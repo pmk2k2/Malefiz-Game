@@ -1,13 +1,13 @@
-package de.hsrm.mi.swtpr.backend;
+package de.hsrm.mi.swtpr.milefiz;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class BackendApplication {
+public class MilefizApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(BackendApplication.class, args);
+		SpringApplication.run(MilefizApplication.class, args);
 	}
 
 }
