@@ -1,0 +1,11 @@
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #181818;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
