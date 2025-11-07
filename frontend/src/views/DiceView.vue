@@ -1,9 +1,8 @@
 <template>
   <main class="main-view">
-    <h1>Milefiz - Würfeltest</h1>
-
-    <RollButton buttonId="diceButton" @trigger="onRoll" />
     <Dice3D ref="diceRef" />
+    <RollButton buttonId="diceButton" @trigger="onRoll" />
+    
   </main>
 </template>
 
