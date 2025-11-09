@@ -2,7 +2,7 @@
 
 <script setup lang="ts">
 import { TresCanvas } from '@tresjs/core';
-import PlayingField from '@/components/playingfield/PlayingField.vue';
+import PlayingField from '@/components/playingfield/ThePlayingField.vue';
 </script>
 
 <template>
