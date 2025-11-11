@@ -11,7 +11,7 @@ body {
   min-height: 100vh;
 }
 
-/* Layout vom Hauptbereich (DiceView.vue) */
+
 .main-view {
   min-height: 100vh;
   display: flex;
@@ -28,41 +28,55 @@ body {
   margin: 0;
 }
 
-
-/*Container vom Würfel (Dice3D.vue)*/
 .dice3d-container {
   width: 400px;
   height: 400px;
 }
 
-/*Stil vom Button (RollButton.vue)*/
 .roll-button {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
   font-size: 1.2rem;
-  padding: 10px 20px;
-  border-radius: 8px;
-  background: #eee;
+  color: #fff;
+  padding: 12px 28px;
   border: none;
+  border-radius: 24px;
+  background: linear-gradient(to bottom, #B77A48, #8A5C32);
+  box-shadow: 0 4px 0 #5C3B20;
   cursor: pointer;
-  transition: background 0.2s ease;
-  width: 200px;
-  height: 50px
+  transition: all 0.2s ease;
+  width: 220px;
+  height: 56px;
 }
 
-.roll-button:hover {
-  background: #ddd;
+.roll-button:hover:not(:disabled) {
+  background: linear-gradient(to bottom, #C88B58, #A86E3C);
+  box-shadow: 0 5px 0 #6B4225;
+  transform: translateY(-3px);
 }
 
-.roll-button:hover:not(:disabled) { transform: translateY(-4px); }
-.roll-button:disabled { opacity: 0.6; cursor: not-allowed; background: #374151; }
+.roll-button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #4A2E16;
+  background: linear-gradient(to bottom, #8A5C32, #6B4225);
+}
 
-/* Animation für die Punkte während es "läd" */
+.roll-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #5A8356;
+  box-shadow: none;
+}
+
+/* Animation für das würfeln "läd" mit den Punkten */
 .dots::after {
   content: '';
   display: inline-block;
   width: 1em;
   animation: dots 1.2s steps(4, end) infinite;
 }
-/* Genauer ablauf der Animation */
+
+/* genaue Timestamps */
 @keyframes dots {
   0%, 20% { content: ''; }
   40% { content: '.'; }
