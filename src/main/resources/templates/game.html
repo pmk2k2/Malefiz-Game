@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Game</title>
+</head>
+
+<body>
+    <h2>Game Screen</h2>
+
+    <section>
+        <p><strong>Game Code:</strong> <b th:text="${gameCode}"></b></p>
+        <p><strong>Player Name:</strong><b th:text="${playerName}"></b></p>
+    </section>
+
+    <section>
+        <ul>
+            <li>Waiting for players...</li>
+        </ul>
+    </section>
+
+</body>
+
+</html>
