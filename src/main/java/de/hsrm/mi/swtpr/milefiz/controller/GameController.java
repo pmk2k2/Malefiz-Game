@@ -33,13 +33,13 @@ public class GameController {
         String code = service.createGame();
         String playerId = session.getId();
         service.addPlayer(code, playerId, name, true);
-        logger.info("Player " + name + " with id: " + playerId + " created a game with code: " + code);
 
-        model.addAttribute("gameCode", code);
-        model.addAttribute("playerName", name);
-        model.addAttribute("game", service.getGame(code));
-        model.addAttribute("playerList", service.getGame(code).getPlayers());
-        return "game";
+        session.setAttribute("gameCode", code);
+        session.setAttribute("playerName", name);
+        session.setAttribute("isHost", true);
+        logger.info("Player {} with id: {} created a game with code: {}", name, playerId, code);
+
+        return "redirect:/lobby";
     }
 
     @PostMapping("/join")
@@ -52,12 +52,27 @@ public class GameController {
             return "welcome";
         }
 
-        logger.info("Player " + name + " with id: " + playerId + " joined a game with code: " + code);
+        session.setAttribute("gameCode", code);
+        session.setAttribute("playerName", name);
+        session.setAttribute("isHost", false);
+        logger.info("Player {} with id: {} joined a game with code: {}", name, playerId, code);
+
+        return "redirect:/lobby";
+    }
+
+    @GetMapping("/lobby")
+    public String lobby(Model model, HttpSession session) {
+        String code = (String) session.getAttribute("gameCode");
+        String name = (String) session.getAttribute("playerName");
+
+        if (code == null || name == null) {
+            return "redirect:/";
+        }
+
         model.addAttribute("gameCode", code);
         model.addAttribute("playerName", name);
         model.addAttribute("game", service.getGame(code));
         model.addAttribute("playerList", service.getGame(code).getPlayers());
         return "game";
     }
-
 }
