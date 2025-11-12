@@ -71,7 +71,7 @@ export function rollDice() {
     cube.rotation.y = startRotation.y + (endRotation.y - startRotation.y) * eased
     cube.rotation.z = 0
 
-    renderer.render(scene, camera)
+    // renderer.render(scene, camera)
     if (t < 1) requestAnimationFrame(animate)
   }
 
@@ -101,7 +101,8 @@ export default defineComponent({
       const textureOrder = [4, 3, 5, 2, 6, 1]
       const materials = textureOrder.map(i =>
         new THREE.MeshBasicMaterial({
-          map: new THREE.TextureLoader().load(`/dice/dice-${i}.png`)
+          map: new THREE.TextureLoader().load(`/dice/dice-${i}.png`),
+          transparent: true
         })
       )
 
