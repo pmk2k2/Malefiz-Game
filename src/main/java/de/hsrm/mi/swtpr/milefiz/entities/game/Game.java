@@ -1,9 +1,9 @@
 package de.hsrm.mi.swtpr.milefiz.entities.game;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,20 +14,25 @@ public class Game {
 
     private static final Logger logger = LoggerFactory.getLogger(Game.class);
     // @Size(min = 1, max = )
-    private List<Player> playerList;
+    private Map<String, Player> playerList;
 
     public Game() {
-        playerList = new ArrayList<>();
+        playerList = new HashMap<>();
     }
 
-    public void addPlayer(Player player) {
-        playerList.add(player);
+    public boolean addPlayer(Player player, String playerId) {
+        if (playerList.containsKey(playerId)) {
+            logger.info("Player" + player.getName() + "already exist!!!!!!");
+            return false;
+        }
+        playerList.put(playerId, player);
         logger.info("The game now has players: "
-                + Arrays.toString(playerList.stream().map(Player::getName).toArray(String[]::new)));
+                + Arrays.toString(playerList.values().stream().map(Player::getName).toArray(String[]::new)));
+        return true;
     }
 
     public Player getPlayer(String name) {
-        for (Player p : playerList) {
+        for (Player p : playerList.values()) {
             if (p.getName().equals(name)) {
                 return p;
             }
@@ -36,7 +41,7 @@ public class Game {
     }
 
     public List<Player> getPlayers() {
-        return playerList;
+        return playerList.values().stream().toList();
     }
 
 }

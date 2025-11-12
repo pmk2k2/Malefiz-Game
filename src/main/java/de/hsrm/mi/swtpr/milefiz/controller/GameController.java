@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 
-import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
 import jakarta.servlet.http.HttpSession;
 
@@ -48,7 +47,8 @@ public class GameController {
         boolean success = service.addPlayer(code, playerId, name, false);
 
         if (!success) {
-            model.addAttribute("error", "Invalid game code");
+            model.addAttribute("error", "Invalid game code or player with the same Id already existed");
+            logger.info("Invalid game code or player with the same Id already existed");
             return "welcome";
         }
 
