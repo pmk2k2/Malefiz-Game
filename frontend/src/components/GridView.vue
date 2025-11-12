@@ -75,14 +75,11 @@ const dummyGrid: Grid = {
   ],
 }
 
-const LINE_THICKNESS = 0.02
-const LINE_Y = 0.011
-
 function cellToField(cell: CellCoord): [number, number, number] {
   const x = cell.i - dummyGrid.cols / 2 + 0.5
   const z = cell.j - dummyGrid.rows / 2 + 0.5
 
-  return [x, 0, z]
+  return [x, 0.05, z]
 }
 </script>
 
@@ -104,9 +101,9 @@ function cellToField(cell: CellCoord): [number, number, number] {
         <TresMesh
           v-for="n in dummyGrid.cols + 1"
           :key="`v-${n}`"
-          :position="[n - 1 - dummyGrid.cols / 2, LINE_Y, 0]"
+          :position="[n - 1 - dummyGrid.cols / 2, 0.011, 0]"
         >
-          <TresBoxGeometry :args="[LINE_THICKNESS, 0.001, dummyGrid.rows]" />
+          <TresBoxGeometry :args="[0.02, 0.001, dummyGrid.rows]" />
           <TresMeshBasicMaterial color="black" />
         </TresMesh>
 
@@ -114,9 +111,9 @@ function cellToField(cell: CellCoord): [number, number, number] {
         <TresMesh
           v-for="n in dummyGrid.rows + 1"
           :key="`h-${n}`"
-          :position="[0, LINE_Y, n - 1 - dummyGrid.rows / 2]"
+          :position="[0, 0.011, n - 1 - dummyGrid.rows / 2]"
         >
-          <TresBoxGeometry :args="[dummyGrid.cols, 0.001, LINE_THICKNESS]" />
+          <TresBoxGeometry :args="[dummyGrid.cols, 0.011, 0.02]" />
           <TresMeshBasicMaterial color="black" />
         </TresMesh>
 
