@@ -22,9 +22,14 @@ const faceRotations: Record<number, { x: number; y: number }> = {
   6: { x: 0, y: 0 }
 }
 
-export function rollDice() {
-  const result = Math.floor(Math.random() * 6) + 1
-  console.log('Augenzahl:', result)
+async function getDiceRollFromServer(): Promise<number> {
+  const res = await fetch('http://localhost:8080/api/daten/roll')
+  const data = await res.json()
+  return data.value  // Wert aus dem JSON vom Backend
+}
+
+export async function rollDice() {
+  const result = await getDiceRollFromServer()
 
   const duration = 1300
   const start = performance.now()
