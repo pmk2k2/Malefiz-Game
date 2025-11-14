@@ -11,7 +11,6 @@
         <button class="btn join" @mouseover="playHover" @click="spielBeitreten">Spiel beitreten</button>
         <button class="btn info" @mouseover="playHover">Regeln / Info</button>
         <button class="btn settings" @mouseover="playHover">Einstellungen</button>
-        <input v-model="playerName" placeholder="Dein Name" required/>
       </div>
 
       <div class="player-list">
@@ -34,68 +33,27 @@ import { ref } from 'vue';
 import router from '@/router';
 import hoverSoundFile from '../assets/button_hover.mp3'
 
-const playerName = ref('');
 const players = ref<{ id: string, name: string }[]>([]);
 
 function playHover() {
-  const audio = new Audio(hoverSoundFile)
-  audio.play()
+  new Audio(hoverSoundFile).play();
 }
 
-async function spielErstellen() {
-  if (!playerName.value) {
-    alert('Bitte gib deinen Namen ein!');
-    return;
-  }
-
-  const res = await fetch('http://localhost:8080/api/game/create', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: playerName.value })
+function spielErstellen() {
+  router.push({
+    path: '/login',
+    query: { mode: 'create' }
   });
-
-  const data = await res.json();
-  console.log(data);
-
-  if (data.gameCode) {
-    router.push({
-      path: '/lobby',
-      query: { gameCode: data.gameCode, playerName: playerName.value }
-    });
-  } else {
-    alert('Fehler beim Erstellen des Spiels');
-  }
 }
 
-async function spielBeitreten() {
-  if (!playerName.value) {
-    alert('Bitte gib deinen Namen ein!');
-    return;
-  }
-
-  const code = prompt('Bitte Spielcode eingeben:');
-  if (!code) return;
-
-  const res = await fetch('http://localhost:8080/api/game/join', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: playerName.value, code })
+function spielBeitreten() {
+  router.push({
+    path: '/login',
+    query: { mode: 'join' }
   });
-
-  const data = await res.json();
-  console.log(data);
-
-  if (data.error) {
-    alert(data.error);
-  } else {
-    router.push({
-      path: '/lobby',
-      query: { gameCode: code, playerName: playerName.value }
-    });
-  }
 }
-
 </script>
+
 
 <style>
 .container {
