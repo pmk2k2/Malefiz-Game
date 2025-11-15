@@ -12,4 +12,5 @@ import PlayingField from '@/components/playingfield/ThePlayingField.vue';
     >
         <PlayingField />
     </TresCanvas>
+
 </template>
