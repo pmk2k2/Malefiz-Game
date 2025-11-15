@@ -9,7 +9,7 @@ public class DiceResult {
     public DiceResult(int value, String playerName){
         this.value = value;
         this.playerName = playerName;
-        this.timeStamp = System.currentTimeMillis();
+        this.timeStamp = System.nanoTime();;
     }
 
     public int getValue(){

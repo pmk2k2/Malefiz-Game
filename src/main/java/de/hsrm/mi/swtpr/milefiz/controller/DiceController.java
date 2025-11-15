@@ -5,14 +5,16 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import de.hsrm.mi.swtpr.milefiz.exception.CooldownException;
 import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.service.DiceService;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/daten")
 public class DiceController {
@@ -25,9 +27,13 @@ public class DiceController {
     }
 
     @GetMapping("/roll")
-    public DiceResult roll(@RequestParam (defaultValue = "Player 1") String playerName) {
+    public DiceResult roll(@RequestParam (defaultValue = "Player 1") String playerName) throws CooldownException {
         return diceService.rollDice(playerName);
     }
     
+    @PostMapping("/cooldown")
+    public void setCooldown(@RequestParam long seconds) {
+        diceService.setCooldown(seconds);
+    }
 
 }
