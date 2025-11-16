@@ -2,6 +2,10 @@
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
 import { computed } from 'vue'
+import TheRock from './TheRock.vue'
+import TheTree from './TheTree.vue'
+import TheCrown from './TheCrown.vue'
+import TheGrass from './TheGrass.vue'
 
 type CellType = 'path' | 'start' | 'goal' | 'blocked'
 
@@ -73,9 +77,13 @@ const dummyGrid: Grid = {
     { i: 10, j: 1, type: 'path' },
     { i: 10, j: 5, type: 'path' },
     { i: 5, j: 3, type: 'path' },
+    { i: 3, j: 1, type: 'path' },
+    { i: 7, j: 1, type: 'path' },
     { i: 5, j: 7, type: 'goal' },
   ],
 }
+
+const CELL_SIZE = 2
 
 // Map aus den explizit gesetzten Feldern
 const key = (i:number, j:number) => `${i},${j}`
@@ -95,69 +103,74 @@ const allCells = computed<CellCoord[]>(() => {
 
 // Zellen auf Map-Koordinaten (x, y, z) mappen
 function cellToField(cell: CellCoord): [number, number, number] {
-  const x = cell.i - dummyGrid.cols / 2 + 0.5
-  const z = -(cell.j - dummyGrid.rows / 2 + 0.5)
+  const x = (cell.i - dummyGrid.cols / 2 + 0.5) * CELL_SIZE
+  const z = -((cell.j - dummyGrid.rows / 2 + 0.5) * CELL_SIZE)
 
   return [x, 0.05, z]
-}
-
-const cellColor= (cell: CellCoord) => {
-  switch (cell.type) {
-    case 'path': return 'grey'
-    case 'start': return 'black'
-    case 'goal': return 'yellow'
-    case 'blocked': return 'green'
-    default: return 'white'
-  }
 }
 </script>
 
 <template>
-  <div class="main-div">
-    <h1>Milefiz - Game</h1>
-    <div class="grid-div">
-      <TresCanvas clear-color="#82DBC5">
-        <TresPerspectiveCamera :position="[0, 10, 8]" :look-at="[0, 0, 0]" />
+  <TresCanvas clear-color="#87CEEB" class="game-canvas">
+    <TresPerspectiveCamera :position="[0, 15, 18]" :look-at="[0, 0, 0]" />
 
-        <!-- Maussteuerung: Dreh/Zoom-Funktion -->
-        <OrbitControls />
+    <!-- Maussteuerung: Dreh/Zoom-Funktion -->
+    <OrbitControls />
 
-        <!-- Beleuchtung -->
-        <TresAmbientLight :intensity="0.5" />
-        <TresDirectionalLight :position="[5, 10, 5]" :intensity="0.8" />
+    <!-- Licht -->
+    <TresDirectionalLight :position="[20, 40, 10]" :intensity="1.5" />
 
-        <!--Vertikale Linien -->
-        <TresMesh
-          v-for="n in dummyGrid.cols + 1"
-          :key="`v-${n}`"
-          :position="[n - 1 - dummyGrid.cols / 2, 0.011, 0]"
-        >
-          <TresBoxGeometry :args="[0.02, 0.001, dummyGrid.rows]" />
-          <TresMeshBasicMaterial color="black" />
-        </TresMesh>
+    <!-- Boden -->
+    <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
+      <TresPlaneGeometry
+        :args="[dummyGrid.cols * CELL_SIZE * 5, dummyGrid.rows * CELL_SIZE * 5]"
+      />
+      <TresMeshStandardMaterial
+        color="#b6e3a5"
+        :roughness="1"
+        :metalness="0"
+      />
+    </TresMesh>
 
-        <!-- Horizontale Linien -->
-        <TresMesh
-          v-for="n in dummyGrid.rows + 1"
-          :key="`h-${n}`"
-          :position="[0, 0.011, n - 1 - dummyGrid.rows / 2]"
-        >
-          <TresBoxGeometry :args="[dummyGrid.cols, 0.011, 0.02]" />
-          <TresMeshBasicMaterial color="black" />
-        </TresMesh>
+<!--   Vertikale Linien
+    <TresMesh
+      v-for="n in dummyGrid.cols + 1"
+      :key="`v-${n}`"
+      :position="[n - 1 - dummyGrid.cols / 2, 0.011, 0]"
+    >
+      <TresBoxGeometry :args="[0, 0, dummyGrid.rows]" />
+      <TresMeshBasicMaterial color="#82DBC5" />
+    </TresMesh>
 
-        <!--Path-Steine-->
-        <TresMesh
-          v-for="cell in allCells"
-          :key="`cell-${cell.i}-${cell.j}`"
-          :position="cellToField(cell)"
-          :rotation="[-Math.PI / 2, 0, 0]"
-        >
-          <TresCircleGeometry :args="[0.35, 32]" />
-          <TresMeshStandardMaterial 
-          :color="cellColor(cell)"/>
-        </TresMesh>
-      </TresCanvas>
-    </div>
-  </div>
+    Horizontale Linien
+    <TresMesh
+      v-for="n in dummyGrid.rows + 1"
+      :key="`h-${n}`"
+      :position="[0, 0.011, n - 1 - dummyGrid.rows / 2]"
+    >
+      <TresBoxGeometry :args="[dummyGrid.cols, 0, 0]" />
+      <TresMeshBasicMaterial color="#82DBC5" />
+    </TresMesh> -->
+
+    <!--Felder je nach Typ mit Objekte befüllen-->
+    <TresMesh
+      v-for="cell in allCells"
+      :key="`cell-${cell.i}-${cell.j}`"
+      :position="cellToField(cell)"
+      :rotation="[-Math.PI / 2, 0, 0]"
+    >
+      <template v-if="cell.type === 'path' || cell.type === 'start'">
+        <TheRock />
+      </template>
+      <template v-else-if="cell.type === 'blocked'">
+        <TheTree />
+        <TheGrass />
+      </template>
+      <template v-else-if="cell.type === 'goal'">
+        <TheRock />
+        <TheCrown />
+      </template>
+      
+    </TresMesh>
+  </TresCanvas>
 </template>

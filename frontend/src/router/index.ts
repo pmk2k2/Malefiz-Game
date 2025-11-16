@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import DiceView from '../components/DiceView.vue'
 import GridView from '../components/GridView.vue'
 
 const router = createRouter({
@@ -7,11 +6,6 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'dice',
-      component: DiceView,
-    },
-    {
-      path: '/grid',
       name: 'grid',
       component: GridView,
     },
