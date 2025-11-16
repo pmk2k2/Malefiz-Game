@@ -55,7 +55,7 @@ function toggleEgoPersp() {
 
             // Position und lookAt-Richtung fuer Kamera anpassen
             let lookDir = [...figAttr?.position]
-            let camPos = ref(figAttr?.position)
+            let camPos = figAttr?.position
             console.log(figAttr?.orientation)
             switch(figAttr?.orientation) {
                 case 'north':
@@ -73,9 +73,9 @@ function toggleEgoPersp() {
             }
 
             // Kamera platzieren 
-            camRef.value.position.x = camPos.value[0]
+            camRef.value.position.x = camPos[0]
             camRef.value.position.y = kameraHoehe
-            camRef.value.position.z = camPos.value[2]
+            camRef.value.position.z = camPos[2]
             /*
             camRef.value.lookAt.x = lookDir[0]
             camRef.value.lookAt.y = lookDir[1]
