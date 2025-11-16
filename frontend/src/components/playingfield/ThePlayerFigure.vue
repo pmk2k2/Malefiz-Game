@@ -32,8 +32,6 @@ const props = defineProps({
     default: () => 'north'
   }
 })
-
-
 </script>
 
 <template>
