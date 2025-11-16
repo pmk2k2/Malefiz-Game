@@ -1,20 +1,25 @@
 <!--  Spielfeld-Szene -->
 <script setup lang="ts">
 import { useLoop, type TresObject } from '@tresjs/core'
-import { computed, onMounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, ref, shallowRef, watchEffect } from 'vue'
 import { Align, OrbitControls } from '@tresjs/cientos'
 import { MeshStandardMaterial } from 'three'
 import ThePlayerFigure from './ThePlayerFigure.vue'
 import type { IPlayerFigure } from '@/IPlayerFigure'
+import { update } from 'three/examples/jsm/libs/tween.module.js'
 
 // Referenz zur Kamera
 const camRef = shallowRef<TresObject | null>(null)
 const orbitRef = shallowRef<TresObject | null>(null)
 
 // Referenz zum Donut-Mesh
-const donutRef = ref()
+//const donutRef = ref()
+
+// Feste Kamerahoehe
+const kameraHoehe = 0.75
 
 // Ref fuer die dargestellten Figuren
+// Wird am Ende tatsaechlich aus WebSocket dingern bezogen
 const figures = ref(new Map<number, IPlayerFigure>())
 figures.value.set(0, {
         "position": [1,0,1],
@@ -37,6 +42,20 @@ figures.value.set(2, {
         "player": 'Spieler2',
         "orientation": 'west'
     }) 
+figures.value.set(3, {
+        "position": [-1,0,5],
+        "color": '#01FF01',
+        //"model": '/Pawn.glb',
+        "player": 'Spieler3',
+        "orientation": 'east'
+    }) 
+figures.value.set(4, {
+        "position": [3,0,3],
+        "color": '#01FF01',
+        //"model": '/Pawn.glb',
+        "player": 'Spieler3',
+        "orientation": 'south'
+    }) 
 // Array fuer figur-Map erstellen
 const figureEntries = computed(() => {
     return Array.from(figures.value.entries())
@@ -44,53 +63,47 @@ const figureEntries = computed(() => {
 
 
 // Ego-Perspektive
-function toggleEgoPersp() {
+function updateCam() {
     if(camRef.value) {
         if(egoPersp) {
             console.log("In Figur")
-            const kameraHoehe = 0.8
 
             // Position der aktuellen Figur kriegen
             let figAttr = figures.value.get(figureControlInd)
 
-            // Position und lookAt-Richtung fuer Kamera anpassen
-            let lookDir = [...figAttr?.position]
-            let camPos = figAttr?.position
             console.log(figAttr?.orientation)
+
+            // Position und lookAt-Richtung fuer Kamera anpassen
+            const camPos = figures.value.get(figureControlInd).position
+            let lookDir = 0
             switch(figAttr?.orientation) {
                 case 'north':
-                    lookDir[0] = lookDir[0] + 1;
+                    lookDir = -0.5;
                     break;
                 case 'east':
-                    lookDir[2] = lookDir[2] + 1;
+                    lookDir = 1;
                     break;
                 case 'south':
-                    lookDir[0] = lookDir[0] - 1;
+                    lookDir = 0.5;
                     break;
                 case 'west':
-                    lookDir[2] = lookDir[2] - 1;
+                    lookDir = 0;
                     break;
             }
 
             // Kamera platzieren 
-            camRef.value.position.x = camPos[0]
+            camRef.value.position.x = camPos[0] // figureControlInd.camPos.value[0]
             camRef.value.position.y = kameraHoehe
-            camRef.value.position.z = camPos[2]
-            /*
-            camRef.value.lookAt.x = lookDir[0]
-            camRef.value.lookAt.y = lookDir[1]
-            camRef.value.lookAt.z = lookDir[2]
-            */
-           camRef.value.lookAt = lookDir
+            camRef.value.position.z = camPos[2] // figureControlInd.camPos.value[0]
+            camRef.value.rotation.set(0, Math.PI * lookDir, 0)
         } else {
             console.log("Ausserhalb Figur")
             // Kamera zurueckpacken
             camRef.value.position.x = 7
             camRef.value.position.y = 7
             camRef.value.position.z = 7
-            camRef.value.lookAt.x = 0
-            camRef.value.lookAt.y = 0
-            camRef.value.lookAt.z = 0
+            // Hardcoded Rotation, damit man auf 0,0,0 guckt
+            camRef.value.rotation.set(-0.7853981633974481, 0.6154797086703871, 0.5235987755982987)
         }
     }
 }
@@ -110,15 +123,15 @@ let figureControlInd = 0
 let egoPersp = false
 
 function keyPress(event: any) {
-  console.log(event.key)
   if(event.key >= '0' && event.key <= '9') {
     figureControlInd = Number.parseInt(event.key)
     console.log("Kontrollierende Figur: " + figureControlInd)
   }
   // Figur des jeweiligen Index bewegen dies das
+  let pos = null
   if(event.key === 'w') {
     let fig = figures.value.get(figureControlInd)
-    let pos = [...fig?.position]
+    pos = [...fig?.position]
 
     pos[0] = pos[0] + 1
     fig.orientation = 'north'
@@ -126,7 +139,7 @@ function keyPress(event: any) {
   }
   if(event.key === 'a') {
     let fig = figures.value.get(figureControlInd)
-    let pos = [...fig?.position]
+    pos = [...fig?.position]
 
     pos[2] = pos[2] - 1
     fig.orientation = 'west'
@@ -134,7 +147,7 @@ function keyPress(event: any) {
   }
   if(event.key === 's') {
     let fig = figures.value.get(figureControlInd)
-    let pos = [...fig?.position]
+    pos = [...fig?.position]
 
     pos[0] = pos[0] - 1
     fig.orientation = 'south'
@@ -142,7 +155,7 @@ function keyPress(event: any) {
   }
   if(event.key === 'd') {
     let fig = figures.value.get(figureControlInd)
-    let pos = [...fig?.position]
+    pos = [...fig?.position]
 
     pos[2] = pos[2] + 1
     fig.orientation = 'east'
@@ -151,19 +164,25 @@ function keyPress(event: any) {
   if(event.key === 'e') {
     egoPersp = !egoPersp
     console.log("Ego-Perspektive: " + egoPersp)
-    toggleEgoPersp();
+    updateCam()
+  }
+  if(pos !== null) {
+    //moveCam(pos[0], kameraHoehe, pos[2])
+    updateCam()
   }
 }
+
 onMounted(() => document.addEventListener('keydown', keyPress))
 
 // elapsed -> Renderdelta?
 // donutRef.value -> wenn donutRef da ist ?
 // onBeforeRender -> BEVOR jeder Frame gerendert wird
 onBeforeRender(({ elapsed }) => {
+    /*
     if(donutRef.value) {
         donutRef.value.rotation.x = elapsed * 0.5
         donutRef.value.rotation.y = elapsed * 0.25
-    }
+    } */
 
 })
 </script>
@@ -187,10 +206,11 @@ onBeforeRender(({ elapsed }) => {
     <TresDirectionalLight :position="[5, 5, 2]" :intensity="2.5"/>
 
     <!-- Testweise ein Donut da -->
+    <!--
     <TresMesh ref="donutRef" :position="[0,2,0]">
         <TresTorusGeometry :args="[1, 0.4, 16, 32]" />
         <TresMeshStandardMaterial color="#ff1100" :metalness="0.7" :roughness="0" />
-    </TresMesh>
+    </TresMesh> -->
 
     <ThePlayerFigure
         v-for="[id, fig] in figureEntries"
