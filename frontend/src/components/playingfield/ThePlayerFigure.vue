@@ -1,33 +1,45 @@
 <script setup lang="ts">
+import { shallowRef } from 'vue'
 import ThePawn from './models/ThePawn.vue'
+import { Align } from '@tresjs/cientos'
 
 // Definieren und festlegen der Props und Defaultwerte
-interface Props {
-  position?: [number, number, number]
-  color?: string
-  model?: string
-  player?: string
-  figureNr?: number
-  orientation?: string
-}
-const props = withDefaults(defineProps<Props>(), {
-  position: () => [0, 0, 0],
-  color: '#ffaacc',
-  model: 'ThePawn',
-  player: 'Player',
-  figureNr: 0,
-  orientation: 'north'
+const props = defineProps({
+  position: {
+    // Position der Figur
+    type: [Number, Number, Number],
+    default: () => [0, 0, 0]
+  },
+  color: {
+    // Farbe der Figur (Server sollte die eig geben)
+    type: String,
+    default: () => '#ffaacc'
+  },
+  model: {
+    // falls man spaeter verschiedene auswaehlbare Models haben will
+    type: String,
+    default: () => 'Pawn'
+  },
+  player: {
+    // zu welchem Spieler die Figur gehoert
+    // keine Ahnung, ob tatsaechlich noetig ???
+    type: String,
+    default: () => 'Player'
+  },
+  orientation: {
+    // Richtung, wohin die Figur schaut (fuer Egoperspektive relevant)
+    type: String,
+    default: () => 'north'
+  }
 })
 
-function setPosition(x: number, y: number, z: number) {
-  props.value.position = [x, y, z]
-}
 
 </script>
 
 <template>
   <TresMesh :position="props.position">
-    <ThePawn />
-    <TresMeshStandardMaterial :color="props.color" />
+    <Align top> <!-- setzt die Figur auf den Boden -->
+      <ThePawn :color="props.color"/>
+    </Align>
   </TresMesh>
 </template>
