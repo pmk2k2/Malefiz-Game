@@ -7,6 +7,7 @@ import TheTree from './TheTree.vue'
 import TheCrown from './TheCrown.vue'
 import TheGrass from './TheGrass.vue'
 
+//Zellentypen
 type CellType = 'path' | 'start' | 'goal' | 'blocked'
 
 // Zellenkoordinten
@@ -87,7 +88,7 @@ const CELL_SIZE = 2
 
 // Map aus den explizit gesetzten Feldern
 const key = (i:number, j:number) => `${i},${j}`
-
+// 2D-Array aller Zellen des Spielfelds mit Typ, wobei nicht gesetzte Zellen 'blocked' sind
 const allCells = computed<CellCoord[]>(() => {
   const overrides = new Map<string, CellType>()
   for (const cell of dummyGrid.cells) overrides.set(key(cell.i, cell.j), cell.type)
@@ -131,26 +132,6 @@ function cellToField(cell: CellCoord): [number, number, number] {
         :metalness="0"
       />
     </TresMesh>
-
-<!--   Vertikale Linien
-    <TresMesh
-      v-for="n in dummyGrid.cols + 1"
-      :key="`v-${n}`"
-      :position="[n - 1 - dummyGrid.cols / 2, 0.011, 0]"
-    >
-      <TresBoxGeometry :args="[0, 0, dummyGrid.rows]" />
-      <TresMeshBasicMaterial color="#82DBC5" />
-    </TresMesh>
-
-    Horizontale Linien
-    <TresMesh
-      v-for="n in dummyGrid.rows + 1"
-      :key="`h-${n}`"
-      :position="[0, 0.011, n - 1 - dummyGrid.rows / 2]"
-    >
-      <TresBoxGeometry :args="[dummyGrid.cols, 0, 0]" />
-      <TresMeshBasicMaterial color="#82DBC5" />
-    </TresMesh> -->
 
     <!--Felder je nach Typ mit Objekte befüllen-->
     <TresMesh
