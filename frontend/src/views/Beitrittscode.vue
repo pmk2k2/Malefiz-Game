@@ -29,13 +29,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 
-const route = useRoute()
 const router = useRouter()
 
-const playerName = route.query.playerName as string
-
+const playerName = localStorage.getItem("playerName")
 const code = ref("")
 
 async function beitreten() {
@@ -54,19 +52,15 @@ async function beitreten() {
 
   if (data.error) {
     alert(data.error)
-  } else {
-    router.push({
-      path: "/lobby",
-      query: { gameCode: code.value, playerName }
-    })
   }
+  localStorage.setItem("playerId", data.playerId)
+  localStorage.setItem("gameCode", data.gameCode)
+
+  router.push("/lobby")
 }
 
 function zurueck() {
-  router.push({
-    path: "/main",
-    query: { playerName }
-  })
+  router.push("/main")
 }
 </script>
 

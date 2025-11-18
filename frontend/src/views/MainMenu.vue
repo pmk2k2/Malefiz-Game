@@ -8,23 +8,8 @@
     <main class="main-content">
       <div class="button-group">
 
-        <button class="btn create" @mouseover="playHover" @click="spielErstellen">
-          Spiel erstellen
-        </button>
-
-        <button class="btn join" @mouseover="playHover" @click="goJoin">
-          Spiel beitreten
-        </button>
-
-        <div v-if="showJoinInput" style="text-align:center">
-          <input 
-            v-model="code" 
-            placeholder="Spielcode"
-            class="input-name"
-          />
-          <button class="btn join" @click="joinGame">Beitreten</button>
-        </div>
-
+        <button class="btn create" @mouseover="playHover" @click="spielErstellen">Spiel erstellen</button>
+        <button class="btn join" @mouseover="playHover" @click="goJoin">Spiel beitreten</button>
         <button class="btn info" @mouseover="playHover">Regeln / Info</button>
         <button class="btn settings" @mouseover="playHover">Einstellungen</button>
 
@@ -52,22 +37,16 @@ import hoverSoundFile from '../assets/button_hover.mp3';
 
 const route = useRoute();
 const router = useRouter();
-
-const playerName = ref(route.query.playerName as string || "");
+const playerName = ref(localStorage.getItem("playerName") || "");
 
 const players = ref<{ id: string, name: string }[]>([]);
-const code = ref("");
-const showJoinInput = ref(false);
 
 function playHover() {
   new Audio(hoverSoundFile).play();
 }
 
 function goJoin() {
-  router.push({
-    path: '/join',
-    query: { playerName: playerName.value }
-  });
+  router.push("/join");
 }
 
 
@@ -80,37 +59,26 @@ async function spielErstellen() {
 
   const data = await res.json();
 
-  router.push({
-    path: '/lobby',
-    query: { gameCode: data.gameCode, playerName: playerName.value }
-  });
+  localStorage.setItem("playerId", data.playerId);
+  localStorage.setItem("gameCode", data.gameCode);
+  router.push("/lobby");
 }
 
-async function joinGame() {
-  if (!code.value.trim()) {
-    alert("Bitte Spielcode eingeben!");
-    return;
-  }
+async function logout() {
+  const playerId = localStorage.getItem("playerId");
+  const gameCode = localStorage.getItem("gameCode");
 
-  const res = await fetch('http://localhost:8080/api/game/join', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: playerName.value, code: code.value })
-  });
-
-  const data = await res.json();
-
-  if (data.error) {
-    alert(data.error);
-  } else {
-    router.push({
-      path: '/lobby',
-      query: { gameCode: code.value, playerName: playerName.value }
+  if (playerId && gameCode) {
+    await fetch("http://localhost:8080/api/game/leave", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        playerId,
+        code: gameCode
+      })
     });
   }
-}
-
-function logout() {
+  localStorage.clear();
   router.push("/");
 }
 </script>

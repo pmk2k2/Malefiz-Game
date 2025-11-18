@@ -14,9 +14,13 @@ const router = createRouter({
   ],
 })
 router.beforeEach((to, from, next) => {
-  if (to.path === '/main' && !to.query.playerName) {
+  const protectedPages = ['/main', '/join', '/lobby']
+  const loggedIn = !!localStorage.getItem("playerName")
+
+  if (protectedPages.includes(to.path) && !loggedIn) {
     return next('/')
   }
+
   next()
 })
 export default router

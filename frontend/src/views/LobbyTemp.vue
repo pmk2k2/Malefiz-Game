@@ -19,13 +19,23 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
 
-const route = useRoute();
+const gameCode = ref(localStorage.getItem("gameCode") || "");
+const playerName = ref(localStorage.getItem("playerName") || "");
 
-const gameCode = ref(route.query.gameCode as string || '');
-const playerName = ref(route.query.playerName as string || '');
 const players = ref<{ id: string, name: string }[]>([]);
+
+onMounted(async () => {
+  if (!gameCode.value) {
+    console.warn("No game code found");
+    return;
+  }
+
+  const res = await fetch(`http://localhost:8080/api/game/${gameCode.value}/players`);
+  if (res.ok) {
+    players.value = await res.json();
+  }
+});
 </script>
 
 <style scoped>

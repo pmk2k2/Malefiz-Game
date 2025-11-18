@@ -34,10 +34,8 @@ function login() {
     return;
   }
 
-  router.push({
-    path: "/main",
-    query: { playerName: name.value }
-  });
+  localStorage.setItem("playerName", name.value)
+  router.push("/main")
 }
 </script>
 
