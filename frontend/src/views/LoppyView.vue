@@ -39,7 +39,10 @@ import MalefizListView from '@/components/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
 
 
-const { loppyID } = defineProps<{ loppyID?: LoppyID }>()
+const loppyID = ref({
+  LoppyID: localStorage.getItem("gameCode")
+});
+
 
 
 const roll = ref<number | null>(null)

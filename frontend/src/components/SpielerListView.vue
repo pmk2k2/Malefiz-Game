@@ -6,53 +6,46 @@
       :spieler="spieler"
       :selected="selectedPlayer === spieler.id"
       @deletezeile="handleDelete"
-      @select="selectedPlayer = spieler.id" 
+      @select="selectedPlayer = spieler.id"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import SpielerListeZeile from './SpielerListeZeile.vue'
+import { mapBackendPlayersToDTD } from '@/stores/mapper'
 
-const spielerListe = ref<ISpielerDTD[]>([
-  {
-    id: 1,
-    name: 'Player 1',
-    bereitschaft: true,
-    spielfiguren: [{ icon: '/assets/icons/blau.png' }]
-  },
-  {
-    id: 2,
-    name: 'Player 2',
-    bereitschaft: false,
-    spielfiguren: [{ icon: '/assets/icons/gruen.png' }]
-  },
-  {
-    id: 3,
-    name: 'Player 3',
-    bereitschaft: false,
-    spielfiguren: [{ icon: '/assets/icons/gelb.png' }]
-  },
-  {
-    id: 4,
-    name: 'Player 4',
-    bereitschaft: false,
-    spielfiguren: [{ icon: '/assets/icons/rot.png' }]
-  }
-])
+const spielerListe = ref<ISpielerDTD[]>([])
 const selectedPlayer = ref<number | null>(null)
 
+onMounted(async () => {
+  const gameCode = localStorage.getItem("gameCode")
+
+  if (!gameCode) {
+    console.warn("No game code found!")
+    return
+  }
+
+  try {
+    const res = await fetch(`http://localhost:8080/api/game/${gameCode}/players`)
+    const backendPlayers = await res.json()
+    spielerListe.value = mapBackendPlayersToDTD(backendPlayers)
+
+  } catch (err) {
+    console.error("Failed to load players:", err)
+  }
+})
+
 function handleDelete(id: number) {
-  
   spielerListe.value = spielerListe.value.filter(item => item.id !== id)
 }
 </script>
 
 <style scoped>
 .spieler-listview {
-  width: 600px; 
+  width: 600px;
   height: 300px;
   max-width: 800px;
   margin: 2rem auto;

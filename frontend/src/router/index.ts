@@ -13,11 +13,11 @@ const router = createRouter({
     {
       path: '/dice',
       name: 'dice',
-      component: LoppyView,
+      component: DiceView,
     },
     { path: '/', component: LoginView },
     { path: '/join', component: Beitrittscode },
-    { path: '/lobby', component: LobbyTemp },
+    { path: '/lobby', component: LoppyView },
     { path: '/main', component: MainMenu }
   ],
 })
