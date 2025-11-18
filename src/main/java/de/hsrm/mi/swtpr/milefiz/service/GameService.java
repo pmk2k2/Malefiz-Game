@@ -1,5 +1,6 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,6 +24,8 @@ public class GameService {
     public String createGame() {
         String gameCode = codeService.generateCode();
         games.put(gameCode, new Game());
+        logger.info("All the games:  "
+                + Arrays.toString(games.keySet().stream().toArray(String[]::new)));
         return gameCode;
     }
 
@@ -32,11 +35,22 @@ public class GameService {
             return false;
         }
         //
-        game.addPlayer(new Player(name, playerId, isHost));
+        boolean playerAdded = game.addPlayer(new Player(name, playerId, isHost), playerId);
+        if (!playerAdded) {
+            return false;
+        }
         return true;
     }
 
     public Game getGame(String code) {
         return games.get(code);
+    }
+
+    public boolean removePlayer(String gameCode, String playerId) {
+        Game game = games.get(gameCode);
+        if (game == null) {
+            return false;
+        }
+        return game.removePlayer(playerId);
     }
 }
