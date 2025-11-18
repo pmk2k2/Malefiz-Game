@@ -44,4 +44,11 @@ public class Game {
         return playerList.values().stream().toList();
     }
 
+    public boolean removePlayer(String playerId) {
+        Player removed = playerList.remove(playerId);
+        logger.info("The game now has players: "
+                + Arrays.toString(playerList.values().stream().map(Player::getName).toArray(String[]::new)));
+        return removed != null;
+    }
+
 }

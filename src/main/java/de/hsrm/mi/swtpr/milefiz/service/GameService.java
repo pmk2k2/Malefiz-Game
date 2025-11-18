@@ -45,4 +45,12 @@ public class GameService {
     public Game getGame(String code) {
         return games.get(code);
     }
+
+    public boolean removePlayer(String gameCode, String playerId) {
+        Game game = games.get(gameCode);
+        if (game == null) {
+            return false;
+        }
+        return game.removePlayer(playerId);
+    }
 }
