@@ -50,13 +50,14 @@ async function beitreten() {
 
   const data = await res.json()
 
-  if (data.error) {
+  if (! data.error) {
+    localStorage.setItem("playerId", data.playerId)
+    localStorage.setItem("gameCode", data.gameCode)
+  router.push("/lobby")
+  }else{
     alert(data.error)
   }
-  localStorage.setItem("playerId", data.playerId)
-  localStorage.setItem("gameCode", data.gameCode)
 
-  router.push("/lobby")
 }
 
 function zurueck() {
