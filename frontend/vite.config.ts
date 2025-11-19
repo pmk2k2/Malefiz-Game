@@ -8,6 +8,14 @@ import { templateCompilerOptions } from '@tresjs/core'
 // https://vite.dev/config/
 export default defineConfig({
   server: {
+    proxy: {
+      '/api': 'http://localhost:8080',
+      '/images': 'http://localhost:8080',
+      '/stompbroker': {
+        target: 'http://localhost:8080/',
+        ws: true,
+      },
+    },
     host: true
   },
   plugins: [
