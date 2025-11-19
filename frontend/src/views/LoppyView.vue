@@ -15,7 +15,7 @@
 
     <EinstellungView v-if="showSettings" />
 
-    <MalefizListView />
+    <SpielerListeView />
 
 
     <div class="buttons">
@@ -35,31 +35,39 @@ import type { LoppyID } from '@/stores/LoppyID'
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
 import { ref } from 'vue'
-import MalefizListView from '@/components/SpielerListView.vue'
+import SpielerListeView from '@/components/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
-
+import { useRoute, useRouter } from 'vue-router';
 
 const loppyID = ref({
   LoppyID: localStorage.getItem("gameCode")
 });
 
-
+const router = useRouter();
 
 const roll = ref<number | null>(null)
-
+const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
 
 function rollDice() {
   roll.value = Math.floor(Math.random() * 6) + 1
 }
 
 function clearRoll() {
+  // Würfel zurücksetzen
   roll.value = null
+
+  // Alle Spieler löschen über handleDelete
+  if (spielerListeRef.value) {
+    // Kopie der IDs, um nicht während des Iterierens das Array zu verändern
+    const allIds = [...spielerListeRef.value.spielerListe.map(s => s.id)]
+    allIds.forEach(id => spielerListeRef.value?.handleDelete(id))
+  }
 }
+
 
 function goBack() {
-  console.log('Zurück button clicked')
+  router.push("/main");
 }
-
 
 const showSettings = ref(false)
 

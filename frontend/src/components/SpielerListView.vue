@@ -29,9 +29,15 @@ onMounted(async () => {
   }
 
   try {
-    const res = await fetch(`http://localhost:8080/api/game/${gameCode}/players`)
-    const backendPlayers = await res.json()
-    spielerListe.value = mapBackendPlayersToDTD(backendPlayers)
+
+    const res = await fetch(`http://localhost:8080/api/game/get?code=${gameCode}`)
+    if (!res.ok) throw new Error("HTTP error " + res.status)
+
+    const backendData = await res.json()
+
+    spielerListe.value = mapBackendPlayersToDTD(backendData.players)
+
+    console.log("Spieler geladen:", spielerListe.value)
 
   } catch (err) {
     console.error("Failed to load players:", err)
@@ -41,6 +47,7 @@ onMounted(async () => {
 function handleDelete(id: number) {
   spielerListe.value = spielerListe.value.filter(item => item.id !== id)
 }
+defineExpose({ handleDelete, spielerListe })
 </script>
 
 <style scoped>

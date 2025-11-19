@@ -35,7 +35,7 @@ const emit = defineEmits<{
 }>()
 
 function selectRow() {
-  emit('select')  // teilt Parent mit, dass diese Zeile selektiert wurde
+  emit('select')  
 }
 </script>
 
