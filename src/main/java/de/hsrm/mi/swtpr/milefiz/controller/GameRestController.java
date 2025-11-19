@@ -80,11 +80,12 @@ public class GameRestController {
     }
 
     @GetMapping("/get")
-    public Map<String, Object> getGame(@RequestParam String code) {
+    public Map<String, Object> getPlayers(@RequestParam String code) {
         Game game = service.getGame(code);
         if (game == null)
             return Map.of("error", "Game not found");
 
         return Map.of("players", game.getPlayers());
     }
+    
 }
