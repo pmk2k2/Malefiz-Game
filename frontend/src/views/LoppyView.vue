@@ -49,7 +49,7 @@ const roll = ref<number | null>(null)
 const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
 
 function rollDice() {
-  roll.value = Math.floor(Math.random() * 6) + 1
+router.push("/grid")
 }
 
 function clearRoll() {
