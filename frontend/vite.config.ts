@@ -7,6 +7,9 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import { templateCompilerOptions } from '@tresjs/core'
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    host: true
+  },
   plugins: [
     vue( {
       ... templateCompilerOptions
@@ -19,3 +22,5 @@ export default defineConfig({
     },
   },
 })
+
+
