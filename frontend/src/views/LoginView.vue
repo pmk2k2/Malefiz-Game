@@ -34,6 +34,8 @@ function login() {
     return;
   }
 
+  
+
   localStorage.setItem("playerName", name.value)
   router.push("/main")
 }

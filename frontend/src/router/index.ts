@@ -26,7 +26,9 @@ router.beforeEach((to, from, next) => {
   if (protectedPages.includes(to.path) && !loggedIn) {
     return next('/')
   }
-
+  if(to.path ==  '/' && loggedIn){
+    return next('/main')
+  }
   next()
 })
 export default router
