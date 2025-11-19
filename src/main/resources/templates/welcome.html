@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<head>
+    <meta charset="UTF-8">
+    <title>LAN Board Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+
+        input[type="text"] {
+            padding: 5px;
+            font-size: 16px;
+            margin: 5px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Welcome to the LAN Board Game</h1>
+
+    <form method="post">
+        <label for="name">Your Name:</label>
+        <br>
+        <input type="text" id="name" name="name" required>
+        <br><br>
+
+        <label for="gameCode">Game Code (if joining):</label>
+        <br>
+        <input type="text" id="gameCode" name="code">
+        <br>
+        <br>
+
+        <button type="submit" formaction="/create">Create Game</button>
+        <button type="submit" formaction="/join">Join Game</button>
+    </form>
+
+</body>
+
+</html>
