@@ -21,7 +21,7 @@
     <div class="buttons">
       <button @click="clearRoll">Löschen</button>
       <button @click="rollDice">Bereit</button>
-      <button @click="goBack">Zurueck</button>
+      <button @click="goBack">Verlassen</button>
     </div>
 
     <div v-if="roll !== null" class="roll-result">
@@ -65,8 +65,22 @@ function clearRoll() {
 }
 
 
-function goBack() {
+async function goBack() {
+  const playerId = localStorage.getItem("playerId");
+  const gameCode = localStorage.getItem("gameCode");
+
+  if (playerId && gameCode) {
+    await fetch("http://localhost:8080/api/game/leave", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        playerId,
+        code: gameCode
+      })
+    });
+  localStorage.removeItem("gameCode")
   router.push("/main");
+}
 }
 
 const showSettings = ref(false)
