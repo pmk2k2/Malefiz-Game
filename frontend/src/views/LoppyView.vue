@@ -7,16 +7,14 @@
       <button type="button">
         <img :src="infoIcon" alt="Info" />
       </button>
-         <button type="button" @click="toggleSettingsView">
+      <button type="button" @click="toggleSettingsView">
         <img :src="einstellungIcon" alt="Einstellungen" />
       </button>
-
     </div>
 
     <EinstellungView v-if="showSettings" />
 
     <SpielerListeView />
-
 
     <div class="buttons">
       <button @click="clearRoll">Löschen</button>
@@ -24,9 +22,7 @@
       <button @click="goBack">Zurueck</button>
     </div>
 
-    <div v-if="roll !== null" class="roll-result">
-      Würfel: {{ roll }}
-    </div>
+    <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
   </div>
 </template>
 
@@ -37,19 +33,19 @@ import infoIcon from '@/assets/info.png'
 import { ref } from 'vue'
 import SpielerListeView from '@/components/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router'
 
 const loppyID = ref({
-  LoppyID: localStorage.getItem("gameCode")
-});
+  LoppyID: localStorage.getItem('gameCode'),
+})
 
-const router = useRouter();
+const router = useRouter()
 
 const roll = ref<number | null>(null)
 const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
 
 function rollDice() {
-router.push("/grid")
+  router.push('/game')
 }
 
 function clearRoll() {
@@ -59,14 +55,13 @@ function clearRoll() {
   // Alle Spieler löschen über handleDelete
   if (spielerListeRef.value) {
     // Kopie der IDs, um nicht während des Iterierens das Array zu verändern
-    const allIds = [...spielerListeRef.value.spielerListe.map(s => s.id)]
-    allIds.forEach(id => spielerListeRef.value?.handleDelete(id))
+    const allIds = [...spielerListeRef.value.spielerListe.map((s) => s.id)]
+    allIds.forEach((id) => spielerListeRef.value?.handleDelete(id))
   }
 }
 
-
 function goBack() {
-  router.push("/main");
+  router.push('/main')
 }
 
 const showSettings = ref(false)
@@ -110,16 +105,15 @@ button:hover {
 }
 
 button img {
-  width: 62px; 
+  width: 62px;
   height: 62px;
-  margin: 0 300px; 
+  margin: 0 300px;
 }
 
-button:has(img) { 
+button:has(img) {
   background-color: transparent;
   padding: 0;
   border-radius: 0;
-
 }
 .icon-button button {
   background-color: transparent;
