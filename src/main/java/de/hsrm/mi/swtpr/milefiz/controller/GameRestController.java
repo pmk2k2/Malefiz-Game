@@ -4,7 +4,6 @@ import java.util.Map;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
-import de.hsrm.mi.swtpr.milefiz.service.CodeGeneratorService;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
 import jakarta.servlet.http.HttpSession;
 
@@ -14,11 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
