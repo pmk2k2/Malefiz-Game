@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { TresCanvas } from '@tresjs/core'
+import { TresCanvas, type TresObject } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
-import { computed } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import TheRock from './TheRock.vue'
 import TheTree from './TheTree.vue'
 import TheCrown from './TheCrown.vue'
 import TheGrass from './TheGrass.vue'
+
+import ThePlayerFigure from './playingfield/ThePlayerFigure.vue'
+import type { IPlayerFigure } from '@/IPlayerFigure'
 
 //Zellentypen
 type CellType = 'path' | 'start' | 'goal' | 'blocked'
@@ -86,6 +89,38 @@ const dummyGrid: Grid = {
 
 const CELL_SIZE = 2
 
+// Zellen auf Map-Koordinaten (x, y, z) mappen
+function cellToField(cell: CellCoord): [number, number, number] {
+  const x = (cell.i - dummyGrid.cols / 2 + 0.5) * CELL_SIZE
+  const z = -((cell.j - dummyGrid.rows / 2 + 0.5) * CELL_SIZE)
+
+  return [x, 0, z]
+}
+
+const startCell: CellCoord = {
+  i: 5,
+  j: 0,
+  type: 'start',
+}
+
+// Weltkoordinaten für diese Startzelle bestimmen
+const [startX, , startZ] = cellToField(startCell)
+
+// Figuren-Liste (später vom Backend befüllen)
+const figures = ref<IPlayerFigure[]>([
+  {
+    id: 'fig-1',
+    position: [startX, 0.2, startZ],
+    color: '#ff0101',
+    playerId: 'Player1',
+    orientation: 'north',
+  },
+])
+
+const camRef = shallowRef<TresObject | null>(null)
+
+const default_cam_pos: [number, number, number] = [0, 15, 18]
+
 // Map aus den explizit gesetzten Feldern
 const key = (i: number, j: number) => `${i},${j}`
 // 2D-Array aller Zellen des Spielfelds mit Typ, wobei nicht gesetzte Zellen 'blocked' sind
@@ -101,23 +136,15 @@ const allCells = computed<CellCoord[]>(() => {
   }
   return out
 })
-
-// Zellen auf Map-Koordinaten (x, y, z) mappen
-function cellToField(cell: CellCoord): [number, number, number] {
-  const x = (cell.i - dummyGrid.cols / 2 + 0.5) * CELL_SIZE
-  const z = -((cell.j - dummyGrid.rows / 2 + 0.5) * CELL_SIZE)
-
-  return [x, 0.05, z]
-}
 </script>
 
 <template>
   <TresCanvas clear-color="#87CEEB" class="w-full h-full">
-    <TresPerspectiveCamera :position="[0, 15, 18]" :look-at="[0, 0, 0]" />
+    <TresPerspectiveCamera ref="camRef" :position="default_cam_pos" :look-at="[0, 0, 0]" />
     <OrbitControls />
 
     <!-- Licht -->
-    <TresDirectionalLight :position="[20, 40, 10]" :intensity="1.5" />
+    <TresDirectionalLight :position="[20, 40, 10]" :intensity="2" />
 
     <!-- Boden -->
     <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
@@ -144,5 +171,14 @@ function cellToField(cell: CellCoord): [number, number, number] {
         <TheCrown />
       </template>
     </TresMesh>
+
+    <!-- Spielfigur(en) -->
+    <ThePlayerFigure
+      v-for="fig in figures"
+      :key="fig.id"
+      :position="fig.position"
+      :color="fig.color"
+      :orientation="fig.orientation"
+    />
   </TresCanvas>
 </template>

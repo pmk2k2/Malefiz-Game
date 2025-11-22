@@ -4,7 +4,6 @@ import LoppyView from '@/views/LoppyView.vue'
 import MainMenu from '../views/MainMenu.vue'
 import LoginView from '../views/LoginView.vue'
 import Beitrittscode from '@/views/Beitrittscode.vue'
-import PlayingFieldView from '@/views/PlayingFieldView.vue'
 import GameView from '../components/GameView.vue'
 
 const router = createRouter({
@@ -15,7 +14,6 @@ const router = createRouter({
     { path: '/lobby', component: LoppyView },
     { path: '/main', component: MainMenu },
     { path: '/game', component: GameView },
-    { path: '/field', component: PlayingFieldView },
   ],
 })
 router.beforeEach((to, from, next) => {
