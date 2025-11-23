@@ -51,7 +51,7 @@ function goJoin() {
 
 
 async function spielErstellen() {
-  const res = await fetch('http://localhost:8080/api/game/create', {
+  const res = await fetch('/api/game/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: playerName.value })
@@ -69,7 +69,7 @@ async function logout() {
   const gameCode = localStorage.getItem("gameCode");
 
   if (playerId && gameCode) {
-    await fetch("http://localhost:8080/api/game/leave", {
+    await fetch("/api/game/leave", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
