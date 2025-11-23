@@ -30,7 +30,7 @@ onMounted(async () => {
 
   try {
 
-    const res = await fetch(`http://localhost:8080/api/game/get?code=${gameCode}`)
+    const res = await fetch(`/api/game/get?code=${gameCode}`)
     if (!res.ok) throw new Error("HTTP error " + res.status)
 
     const backendData = await res.json()
