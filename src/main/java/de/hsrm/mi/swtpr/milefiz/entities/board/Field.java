@@ -1,5 +1,49 @@
 package de.hsrm.mi.swtpr.milefiz.entities.board;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Field {
-    
+    private final int i;
+    private final int j;
+    private CellType type;
+    private List<Figure> figures = new ArrayList<>();
+
+    public Field(int i, int j, CellType type) {
+        this.i = i;
+        this.j = j;
+        this.type = type;
+    }
+
+    public void addFigure(Figure figure) {
+        figures.add(figure);
+    }
+
+    public void removeFigure(Figure figure) {
+        figures.remove(figure);
+    }
+
+    public List<Figure> getFigures() {
+        return figures;
+    }
+
+    public void setType(CellType type) {
+        this.type = type;
+    }
+
+    public CellType getType() {
+        return type;
+    }
+
+    public boolean isBlocked() {
+        return type == CellType.BLOCKED;
+    }
+
+    public int getI() {
+        return i;
+    }
+
+    public int getJ() {
+        return j;
+    }
 }

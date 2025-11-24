@@ -1,5 +1,8 @@
 package de.hsrm.mi.swtpr.milefiz.entities.board;
 
-public class CellType {
-    
+public enum CellType {
+    PATH,
+    START,
+    GOAL,
+    BLOCKED
 }
