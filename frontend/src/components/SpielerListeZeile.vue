@@ -18,11 +18,20 @@
       <span v-if="spieler.bereitschaft" class="status bereit">bereit</span>
       <span v-else class="status nicht-bereit">Nicht bereit</span>
     </div>
+
+    <div class="spieler-kicken" v-if="host && spieler.id.toString() !== myPlayerId">
+      <button class="kicken" @click.stop="kicken">kick</button>
+    </div>
+
   </div>
+  
 </template>
 
 <script setup lang="ts">
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
+
+const myPlayerId = localStorage.getItem("playerId");
+const host = localStorage.getItem("isHost") === "true";
 
 const props = defineProps<{
   spieler: ISpielerDTD,
@@ -37,6 +46,45 @@ const emit = defineEmits<{
 function selectRow() {
   emit('select')  
 }
+
+console.log("--- DEBUG ZEILE ---");
+console.log("Mein Status (isHost):", host);
+console.log("Meine ID (localStorage):", myPlayerId);
+console.log("Spieler ID (prop):", props.spieler.id);
+console.log("Spieler Name:", props.spieler.name);
+console.log("Vergleich:", host && (props.spieler.id !== myPlayerId));
+
+async function kicken() {
+  const gameCode = localStorage.getItem("gameCode");
+  const playerId = props.spieler.id;
+
+  if (!gameCode) {
+    console.error("Kein gameCode gefunden debug");
+    return;
+  }
+
+  try {
+    const res = await fetch("http://localhost:8080/api/game/leave", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: gameCode,
+        playerId: playerId
+      })
+    });
+    
+    const data = await res.json();
+    if (data.removed) {
+      console.log(`Spieler ${props.spieler.name} wurde gekickt`);
+      emit("deletezeile", props.spieler.id); // entfernt die Zeile in der Lobby-Liste
+    } else {
+      console.warn("Spieler konnte nicht entfernt werden");
+    }
+  } catch (err) {
+    console.error("Fehler beim Kicken:", err);
+  }
+}
+
 </script>
 
 <style scoped>

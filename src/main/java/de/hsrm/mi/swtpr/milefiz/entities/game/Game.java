@@ -31,13 +31,8 @@ public class Game {
         return true;
     }
 
-    public Player getPlayer(String name) {
-        for (Player p : playerList.values()) {
-            if (p.getName().equals(name)) {
-                return p;
-            }
-        }
-        return null;
+    public Player getPlayer(String playerId) {
+        return playerList.get(playerId);
     }
 
     public List<Player> getPlayers() {

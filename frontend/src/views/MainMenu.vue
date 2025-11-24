@@ -58,6 +58,7 @@ async function spielErstellen() {
 
   localStorage.setItem('playerId', data.playerId)
   localStorage.setItem('gameCode', data.gameCode)
+  localStorage.setItem('isHost', String(data.isHost))
   router.push('/lobby')
 }
 

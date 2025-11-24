@@ -4,6 +4,7 @@ import java.util.Map;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
+import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.service.CodeGeneratorService;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
 import jakarta.servlet.http.HttpSession;
@@ -36,14 +37,17 @@ public class GameRestController {
         String code = service.createGame();
         String playerId = session.getId();
 
+        Player player = new Player(name, playerId, true);
         service.addPlayer(code, playerId, name, true);
         Game game = service.getGame(code);
+        player = game.getPlayer(playerId);
 
         return Map.of(
                 "gameCode", code,
                 "playerName", name,
                 "players", game.getPlayers(),
-                "playerId", playerId);
+                "playerId", playerId,
+                "isHost", player != null && player.isHost());
     }
 
     @PostMapping("/join")
@@ -52,17 +56,20 @@ public class GameRestController {
         String code = body.get("code");
         String playerId = session.getId();
 
+        Player player = new Player(name, playerId, true);
         boolean success = service.addPlayer(code, playerId, name, false);
         if (!success) {
             return Map.of("error", "Invalid game code");
         }
-
         Game game = service.getGame(code);
+        player = game.getPlayer(playerId);
+
         return Map.of(
                 "gameCode", code,
                 "playerName", name,
                 "players", game.getPlayers(),
-                "playerId", playerId);
+                "playerId", playerId,
+                "isHost", player != null && player.isHost());
     }
 
     @PostMapping("/leave")
