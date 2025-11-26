@@ -1,7 +1,7 @@
 import type { ISpielfigurDTD } from "./ISpielfigurDTD"
 
 export interface ISpielerDTD {
-  id: number
+  id: string
   name: string 
   bereitschaft: boolean
   spielfiguren: Array<ISpielfigurDTD>
