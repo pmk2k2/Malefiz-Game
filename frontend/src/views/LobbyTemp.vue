@@ -31,7 +31,7 @@ onMounted(async () => {
     return;
   }
 
-  const res = await fetch(`http://localhost:8080/api/game/${gameCode.value}/players`);
+  const res = await fetch(`/api/game/${gameCode.value}/players`);
   if (res.ok) {
     players.value = await res.json();
   }

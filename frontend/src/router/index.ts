@@ -2,10 +2,12 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LoppyView from '@/views/LoppyView.vue'
 
 import MainMenu from '../views/MainMenu.vue'
-import LoginView from '../views/LoginView.vue'
-import Beitrittscode from '@/views/Beitrittscode.vue'
-import PlayingFieldView from '@/views/PlayingFieldView.vue'
-import GameView from '../components/GameView.vue'
+import LobbyTemp from '../views/LobbyTemp.vue';
+import LoginView from '../views/LoginView.vue';
+import Beitrittscode from '@/views/Beitrittscode.vue';
+import PlayingFieldView from '@/views/PlayingFieldView.vue';
+import GridView from '../components/GridView.vue'
+import DiceView from '@/views/DiceView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -14,8 +16,8 @@ const router = createRouter({
     { path: '/join', component: Beitrittscode },
     { path: '/lobby', component: LoppyView },
     { path: '/main', component: MainMenu },
-    { path: '/game', component: GameView },
-    { path: '/field', component: PlayingFieldView },
+    { path: '/grid', component: GridView },
+    { path: '/field', component: PlayingFieldView }
   ],
 })
 router.beforeEach((to, from, next) => {
