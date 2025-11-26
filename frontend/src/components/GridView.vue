@@ -19,105 +19,136 @@ interface Field {
   type: CellType
 }
 
-// Das Spielfeld, cells für aktiven Spielfelder
-interface Grid {
+// Das Spielfeld, grid für aktiven Spielfelder
+interface Board {
   cols: number
   rows: number
-  cells: Field[]
+  grid: Field[][]
 }
 
 // Demo-Spielfeld, Werte werden zukünftig vom Backend gefüllt
-const dummyGrid: Grid = {
+const dummyBoard: Board = {
   cols: 11,
   rows: 8,
-  cells: [
-    { i: 0, j: 0, type: 'START'},
-    { i: 1, j: 0, type: 'START'},
-    { i: 2, j: 0, type: 'START' },
-    { i: 3, j: 0, type: 'START' },
-    { i: 4, j: 0, type: 'START' },
-    { i: 5, j: 0, type: 'START' },
-    { i: 6, j: 0, type: 'START' },
-    { i: 7, j: 0, type: 'START' },
-    { i: 8, j: 0, type: 'START' },
-    { i: 9, j: 0, type: 'START' },
-    { i: 10, j: 0, type: 'START' },
-    { i: 0, j: 2, type: 'PATH' },
-    { i: 1, j: 2, type: 'PATH' },
-    { i: 2, j: 2, type: 'PATH' },
-    { i: 3, j: 2, type: 'PATH' },
-    { i: 4, j: 2, type: 'PATH' },
-    { i: 5, j: 2, type: 'PATH' },
-    { i: 6, j: 2, type: 'PATH' },
-    { i: 7, j: 2, type: 'PATH' },
-    { i: 8, j: 2, type: 'PATH' },
-    { i: 9, j: 2, type: 'PATH' },
-    { i: 10, j: 2, type: 'PATH' },
-    { i: 0, j: 4, type: 'PATH' },
-    { i: 1, j: 4, type: 'PATH' },
-    { i: 2, j: 4, type: 'PATH' },
-    { i: 3, j: 4, type: 'PATH' },
-    { i: 4, j: 4, type: 'PATH' },
-    { i: 5, j: 4, type: 'PATH' },
-    { i: 6, j: 4, type: 'PATH' },
-    { i: 7, j: 4, type: 'PATH' },
-    { i: 8, j: 4, type: 'PATH' },
-    { i: 9, j: 4, type: 'PATH' },
-    { i: 10, j: 4, type: 'PATH' },
-    { i: 0, j: 6, type: 'PATH' },
-    { i: 1, j: 6, type: 'PATH' },
-    { i: 2, j: 6, type: 'PATH' },
-    { i: 3, j: 6, type: 'PATH' },
-    { i: 4, j: 6, type: 'PATH' },
-    { i: 5, j: 6, type: 'PATH' },
-    { i: 6, j: 6, type: 'PATH' },
-    { i: 7, j: 6, type: 'PATH' },
-    { i: 8, j: 6, type: 'PATH' },
-    { i: 9, j: 6, type: 'PATH' },
-    { i: 10, j: 6, type: 'PATH' },
-    { i: 0, j: 1, type: 'PATH' },
-    { i: 0, j: 5, type: 'PATH' },
-    { i: 10, j: 1, type: 'PATH' },
-    { i: 10, j: 5, type: 'PATH' },
-    { i: 5, j: 3, type: 'PATH' },
-    { i: 3, j: 1, type: 'PATH' },
-    { i: 7, j: 1, type: 'PATH' },
-    { i: 5, j: 7, type: 'GOAL' },
+  grid: [
+    // Row 0 (j=0)
+    [
+      { i: 0, j: 0, type: 'START' },
+      { i: 1, j: 0, type: 'BLOCKED' },
+      { i: 2, j: 0, type: 'START' },
+      { i: 3, j: 0, type: 'START' },
+      { i: 4, j: 0, type: 'BLOCKED' },
+      { i: 5, j: 0, type: 'START' },
+      { i: 6, j: 0, type: 'BLOCKED' },
+      { i: 7, j: 0, type: 'START' },
+      { i: 8, j: 0, type: 'BLOCKED' },
+      { i: 9, j: 0, type: 'BLOCKED' },
+      { i: 10, j: 0, type: 'START' },
+    ],
+    // Row 1 (j=1)
+    [
+      { i: 0, j: 1, type: 'PATH' },
+      { i: 1, j: 1, type: 'BLOCKED' },
+      { i: 2, j: 1, type: 'BLOCKED' },
+      { i: 3, j: 1, type: 'PATH' },
+      { i: 4, j: 1, type: 'BLOCKED' },
+      { i: 5, j: 1, type: 'BLOCKED' },
+      { i: 6, j: 1, type: 'BLOCKED' },
+      { i: 7, j: 1, type: 'PATH' },
+      { i: 8, j: 1, type: 'BLOCKED' },
+      { i: 9, j: 1, type: 'BLOCKED' },
+      { i: 10, j: 1, type: 'PATH' },
+    ],
+    // Row 2 (j=2)
+    [
+      { i: 0, j: 2, type: 'PATH' },
+      { i: 1, j: 2, type: 'PATH' },
+      { i: 2, j: 2, type: 'PATH' },
+      { i: 3, j: 2, type: 'PATH' },
+      { i: 4, j: 2, type: 'PATH' },
+      { i: 5, j: 2, type: 'PATH' },
+      { i: 6, j: 2, type: 'PATH' },
+      { i: 7, j: 2, type: 'PATH' },
+      { i: 8, j: 2, type: 'PATH' },
+      { i: 9, j: 2, type: 'PATH' },
+      { i: 10, j: 2, type: 'PATH' },
+    ],
+    // Row 3 (j=3)
+    [
+      { i: 0, j: 3, type: 'BLOCKED' },
+      { i: 1, j: 3, type: 'BLOCKED' },
+      { i: 2, j: 3, type: 'BLOCKED' },
+      { i: 3, j: 3, type: 'BLOCKED' },
+      { i: 4, j: 3, type: 'BLOCKED' },
+      { i: 5, j: 3, type: 'PATH' },
+      { i: 6, j: 3, type: 'BLOCKED' },
+      { i: 7, j: 3, type: 'BLOCKED' },
+      { i: 8, j: 3, type: 'BLOCKED' },
+      { i: 9, j: 3, type: 'BLOCKED' },
+      { i: 10, j: 3, type: 'BLOCKED' },
+    ],
+    // Row 4 (j=4)
+    [
+      { i: 0, j: 4, type: 'PATH' },
+      { i: 1, j: 4, type: 'PATH' },
+      { i: 2, j: 4, type: 'PATH' },
+      { i: 3, j: 4, type: 'PATH' },
+      { i: 4, j: 4, type: 'PATH' },
+      { i: 5, j: 4, type: 'PATH' },
+      { i: 6, j: 4, type: 'PATH' },
+      { i: 7, j: 4, type: 'PATH' },
+      { i: 8, j: 4, type: 'PATH' },
+      { i: 9, j: 4, type: 'PATH' },
+      { i: 10, j: 4, type: 'PATH' },
+    ],
+    // Row 5 (j=5)
+    [
+      { i: 0, j: 5, type: 'PATH' },
+      { i: 1, j: 5, type: 'BLOCKED' },
+      { i: 2, j: 5, type: 'BLOCKED' },
+      { i: 3, j: 5, type: 'BLOCKED' },
+      { i: 4, j: 5, type: 'BLOCKED' },
+      { i: 5, j: 5, type: 'BLOCKED' },
+      { i: 6, j: 5, type: 'BLOCKED' },
+      { i: 7, j: 5, type: 'BLOCKED' },
+      { i: 8, j: 5, type: 'BLOCKED' },
+      { i: 9, j: 5, type: 'BLOCKED' },
+      { i: 10, j: 5, type: 'PATH' },
+    ],
+    // Row 6 (j=6)
+    [
+      { i: 0, j: 6, type: 'PATH' },
+      { i: 1, j: 6, type: 'PATH' },
+      { i: 2, j: 6, type: 'PATH' },
+      { i: 3, j: 6, type: 'PATH' },
+      { i: 4, j: 6, type: 'PATH' },
+      { i: 5, j: 6, type: 'PATH' },
+      { i: 6, j: 6, type: 'PATH' },
+      { i: 7, j: 6, type: 'PATH' },
+      { i: 8, j: 6, type: 'PATH' },
+      { i: 9, j: 6, type: 'PATH' },
+      { i: 10, j: 6, type: 'PATH' },
+    ],
+    // Row 7 (j=7)
+    [
+      { i: 0, j: 7, type: 'BLOCKED' },
+      { i: 1, j: 7, type: 'BLOCKED' },
+      { i: 2, j: 7, type: 'BLOCKED' },
+      { i: 3, j: 7, type: 'BLOCKED' },
+      { i: 4, j: 7, type: 'BLOCKED' },
+      { i: 5, j: 7, type: 'GOAL' },
+      { i: 6, j: 7, type: 'BLOCKED' },
+      { i: 7, j: 7, type: 'BLOCKED' },
+      { i: 8, j: 7, type: 'BLOCKED' },
+      { i: 9, j: 7, type: 'BLOCKED' },
+      { i: 10, j: 7, type: 'BLOCKED' },
+    ],
   ],
-}
-
-function convertTo2DArray(grid: Grid): Field[][] {
-  const fields: Field[][] = [];
-
-  for (let j = 0; j < grid.rows; j++) {
-    const row: Field[] = [];
-
-    for (let i = 0; i < grid.cols; i++) {
-      const cell = grid.cells.find(c => c.i === i && c.j === j);
-      row.push({
-        i,
-        j,
-        type: (cell ? cell.type : 'BLOCKED') // don't call toUpperCase here
-      });
-    }
-
-    fields.push(row);
-  }
-
-  return fields;
-}
-
-
-
-const temporaryBoard = {
-  cols: dummyGrid.cols,
-  rows: dummyGrid.rows,
-  grid: convertTo2DArray(dummyGrid)
 };
 
 const CELL_SIZE = 2
 
-async function sendBoard(board: typeof temporaryBoard) {
+async function sendBoard(board: typeof dummyBoard) {
   try {
     const response = await fetch('/api/temporary-board', {
       method: 'POST',
@@ -134,41 +165,38 @@ async function sendBoard(board: typeof temporaryBoard) {
   }
 }
 
+// async function getBoardFromBackend(){
+//   try{
+//     const response = await fetch("api/temporary-board", {
+//       method: "GET",
+//       headers: {
+//         'Content-Type': 'application/json'
+//       }
+//     });
+
+//     const temporaryBoard: Board = await 
+//   }
+// }
+
 function onSend(id: string) {
   console.log('Button pressed:', id);
-  rollDice();
-  console.log(temporaryBoard)
-  console.log(JSON.stringify(temporaryBoard, null, 2));
-  // send the current board to backend
-  sendBoard(temporaryBoard);
+  sendBoard(dummyBoard);
 }
-
-
 
 // Map aus den explizit gesetzten Feldern
 const key = (i:number, j:number) => `${i},${j}`
 // 2D-Array aller Zellen des Spielfelds mit Typ, wobei nicht gesetzte Zellen 'BLOCKED' sind
 const allCells = computed<Field[]>(() => {
-  const overrides = new Map<string, CellType>()
-  for (const cell of dummyGrid.cells) overrides.set(key(cell.i, cell.j), cell.type)
-
-  const out: Field[] = []
-  for (let j = 0; j < dummyGrid.rows; j++) {
-    for (let i = 0; i < dummyGrid.cols; i++) {
-      out.push({ i, j, type: overrides.get(key(i, j)) ?? 'BLOCKED' })
-    }
-  }
-  return out
+  return dummyBoard.grid.flat()
 })
 
 // Zellen auf Map-Koordinaten (x, y, z) mappen
 function cellToField(cell: Field): [number, number, number] {
-  const x = (cell.i - dummyGrid.cols / 2 + 0.5) * CELL_SIZE
-  const z = -((cell.j - dummyGrid.rows / 2 + 0.5) * CELL_SIZE)
+  const x = (cell.i - dummyBoard.cols / 2 + 0.5) * CELL_SIZE
+  const z = -((cell.j - dummyBoard.rows / 2 + 0.5) * CELL_SIZE)
 
   return [x, 0.05, z]
 }
-
 
 function onRoll(id: string) {
   console.log('Button pressed:', id)
@@ -189,7 +217,7 @@ function onRoll(id: string) {
       <!-- Boden -->
       <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
         <TresPlaneGeometry
-          :args="[dummyGrid.cols * CELL_SIZE * 5, dummyGrid.rows * CELL_SIZE * 5]"
+          :args="[dummyBoard.cols * CELL_SIZE * 5, dummyBoard.rows * CELL_SIZE * 5]"
         />
         <TresMeshStandardMaterial
           color="#b6e3a5"
