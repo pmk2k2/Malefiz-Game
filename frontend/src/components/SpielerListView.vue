@@ -5,6 +5,7 @@
       :key="spieler.id"
       :spieler="spieler"
       :selected="selectedPlayer === spieler.id"
+      :meHost="currentUserIsHost" 
       @deletezeile="handleDelete"
       @select="selectedPlayer = spieler.id"
     />
@@ -18,10 +19,13 @@ import SpielerListeZeile from './SpielerListeZeile.vue'
 import { mapBackendPlayersToDTD } from '@/stores/mapper'
 
 const spielerListe = ref<ISpielerDTD[]>([])
-const selectedPlayer = ref<number | null>(null)
+const selectedPlayer = ref<string | null>(null)
+const currentUserIsHost = ref(false)
 
 onMounted(async () => {
   const gameCode = localStorage.getItem("gameCode")
+
+  currentUserIsHost.value = localStorage.getItem('isHost') === 'true';
 
   if (!gameCode) {
     console.warn("No game code found!")
@@ -44,7 +48,7 @@ onMounted(async () => {
   }
 })
 
-function handleDelete(id: number) {
+function handleDelete(id: string) {
   spielerListe.value = spielerListe.value.filter(item => item.id !== id)
 }
 defineExpose({ handleDelete, spielerListe })
