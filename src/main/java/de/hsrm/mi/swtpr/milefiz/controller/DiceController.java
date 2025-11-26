@@ -1,6 +1,6 @@
 package de.hsrm.mi.swtpr.milefiz.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,18 +21,18 @@ public class DiceController {
     
     private final DiceService diceService;
 
-    @Autowired
+    //@Autowired
     public DiceController(DiceService diceService){
         this.diceService = diceService;
     }
 
     @GetMapping("/roll")
-    public DiceResult roll(@RequestParam (defaultValue = "Player 1") String playerName) throws CooldownException {
+    public DiceResult roll(@RequestParam (name = "playerName", defaultValue = "Player 1") String playerName) throws CooldownException {
         return diceService.rollDice(playerName);
     }
     
     @PostMapping("/cooldown")
-    public void setCooldown(@RequestParam long seconds) {
+    public void setCooldown(@RequestParam("seconds") long seconds) {
         diceService.setCooldown(seconds);
     }
 

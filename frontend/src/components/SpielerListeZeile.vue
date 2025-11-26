@@ -7,7 +7,7 @@
     <div class="spieler-info">
       <img
         v-if="spieler.spielfiguren.length"
-        :src="spieler.spielfiguren[0].icon"
+        :src="spieler.spielfiguren[0]?.icon"
         alt="Spielfigur"
         class="spielfigur"
       />
