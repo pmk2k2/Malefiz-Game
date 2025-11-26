@@ -40,10 +40,6 @@ public class Game {
         return null;
     }
 
-    public Player getPlayerById(String id) {
-        return playerList.get(id);
-    }
-
     public List<Player> getPlayers() {
         return playerList.values().stream().toList();
     }

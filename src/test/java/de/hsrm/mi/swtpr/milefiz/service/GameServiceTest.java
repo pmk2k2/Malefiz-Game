@@ -17,7 +17,7 @@ class GameServiceTest {
     @BeforeEach
     void setUp() {
         codeGeneratorService = Mockito.mock(CodeGeneratorService.class);
-        gameService = new GameService(codeGeneratorService);
+        gameService = new GameService(codeGeneratorService, null);
     }
 
     /**
