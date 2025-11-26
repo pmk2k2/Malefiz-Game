@@ -60,12 +60,14 @@ function clearRoll() {
   }
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
 async function goBack() {
   const playerId = localStorage.getItem("playerId");
   const gameCode = localStorage.getItem("gameCode");
 
   if (playerId && gameCode) {
-    await fetch("http://localhost:8080/api/game/leave", {
+    await fetch(`${API_BASE_URL}/game/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
