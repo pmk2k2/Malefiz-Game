@@ -35,6 +35,10 @@ public class Game {
         return playerList.get(playerId);
     }
 
+    public Player getPlayerById(String id) {
+        return playerList.get(id);
+    }
+
     public List<Player> getPlayers() {
         return playerList.values().stream().toList();
     }

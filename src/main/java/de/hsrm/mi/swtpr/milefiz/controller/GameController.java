@@ -29,7 +29,7 @@ public class GameController {
     }
 
     @PostMapping("/create")
-    public String createGame(@RequestParam String name, Model model, HttpSession session) {
+    public String createGame(@RequestParam("name") String name, Model model, HttpSession session) {
         String code = service.createGame();
         String playerId = session.getId();
         service.addPlayer(code, playerId, name, true);
@@ -43,7 +43,7 @@ public class GameController {
     }
 
     @PostMapping("/join")
-    public String joinGame(@RequestParam String name, @RequestParam String code, Model model, HttpSession session) {
+    public String joinGame(@RequestParam("name") String name, @RequestParam String code, Model model, HttpSession session) {
         String playerId = session.getId();
         boolean success = service.addPlayer(code, playerId, name, false);
 

@@ -37,17 +37,15 @@ public class GameRestController {
         String code = service.createGame();
         String playerId = session.getId();
 
-        Player player = new Player(name, playerId, true);
         service.addPlayer(code, playerId, name, true);
         Game game = service.getGame(code);
-        player = game.getPlayer(playerId);
 
         return Map.of(
                 "gameCode", code,
                 "playerName", name,
                 "players", game.getPlayers(),
                 "playerId", playerId,
-                "isHost", player != null && player.isHost());
+                "isHost", true);
     }
 
     @PostMapping("/join")
@@ -56,20 +54,18 @@ public class GameRestController {
         String code = body.get("code");
         String playerId = session.getId();
 
-        Player player = new Player(name, playerId, true);
         boolean success = service.addPlayer(code, playerId, name, false);
         if (!success) {
             return Map.of("error", "Invalid game code");
         }
         Game game = service.getGame(code);
-        player = game.getPlayer(playerId);
 
         return Map.of(
                 "gameCode", code,
                 "playerName", name,
                 "players", game.getPlayers(),
                 "playerId", playerId,
-                "isHost", player != null && player.isHost());
+                "isHost", false);
     }
 
     @PostMapping("/leave")
@@ -79,7 +75,7 @@ public class GameRestController {
         logger.info("The player with id " + playerId + " is leaving the game " + gameCode);
         boolean removed = service.removePlayer(gameCode, playerId);
         if (removed) {
-            logger.info("LEFFFFTTTTTT");
+            logger.info(playerId + "LEFFFFTTTTTT");
         } else {
             logger.info("NOOOOOOOTTTTTTT");
         }
@@ -87,12 +83,12 @@ public class GameRestController {
     }
 
     @GetMapping("/get")
-    public Map<String, Object> getPlayers(@RequestParam String code) {
+    public Map<String, Object> getPlayers(@RequestParam("code")  String code) {
         Game game = service.getGame(code);
         if (game == null)
             return Map.of("error", "Game not found");
 
         return Map.of("players", game.getPlayers());
     }
-    
+
 }
