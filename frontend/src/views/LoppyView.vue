@@ -70,7 +70,7 @@ async function goBack() {
   const gameCode = localStorage.getItem("gameCode");
 
   if (playerId && gameCode) {
-    await fetch("http://localhost:8080/api/game/leave", {
+    await fetch("/api/game/leave", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
