@@ -20,9 +20,10 @@
 />
 
     <div class="buttons">
-      <button @click="clearRoll">Löschen</button>
-      <button @click="rollDice">Bereit</button>
+      <button @click="isBereit">Bereit</button>
+      <button v-if="isHost" @click="gameStarten">Starten</button>
       <button @click="goBack">Verlassen</button>
+
     </div>
 
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
@@ -39,6 +40,17 @@ import EinstellungView from '@/components/EinstellungView.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { onMounted } from "vue";
 import { useGameStore } from "@/stores/gamestore";
+import type { ISpielerDTD } from '@/stores/ISpielerDTD'
+import { mapBackendPlayersToDTD } from '@/stores/mapper'
+
+
+
+
+const isHost = ref(false);
+onMounted(() => {
+  isHost.value = gameStore.gameData.isHost === true;
+});
+
 
 
 const gameStore = useGameStore();
@@ -105,6 +117,76 @@ async function goBack() {
   console.log("game code rm"+gameCode)
   router.push("/main");
 }
+}
+
+
+const props = defineProps<{ spieler: ISpielerDTD , meHost: boolean}>();
+
+
+
+async function gameStarten(){
+  const gameCode = gameStore.gameData.gameCode
+  const playerAdmin= props.spieler.isHost;
+
+
+  if(!gameCode){
+    console.warn("Kein gameCode vorhanden");
+    return;
+  }
+  try{
+    const res = await fetch(`http://localhost:8080/api/game/start?code=${gameCode}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: gameCode, isReady: true })
+    });
+    if(!res.ok) throw new Error("Fehler beim Starten des Spiels");
+    router.push('/game');
+  } catch(err){
+    console.error(err);
+  }
+}
+
+
+
+const emit = defineEmits<{
+  (e: "isReady", value: boolean): void
+}>();
+
+
+
+async function isBereit() {
+  const playerId = gameStore.gameData.playerId
+  const gameCode = gameStore.gameData.gameCode
+  if (!playerId || !gameCode) {
+    console.warn("Keine playerId oder gameCode vorhanden");
+    return;
+  }
+
+  try {
+    // Backend-Call
+    const res = await fetch("http://localhost:8080/api/game/setReady", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ playerId, code: gameCode, isReady: true })
+    });
+
+    if (!res.ok) throw new Error("Failed to set ready");
+
+    const data = await res.json();
+
+    // Update lokal, falls die Spieler-Liste verfügbar ist
+    if (spielerListeRef.value?.spielerListe) {
+      const player = spielerListeRef.value.spielerListe.find((s: any) => s.id === playerId);
+      if (player) {
+        player.isReady = data.isReady;
+      }
+    }
+
+    // Event an Parent senden
+    emit("isReady", true);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 const showSettings = ref(false)
