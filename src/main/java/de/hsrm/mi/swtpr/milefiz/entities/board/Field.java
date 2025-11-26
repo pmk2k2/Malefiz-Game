@@ -4,10 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Field {
-    private final int i;
-    private final int j;
+    private int i;
+    private int j;
     private CellType type;
     private List<Figure> figures = new ArrayList<>();
+
+    public Field(){
+        
+    }
 
     public Field(int i, int j, CellType type) {
         this.i = i;
@@ -46,4 +50,10 @@ public class Field {
     public int getJ() {
         return j;
     }
+
+    @Override
+    public String toString() {
+        return "Field [i=" + i + ", j=" + j + ", type=" + type + "]";
+    }
+
 }
