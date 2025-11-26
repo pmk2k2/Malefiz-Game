@@ -9,7 +9,6 @@ public class TemporaryBoard implements Board {
         int cols = 11;
         grid = new Field[rows][cols];
 
-        
         for (int j = 0; j < rows; j++) {
             for (int i = 0; i < cols; i++) {
                 // Reihen 0, 2, 4, 6 sind begehbar (PATH), wie im Frontend
