@@ -14,7 +14,11 @@
 
     <EinstellungView v-if="showSettings" />
 
-    <SpielerListeView ref="spielerListeRef" />
+
+    <SpielerListeView 
+    ref = "spielerListeRef"
+    @deleteZeile="onDeleteZeile"/>
+
 
     <div class="buttons">
       <button @click="clearRoll">Löschen</button>
@@ -47,6 +51,14 @@ const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
 function rollDice() {
   router.push('/game')
 }
+
+function onDeleteZeile(playerId: string) {
+  if (spielerListeRef.value) {
+    spielerListeRef.value.spielerListe = 
+      spielerListeRef.value.spielerListe.filter(spieler => spieler.id !== playerId);
+  }
+}
+
 
 function clearRoll() {
   // Würfel zurücksetzen

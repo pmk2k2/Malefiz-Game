@@ -48,6 +48,7 @@ async function beitreten() {
   if (!data.error) {
     localStorage.setItem('playerId', data.playerId)
     localStorage.setItem('gameCode', data.gameCode)
+    localStorage.setItem('isHost', 'false')
     router.push('/lobby')
   } else {
     alert(data.error)

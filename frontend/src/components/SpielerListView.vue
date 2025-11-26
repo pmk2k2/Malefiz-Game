@@ -6,6 +6,10 @@
       :spieler="spieler"
       :selected="selectedPlayer === spieler.id"
 
+      :meHost="currentUserIsHost" 
+      @deletezeile="handleDelete"
+      @select="selectedPlayer = spieler.id"
+
     />
   </div>
 </template>
@@ -19,9 +23,13 @@ import { mapBackendPlayersToDTD } from '@/stores/mapper'
 const spielerListe = ref<ISpielerDTD[]>([])
 const selectedPlayer = ref<string | null>(null)
 
+const currentUserIsHost = ref(false)
+
 
 onMounted(async () => {
   const gameCode = localStorage.getItem("gameCode")
+
+  currentUserIsHost.value = localStorage.getItem('isHost') === 'true';
 
   if (!gameCode) {
     console.warn("No game code found!")
@@ -45,7 +53,14 @@ onMounted(async () => {
 })
 
 
+
 defineExpose({  spielerListe })
+
+function handleDelete(id: string) {
+  spielerListe.value = spielerListe.value.filter(item => item.id !== id)
+}
+defineExpose({ handleDelete, spielerListe })
+
 </script>
 
 <style scoped>

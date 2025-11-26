@@ -20,7 +20,13 @@
       <span v-if="spieler.isReady" class="status bereit">bereit</span>
       <span v-else class="status nicht-bereit">Nicht bereit</span>
     </div>
+
+    <div class="spieler-kicken" v-if="meHost && !spieler.isHost">
+      <button class="kicken" @click.stop="kicken">kicken</button>
+    </div>
+
   </div>
+  
 </template>
 
 <script setup lang="ts">
@@ -29,9 +35,44 @@ import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 
 const props = defineProps<{
   spieler: ISpielerDTD,
-  selected: boolean
+  selected: boolean,
+  meHost: boolean
 }>()
 
+const emit = defineEmits<{
+  deletezeile: [id:string],
+  select: []
+}>()
+
+function selectRow() {
+  emit('select')  
+}
+
+async function kicken() {
+  
+  const gameCode = localStorage.getItem("gameCode");
+  const playerIdKick = props.spieler.id;
+
+  try {
+    const res = await fetch("http://localhost:8080/api/game/leave", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: gameCode,
+        playerId: playerIdKick
+      })
+    });
+
+    if (res.ok) {
+      emit("deletezeile", playerIdKick);
+    } else {
+      console.log("Fehler beim Kicken (res nicht ok)")
+    }
+    
+  } catch (err) {
+    console.error("Fehler beim Kicken:", err);
+  }
+}
 
 </script>
 
