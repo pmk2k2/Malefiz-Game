@@ -2,7 +2,6 @@ package de.hsrm.mi.swtpr.milefiz.service;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -49,33 +48,9 @@ public class GameService {
 
     public boolean removePlayer(String gameCode, String playerId) {
         Game game = games.get(gameCode);
-        if (game == null)
+        if (game == null) {
             return false;
-
-        Player removedPlayer = game.getPlayerById(playerId);
-        logger.info(playerId);
-        if (removedPlayer == null)
-            return false;
-
-        boolean wasHost = removedPlayer.isHost();
-
-        boolean removed = game.removePlayer(playerId);
-        if (!removed)
-            return false;
-
-        List<Player> players = game.getPlayers();
-
-        if (players.isEmpty()) {
-            games.remove(gameCode);
-            return true;
         }
-
-        if (wasHost) {
-            players.get(0).setHost(true);
-            logger.info("new host" + players.get(0).getName());
-        }
-
-        return true;
+        return game.removePlayer(playerId);
     }
-
 }
