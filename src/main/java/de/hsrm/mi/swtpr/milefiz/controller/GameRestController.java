@@ -43,7 +43,8 @@ public class GameRestController {
                 "gameCode", code,
                 "playerName", name,
                 "players", game.getPlayers(),
-                "playerId", playerId);
+                "playerId", playerId,
+                "isHost", true);
     }
 
     @PostMapping("/join")
@@ -62,7 +63,8 @@ public class GameRestController {
                 "gameCode", code,
                 "playerName", name,
                 "players", game.getPlayers(),
-                "playerId", playerId);
+                "playerId", playerId,
+                "isHost", false);
     }
 
     @PostMapping("/leave")
@@ -72,7 +74,7 @@ public class GameRestController {
         logger.info("The player with id " + playerId + " is leaving the game " + gameCode);
         boolean removed = service.removePlayer(gameCode, playerId);
         if (removed) {
-            logger.info("LEFFFFTTTTTT");
+            logger.info(playerId + "LEFFFFTTTTTT");
         } else {
             logger.info("NOOOOOOOTTTTTTT");
         }
@@ -80,12 +82,12 @@ public class GameRestController {
     }
 
     @GetMapping("/get")
-    public Map<String, Object> getPlayers(@RequestParam String code) {
+    public Map<String, Object> getPlayers(@RequestParam("code")  String code) {
         Game game = service.getGame(code);
         if (game == null)
             return Map.of("error", "Game not found");
 
         return Map.of("players", game.getPlayers());
     }
-    
+
 }

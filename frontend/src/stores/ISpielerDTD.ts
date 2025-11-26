@@ -5,4 +5,5 @@ export interface ISpielerDTD {
   name: string 
   bereitschaft: boolean
   spielfiguren: Array<ISpielfigurDTD>
+  isHost: boolean
 }

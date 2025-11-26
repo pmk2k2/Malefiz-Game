@@ -2,6 +2,7 @@ package de.hsrm.mi.swtpr.milefiz.service;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -59,16 +60,40 @@ public class GameService {
         if (game == null) {
             return false;
         }
+
         Player removedPlayer = game.getPlayerById(playerId);
-        // wenn Spieler das Spiel verlässt, erscheint diese Nachhricht.
-        if (removedPlayer != null) {
-            publisher.publishEvent(new FrontendNachrichtEvent(
-                    Nachrichtentyp.VERBINDUNGSABBRUCH,
-                    playerId,
-                    Operation.LEFT,
-                    gameCode,
-                    removedPlayer.getName()));
+        logger.info("Player leaving: " + playerId);
+        if (removedPlayer == null) {
+            return false;
         }
-        return game.removePlayer(playerId); // Spieler verlässt das Spiel.
+
+        boolean wasHost = removedPlayer.isHost();
+
+        // Event vor Entfernung veröffentlichen
+        publisher.publishEvent(new FrontendNachrichtEvent(
+                Nachrichtentyp.VERBINDUNGSABBRUCH,
+                playerId,
+                Operation.LEFT,
+                gameCode,
+                removedPlayer.getName()));
+
+        boolean removed = game.removePlayer(playerId);
+        if (!removed) {
+            return false;
+        }
+
+        List<Player> players = game.getPlayers();
+        if (players.isEmpty()) {
+            games.remove(gameCode);
+            logger.info("Game " + gameCode + " removed as no players left.");
+            return true;
+        }
+
+        if (wasHost) {
+            players.get(0).setHost(true);
+            logger.info("New host: " + players.get(0).getName());
+        }
+
+        return true;
     }
 }

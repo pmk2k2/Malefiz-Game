@@ -11,7 +11,10 @@
         alt="Spielfigur"
         class="spielfigur"
       />
-      <span class="spieler-name">{{ spieler.name }}</span>
+      <span class="spieler-name">
+        {{ spieler.name }} 
+        <span v-if="spieler.isHost">(Host)</span>
+      </span>
     </div>
 
     <div class="spieler-status">
