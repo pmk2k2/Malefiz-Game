@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.7'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.sonarqube' version '4.4.1.3414'
 }
 
 group = 'de.hsrm.mi.swtpr'
@@ -34,4 +35,17 @@ task build_frontend(type: Exec) {
   workingDir "${projectDir}/frontend"
   commandLine "/bin/bash", "-c", "npm clean-install && npm audit fix && npm run build && rm -rf ../src/main/resources/public && cp -rv dist ../src/main/resources/public"
 }
+
+sonar {
+    properties {
+        property "sonar.token", "sqa_425cdb59aca65885484abc283137ade0666ac720" 
+		property "sonar.host.url", "http://localhost:9000/sonar"
+
+        property "sonar.sources", "src/main/java"
+        property "sonar.java.binaries", "${project.buildDir}/classes"
+
+        property "sonar.organization", "SWT-Projekt Gruppe 01"
+    }
+}
+
 bootJar.dependsOn build_frontend
