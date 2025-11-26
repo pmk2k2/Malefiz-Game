@@ -24,6 +24,7 @@ const gameCode = ref(localStorage.getItem("gameCode") || "");
 const playerName = ref(localStorage.getItem("playerName") || "");
 
 const players = ref<{ id: string, name: string }[]>([]);
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 onMounted(async () => {
   if (!gameCode.value) {
@@ -31,7 +32,7 @@ onMounted(async () => {
     return;
   }
 
-  const res = await fetch(`http://localhost:8080/api/game/${gameCode.value}/players`);
+  const res = await fetch(`${API_BASE_URL}/game/${gameCode.value}/players`);
   if (res.ok) {
     players.value = await res.json();
   }

@@ -19,6 +19,7 @@ import { mapBackendPlayersToDTD } from '@/stores/mapper'
 
 const spielerListe = ref<ISpielerDTD[]>([])
 const selectedPlayer = ref<number | null>(null)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 onMounted(async () => {
   const gameCode = localStorage.getItem("gameCode")
@@ -30,7 +31,7 @@ onMounted(async () => {
 
   try {
 
-    const res = await fetch(`http://localhost:8080/api/game/get?code=${gameCode}`)
+    const res = await fetch(`${API_BASE_URL}/game/get?code=${gameCode}`)
     if (!res.ok) throw new Error("HTTP error " + res.status)
 
     const backendData = await res.json()

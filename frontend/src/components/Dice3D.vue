@@ -17,9 +17,10 @@ const faceRotations: Record<number, { x: number; y: number }> = {
   5: { x: Math.PI / 2, y: 0 },
   6: { x: 0, y: 0 },
 }
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 async function getDiceRollFromServer(): Promise<number> {
-  const res = await fetch('http://localhost:8080/api/daten/roll')
+  const res = await fetch(`${API_BASE_URL}/daten/roll`)
   const data = await res.json()
   return data.value // Wert aus dem JSON vom Backend
 }
