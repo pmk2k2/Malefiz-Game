@@ -6,8 +6,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
-
 @Service
 public class FrontendNachrichtService {
 
@@ -20,10 +18,9 @@ public class FrontendNachrichtService {
 
     @EventListener
     public void sendEvent(FrontendNachrichtEvent ev) {
-        String destination = "/topic/lobby/" + ev.getGameCode();
+        String destination = "/topic/gameSession/" + ev.getGameCode();
         logger.info("Sende STOMP-Event an {}: {} ", destination, ev);
-        messagingTemplate.convertAndSend(destination,
-                Map.of("message", "Spieler " + ev.getPlayerName() + " hat die Lobby verlassen"));
+        messagingTemplate.convertAndSend(destination, ev);
+        // daten aus FrontEndNachrichtEvent werden übertragen, wenn event (JOINED,LEFT, usw) getriggert werden.
     }
-
 }

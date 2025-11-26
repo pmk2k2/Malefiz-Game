@@ -29,13 +29,17 @@
 </template>
 
 <script setup lang="ts">
-import type { LoppyID } from '@/stores/LoppyID'
+import type { LobbyID } from '@/stores/LobbyID'
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
 import { ref } from 'vue'
 import SpielerListeView from '@/components/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
 import { useRoute, useRouter } from 'vue-router'
+import { onMounted } from "vue";
+import { useGameStore } from "@/stores/gamestore";
+
+
 
 const loppyID = ref({
   LoppyID: localStorage.getItem('gameCode'),
@@ -45,6 +49,16 @@ const router = useRouter()
 
 const roll = ref<number | null>(null)
 const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
+
+const gameStore = useGameStore();
+
+onMounted(() => {
+  const code = localStorage.getItem("gameCode");
+  if (!code) return;
+  gameStore.startLobbyLiveUpdate(code);
+  gameStore.updatePlayerList(code);
+});
+
 
 function rollDice() {
   router.push('/game')

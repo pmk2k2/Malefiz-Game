@@ -3,12 +3,13 @@ package de.hsrm.mi.swtpr.milefiz.messaging;
 public class FrontendNachrichtEvent {
 
     public enum Nachrichtentyp {
-        VERBINDUNGSABBRUCH
+        LOBBY
         // weitere typen können hier spätre ergänzt werden
     }
 
     public enum Operation {
-        LEFT
+        LEFT,
+        JOINED
         // weitere Operationen können hier später ergänzt werden.
     }
 

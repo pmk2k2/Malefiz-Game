@@ -1,5 +1,5 @@
 export interface IFrontendNachrichtEvent {
-    typ: string; // Nachrichtentyp (z.B. VERBINDUNGSABBRUCH)
+    typ: string; // Nachrichtentyp (z.B. LOBBY)
     id: string;  // Player-ID
     operation: string; // Operation (z.B. LEFT)
     gameCode: string; // Game-Code der Lobby

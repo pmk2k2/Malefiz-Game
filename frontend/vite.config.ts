@@ -5,21 +5,34 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 import { templateCompilerOptions } from '@tresjs/core'
-// https://vite.dev/config/
+
+
+//proxy für backendaufrufe
 export default defineConfig({
   server: {
-    host: true
+    host: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      }
+    }
   },
+
+
   plugins: [
-    vue( {
-      ... templateCompilerOptions
-    } ),
+    vue({
+      ...templateCompilerOptions
+    }),
     vueDevTools(),
   ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
+  },
+  define: {
+    global: "window",
   },
 })
 
