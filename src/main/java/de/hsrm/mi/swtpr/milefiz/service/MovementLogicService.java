@@ -81,6 +81,12 @@ public class MovementLogicService {
             return FigureMoveResult.fail("Dritte Figur blockiert das Feld");
         }
 
+        // Bewegung nur in einer Achse
+        if (Math.abs(di) > 0 && Math.abs(dj) > 0) {
+            return FigureMoveResult.fail("Diagnol nicht erlaubt");
+        }
+
+
         // Bei allen anderen Fällen
         return FigureMoveResult.ok();
 
