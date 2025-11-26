@@ -2,7 +2,7 @@ import type { ISpielerDTD } from "@/stores/ISpielerDTD";
 
 export function mapBackendPlayersToDTD(players: any[]): ISpielerDTD[] {
   return players.map((p, index) => ({
-    id: index + 1,
+    id: p.id,
     name: p.name,
     bereitschaft: false,
     spielfiguren: [

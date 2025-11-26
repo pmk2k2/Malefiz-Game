@@ -4,6 +4,7 @@ import java.util.Map;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
+import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.service.CodeGeneratorService;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
 import jakarta.servlet.http.HttpSession;
@@ -57,8 +58,8 @@ public class GameRestController {
         if (!success) {
             return Map.of("error", "Invalid game code");
         }
-
         Game game = service.getGame(code);
+
         return Map.of(
                 "gameCode", code,
                 "playerName", name,
