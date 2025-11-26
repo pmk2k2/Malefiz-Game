@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoppyView from '@/views/LoppyView.vue'
-
 import MainMenu from '../views/MainMenu.vue'
 import LoginView from '../views/LoginView.vue'
 import Beitrittscode from '@/views/Beitrittscode.vue'
