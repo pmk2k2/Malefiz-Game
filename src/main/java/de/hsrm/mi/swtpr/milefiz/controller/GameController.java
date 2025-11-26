@@ -32,7 +32,7 @@ public class GameController {
     public String createGame(@RequestParam("name") String name, Model model, HttpSession session) {
         String code = service.createGame();
         String playerId = session.getId();
-        service.addPlayer(code, playerId, name, true);
+        service.addPlayer(code, playerId, name, true, false);
         logger.info("Player " + name + " with id: " + playerId + " created a game with code: " + code);
 
         model.addAttribute("gameCode", code);
@@ -45,7 +45,7 @@ public class GameController {
     @PostMapping("/join")
     public String joinGame(@RequestParam("name") String name, @RequestParam String code, Model model, HttpSession session) {
         String playerId = session.getId();
-        boolean success = service.addPlayer(code, playerId, name, false);
+        boolean success = service.addPlayer(code, playerId, name, false, false);
 
         if (!success) {
             model.addAttribute("error", "Invalid game code");

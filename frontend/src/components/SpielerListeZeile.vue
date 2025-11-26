@@ -37,6 +37,7 @@ import { useGameStore } from '@/stores/gamestore'
 
 const gameStore = useGameStore()
 
+
 const props = defineProps<{
   spieler: ISpielerDTD,
   selected: boolean,

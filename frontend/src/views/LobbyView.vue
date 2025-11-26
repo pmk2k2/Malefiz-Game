@@ -34,7 +34,7 @@
 import type { LobbyID } from '@/stores/LobbyID'
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
-import { onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import SpielerListeView from '@/components/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -43,16 +43,7 @@ import { useGameStore } from "@/stores/gamestore";
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import { mapBackendPlayersToDTD } from '@/stores/mapper'
 
-
-
-
-const isHost = ref(false);
-onMounted(() => {
-  isHost.value = gameStore.gameData.isHost === true;
-});
-
-
-
+const isHost = computed(() => gameStore.gameData.isHost === true)
 const gameStore = useGameStore();
 const router = useRouter()
 
@@ -91,12 +82,6 @@ function clearRoll() {
   // Würfel zurücksetzen
   roll.value = null
 
-  // Alle Spieler löschen über handleDelete
-  if (spielerListeRef.value) {
-    // Kopie der IDs, um nicht während des Iterierens das Array zu verändern
-    const allIds = [...spielerListeRef.value.spielerListe.map((s) => s.id)]
-    allIds.forEach((id) => spielerListeRef.value?.handleDelete(id))
-  }
 }
 
 async function goBack() {
@@ -126,8 +111,6 @@ const props = defineProps<{ spieler: ISpielerDTD , meHost: boolean}>();
 
 async function gameStarten(){
   const gameCode = gameStore.gameData.gameCode
-  const playerAdmin= props.spieler.isHost;
-
 
   if(!gameCode){
     console.warn("Kein gameCode vorhanden");
@@ -194,6 +177,7 @@ const showSettings = ref(false)
 function toggleSettingsView() {
   showSettings.value = !showSettings.value
 }
+
 </script>
 
 <style scoped>

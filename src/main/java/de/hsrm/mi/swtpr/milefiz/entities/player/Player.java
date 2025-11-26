@@ -4,6 +4,7 @@ public class Player {
     private String name;
     private String id;
     private boolean isHost;
+    private boolean isReady;
 
     public boolean isHost() {
         return isHost;
@@ -29,10 +30,20 @@ public class Player {
         this.name = name;
     }
 
-    public Player(String name, String id, boolean isHost) {
+
+    public boolean isReady() {
+        return isReady;
+    }
+
+    public void setReady(boolean isReady) {
+        this.isReady = isReady;
+    }
+
+    public Player(String name, String id, boolean isHost, boolean isReady) {
         this.name = name;
         this.id = id;
         this.isHost = isHost;
+        this.isReady= isReady;
     }
 
 }

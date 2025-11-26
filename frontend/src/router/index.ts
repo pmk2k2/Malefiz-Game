@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoppyView from '@/views/LoppyView.vue'
+import LobbyView from '@/views/LobbyView.vue'
 
 import MainMenu from '../views/MainMenu.vue'
 import LoginView from '../views/LoginView.vue'
@@ -13,7 +13,7 @@ const router = createRouter({
   routes: [
     { path: '/', component: LoginView },
     { path: '/join', component: Beitrittscode },
-    { path: '/lobby', component: LoppyView },
+    { path: '/lobby', component: LobbyView },
     { path: '/main', component: MainMenu },
     { path: '/game', component: GameView },
     { path: '/field', component: PlayingFieldView },

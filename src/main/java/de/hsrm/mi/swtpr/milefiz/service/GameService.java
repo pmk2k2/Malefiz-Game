@@ -38,13 +38,13 @@ public class GameService {
         return gameCode;
     }
 
-    public boolean addPlayer(String gameCode, String playerId, String name, boolean isHost) {
+    public boolean addPlayer(String gameCode, String playerId, String name, boolean isHost, boolean isReady) {
         Game game = games.get(gameCode);
         if (games.get(gameCode) == null) {
             return false;
         }
         //
-        boolean playerAdded = game.addPlayer(new Player(name, playerId, isHost), playerId);
+        boolean playerAdded = game.addPlayer(new Player(name, playerId, isHost, isReady), playerId);
 
         // Event nach add veröffentlichen
         publisher.publishEvent(new FrontendNachrichtEvent(
@@ -104,4 +104,18 @@ public class GameService {
 
         return true;
     }
+
+    public boolean setPlayerReady(String gameCode, String playerId, boolean isReady) {
+        Game game = games.get(gameCode);
+        if (game == null)
+            return false;
+
+        Player player = game.getPlayerById(playerId);
+        if (player == null)
+            return false;
+
+        player.setReady(isReady);
+        return true;
+    }
+
 }
