@@ -4,17 +4,17 @@ import { Client } from '@stomp/stompjs';
 import type { IFrontendNachrichtEvent } from '@/services/IFrontendNachrichtEvent';
 import { useInfo } from "@/composable/useInfo";
 import type { ISpielerDTD } from "./ISpielerDTD";
-import type { LobbyID } from './LoppyID';
+//import type { LobbyID } from './LoppyID';
 
 const { setzeInfo } = useInfo();
 
 const DEST = '/topic/lobby';
 
 export const useDoenerStore = defineStore("doenerstore", () => {
-  const spielerdata = reactive<{ ok: boolean; spielerinfo: ISpielerDTD[], lobby: LobbyID[] }>({
-    ok: false,
-    spielerinfo: [],
-    lobbyid:[]
+  //const spielerdata = reactive<{ ok: boolean; spielerinfo: ISpielerDTD[], lobby: LobbyID[] }>({
+    //ok: false,
+    //spielerinfo: [],
+    //lobby:[]
   });
   let stompClient: Client | null = null;
 
