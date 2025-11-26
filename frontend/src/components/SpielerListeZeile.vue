@@ -1,7 +1,7 @@
 <template>
   <div 
-    class="spieler-zeile" 
-    :class="{ selected: selected }" 
+    class="spieler-zeile"
+    :class="{ selected: selected }"
     @click="selectRow"
   >
     <div class="spieler-info">
@@ -50,7 +50,6 @@ function selectRow() {
   font-size: 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
-
 }
 
 /* Hover-Effekt */

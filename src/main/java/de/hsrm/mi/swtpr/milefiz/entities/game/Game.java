@@ -22,7 +22,7 @@ public class Game {
 
     public boolean addPlayer(Player player, String playerId) {
         if (playerList.containsKey(playerId)) {
-            logger.info("Player" + player.getName() + "already exist!!!!!!");
+            logger.info("Player " + player.getName() + "already exist!!!!!!");
             return false;
         }
         playerList.put(playerId, player);
@@ -42,6 +42,10 @@ public class Game {
 
     public List<Player> getPlayers() {
         return playerList.values().stream().toList();
+    }
+
+    public Player getPlayerById(String playerId) {
+        return playerList.get(playerId);
     }
 
     public boolean removePlayer(String playerId) {
