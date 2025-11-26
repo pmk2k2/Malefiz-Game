@@ -1,3 +1,14 @@
+<!-- Infobox (useInfo) 
+<template>
+  <div class="lobby-container">
+    <div v-if="infoText" class="info-box"> 
+      {{ infoText }}
+    </div>
+  </div>
+</template>
+
+-->
+
 <template>
   <div class="login-container">
     <header class="header">

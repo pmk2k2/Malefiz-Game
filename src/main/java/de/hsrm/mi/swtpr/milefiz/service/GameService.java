@@ -45,6 +45,15 @@ public class GameService {
         }
         //
         boolean playerAdded = game.addPlayer(new Player(name, playerId, isHost), playerId);
+
+        // Event nach add veröffentlichen
+        publisher.publishEvent(new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                playerId,
+                Operation.JOINED,
+                gameCode,
+                name));
+
         if (!playerAdded) {
             return false;
         }
@@ -69,18 +78,17 @@ public class GameService {
 
         boolean wasHost = removedPlayer.isHost();
 
-        // Event vor Entfernung veröffentlichen
+        boolean removed = game.removePlayer(playerId); // huer wird der player removed
+        if (!removed) {
+            return false;
+        }
+        // Event nach Entfernung veröffentlichen
         publisher.publishEvent(new FrontendNachrichtEvent(
-                Nachrichtentyp.VERBINDUNGSABBRUCH,
+                Nachrichtentyp.LOBBY,
                 playerId,
                 Operation.LEFT,
                 gameCode,
                 removedPlayer.getName()));
-
-        boolean removed = game.removePlayer(playerId);
-        if (!removed) {
-            return false;
-        }
 
         List<Player> players = game.getPlayers();
         if (players.isEmpty()) {
