@@ -21,9 +21,12 @@
 
 
     <div class="buttons">
-      <button @click="clearRoll">Löschen</button>
       <button @click="isBereit">Bereit</button>
+      
+      
+    <button v-if="isHost" @click="gameStarten">Starten</button>
       <button @click="goBack">Verlassen</button>
+
     </div>
 
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
@@ -33,11 +36,21 @@
 <script setup lang="ts">
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import SpielerListeView from '@/components/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
+import { mapBackendPlayersToDTD } from '@/stores/mapper'
+
+
+
+
+const isHost = ref(false);
+onMounted(() => {
+  isHost.value = localStorage.getItem("isHost") === "true";
+});
+
 
 const lobbyID = ref({
   LobbyID: localStorage.getItem('gameCode'),
@@ -85,7 +98,33 @@ async function goBack() {
 }
 
 
-const props = defineProps<{ spieler: ISpielerDTD }>();
+const props = defineProps<{ spieler: ISpielerDTD , meHost: boolean}>();
+
+
+
+async function gameStarten(){
+  const gameCode = localStorage.getItem("gameCode");
+  const playerAdmin= props.spieler.isHost;
+
+
+  if(!gameCode){
+    console.warn("Kein gameCode vorhanden");
+    return;
+  }
+  try{
+    const res = await fetch(`http://localhost:8080/api/game/start?code=${gameCode}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: gameCode, isReady: true })
+    });
+    if(!res.ok) throw new Error("Fehler beim Starten des Spiels");
+    router.push('/game');
+  } catch(err){
+    console.error(err);
+  }
+}
+
+
 
 const emit = defineEmits<{
   (e: "isReady", value: boolean): void

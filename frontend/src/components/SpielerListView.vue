@@ -54,7 +54,6 @@ onMounted(async () => {
 
 
 
-defineExpose({  spielerListe })
 
 function handleDelete(id: string) {
   spielerListe.value = spielerListe.value.filter(item => item.id !== id)
