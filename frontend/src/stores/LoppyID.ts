@@ -1,3 +1,3 @@
-export interface LoppyID{
-  LoppyID: string
+export interface LobbyID{
+  LobbyyID: string
 }

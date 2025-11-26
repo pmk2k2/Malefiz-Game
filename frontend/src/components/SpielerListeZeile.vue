@@ -1,8 +1,7 @@
 <template>
   <div 
     class="spieler-zeile" 
-    :class="{ selected: selected }" 
-    @click="selectRow"
+
   >
     <div class="spieler-info">
       <img
@@ -18,7 +17,7 @@
     </div>
 
     <div class="spieler-status">
-      <span v-if="spieler.bereitschaft" class="status bereit">bereit</span>
+      <span v-if="spieler.isReady" class="status bereit">bereit</span>
       <span v-else class="status nicht-bereit">Nicht bereit</span>
     </div>
   </div>
@@ -27,19 +26,13 @@
 <script setup lang="ts">
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 
+
 const props = defineProps<{
   spieler: ISpielerDTD,
   selected: boolean
 }>()
 
-const emit = defineEmits<{
-  deletezeile: [id:number],
-  select: []
-}>()
 
-function selectRow() {
-  emit('select')  
-}
 </script>
 
 <style scoped>

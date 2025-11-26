@@ -1,7 +1,7 @@
 <template>
   <div class="background">
     <h1>Malefiz</h1>
-    <h2>{{ loppyID?.LoppyID ?? 'kein LoppyID vorhanden' }}</h2>
+    <h2>{{ lobbyID?.LobbyID ?? 'kein LobbyID vorhanden' }}</h2>
 
     <div class="icon-button">
       <button type="button">
@@ -14,11 +14,11 @@
 
     <EinstellungView v-if="showSettings" />
 
-    <SpielerListeView />
+    <SpielerListeView ref="spielerListeRef" />
 
     <div class="buttons">
       <button @click="clearRoll">Löschen</button>
-      <button @click="rollDice">Bereit</button>
+      <button @click="isBereit">Bereit</button>
       <button @click="goBack">Verlassen</button>
     </div>
 
@@ -27,16 +27,16 @@
 </template>
 
 <script setup lang="ts">
-import type { LoppyID } from '@/stores/LoppyID'
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
 import { ref } from 'vue'
 import SpielerListeView from '@/components/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
 import { useRoute, useRouter } from 'vue-router'
+import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 
-const loppyID = ref({
-  LoppyID: localStorage.getItem('gameCode'),
+const lobbyID = ref({
+  LobbyID: localStorage.getItem('gameCode'),
 })
 
 const router = useRouter()
@@ -52,12 +52,6 @@ function clearRoll() {
   // Würfel zurücksetzen
   roll.value = null
 
-  // Alle Spieler löschen über handleDelete
-  if (spielerListeRef.value) {
-    // Kopie der IDs, um nicht während des Iterierens das Array zu verändern
-    const allIds = [...spielerListeRef.value.spielerListe.map((s) => s.id)]
-    allIds.forEach((id) => spielerListeRef.value?.handleDelete(id))
-  }
 }
 
 async function goBack() {
@@ -78,11 +72,56 @@ async function goBack() {
 }
 }
 
+
+const props = defineProps<{ spieler: ISpielerDTD }>();
+
+const emit = defineEmits<{
+  (e: "isReady", value: boolean): void
+}>();
+
+
+
+async function isBereit() {
+  const playerId = localStorage.getItem("playerId");
+  const gameCode = localStorage.getItem("gameCode");
+  if (!playerId || !gameCode) {
+    console.warn("Keine playerId oder gameCode vorhanden");
+    return;
+  }
+
+  try {
+    // Backend-Call
+    const res = await fetch("http://localhost:8080/api/game/setReady", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ playerId, code: gameCode, isReady: true })
+    });
+
+    if (!res.ok) throw new Error("Failed to set ready");
+
+    const data = await res.json();
+
+    // Update lokal, falls die Spieler-Liste verfügbar ist
+    if (spielerListeRef.value?.spielerListe) {
+      const player = spielerListeRef.value.spielerListe.find((s: any) => s.id === playerId);
+      if (player) {
+        player.isReady = data.isReady;
+      }
+    }
+
+    // Event an Parent senden
+    emit("isReady", true);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 const showSettings = ref(false)
 
 function toggleSettingsView() {
   showSettings.value = !showSettings.value
 }
+
 </script>
 
 <style scoped>

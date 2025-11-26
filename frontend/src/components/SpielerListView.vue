@@ -5,8 +5,7 @@
       :key="spieler.id"
       :spieler="spieler"
       :selected="selectedPlayer === spieler.id"
-      @deletezeile="handleDelete"
-      @select="selectedPlayer = spieler.id"
+
     />
   </div>
 </template>
@@ -18,7 +17,8 @@ import SpielerListeZeile from './SpielerListeZeile.vue'
 import { mapBackendPlayersToDTD } from '@/stores/mapper'
 
 const spielerListe = ref<ISpielerDTD[]>([])
-const selectedPlayer = ref<number | null>(null)
+const selectedPlayer = ref<string | null>(null)
+
 
 onMounted(async () => {
   const gameCode = localStorage.getItem("gameCode")
@@ -44,10 +44,8 @@ onMounted(async () => {
   }
 })
 
-function handleDelete(id: number) {
-  spielerListe.value = spielerListe.value.filter(item => item.id !== id)
-}
-defineExpose({ handleDelete, spielerListe })
+
+defineExpose({  spielerListe })
 </script>
 
 <style scoped>
