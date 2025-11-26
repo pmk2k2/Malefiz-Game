@@ -26,15 +26,16 @@ router.beforeEach((to, from, next) => {
   if (protectedPages.includes(to.path) && !loggedIn) {
     return next('/')
   }
-  if (to.path == '/' && loggedIn) {
-    if(to.path ==  '/' && gameCode){
+  if(to.path ==  '/' && gameCode){
     return next('/lobby')
   }
+  
   if(to.path ==  '/' && loggedIn){
     return next('/main')
   }
+  
   next()
-}})
+})
 
 
 export default router
