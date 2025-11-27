@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+import router from '@/router';
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import { useGameStore } from '@/stores/gamestore'
 
@@ -57,7 +58,7 @@ async function kicken() {
   const playerIdKick = props.spieler.id;
 
   try {
-    const res = await fetch("http://localhost:8080/api/game/leave", {
+    const res = await fetch("/api/game/leave", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -69,6 +70,7 @@ async function kicken() {
 
     if (res.ok) {
       emit("deletezeile", playerIdKick);
+      router.push("/main")
     } else {
       console.log("Fehler beim Kicken (res nicht ok)")
     }

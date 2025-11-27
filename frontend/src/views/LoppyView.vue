@@ -1,7 +1,7 @@
 <template>
   <div class="background">
     <h1>Malefiz</h1>
-    <h2>{{ loppyID?.LoppyID ?? 'kein LoppyID vorhanden' }}</h2>
+    <h2>{{ gameStore.gameData.gameCode ?? 'kein LoppyID vorhanden' }}</h2>
 
     <div class="icon-button">
       <button type="button">
@@ -33,7 +33,7 @@
 import type { LobbyID } from '@/stores/LobbyID'
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
-import { ref, watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import SpielerListeView from '@/components/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -42,10 +42,6 @@ import { useGameStore } from "@/stores/gamestore";
 
 
 const gameStore = useGameStore();
-const loppyID = ref({
-  LoppyID: gameStore.gameData.gameCode,
-})
-
 const router = useRouter()
 
 const roll = ref<number | null>(null)
@@ -53,11 +49,18 @@ const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
 
 onMounted(() => {
   const code = gameStore.gameData.gameCode
-  if (!code) return
+  if (!code) {
+    router.push('/main');
+    return;
+  }
   gameStore.startLobbyLiveUpdate(code)
   gameStore.updatePlayerList(code)
   console.log(code)
 })
+
+onUnmounted(() => {
+  gameStore.disconnect();
+});
 
 
 function rollDice() {
@@ -88,7 +91,7 @@ async function goBack() {
   const { playerId, gameCode } = gameStore.gameData
 
   if (playerId && gameCode) {
-    await fetch("http://localhost:8080/api/game/leave", {
+    await fetch("/api/game/leave", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -96,7 +99,9 @@ async function goBack() {
         code: gameCode
       })
     });
-  gameStore.gameData.gameCode = null
+  gameStore.gameData.gameCode=null
+  console.log(gameStore.gameData.gameCode)
+  console.log("game code rm"+gameCode)
   router.push("/main");
 }
 }

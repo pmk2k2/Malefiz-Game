@@ -14,7 +14,6 @@ export const useGameStore = defineStore("gamestore", () => {
   const gameData = reactive<{
     ok: boolean;
     players: ISpielerDTD[];
-    lobby: LobbyID[];
     gameCode: string | null;
     playerId: string | null;
     playerName: string | null;
@@ -22,7 +21,6 @@ export const useGameStore = defineStore("gamestore", () => {
   }>({
     ok: false,
     players: [],
-    lobby: [],
     gameCode: null,
     playerId: null,
     playerName: null,
@@ -45,7 +43,7 @@ export const useGameStore = defineStore("gamestore", () => {
     }
 
     stompClient = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/stompbroker'),
+      webSocketFactory: () => new SockJS('/stompbroker'),
       reconnectDelay: 5000,
       debug: str => console.log('[STOMP]', str),
     });
@@ -75,11 +73,12 @@ export const useGameStore = defineStore("gamestore", () => {
     try {
       //setzeInfo("Lobby-Daten wurden aktualisiert");
       console.log("updatePlayerList aufgerufen für Code:", gameCode);
-      const response = await fetch(`http://localhost:8080/api/game/get?code=${gameCode}`, {
+      const response = await fetch(`/api/game/get?code=${gameCode}`, {
         headers: {
           // 'Authorization': `Bearer ${loginStore.jwt}`, // Falls JWT benötigt
         },
-        redirect: 'error'
+        redirect: 'error',
+        
       });
       console.log("[updatePlayerList] Response-Status:", response.status);
       if (!response.ok) throw new Error(response.statusText);
@@ -87,7 +86,6 @@ export const useGameStore = defineStore("gamestore", () => {
       const jsonData = await response.json();
 
       gameData.players = mapBackendPlayersToDTD(jsonData.players || []);
-      gameData.lobby = jsonData.lobby || [];
       gameData.ok = true;
       gameData.gameCode = gameCode;
 
@@ -105,7 +103,6 @@ export const useGameStore = defineStore("gamestore", () => {
         //setzeInfo("Unbekannter Fehler");
       }
       gameData.players = [];
-      gameData.lobby = [];
       gameData.ok = false;
     }
   }
@@ -126,7 +123,6 @@ export const useGameStore = defineStore("gamestore", () => {
     gameData.gameCode = null;
     gameData.isHost = null;
     gameData.players = [];
-    gameData.lobby = [];
     gameData.ok = false;
 
     localStorage.removeItem("gameData");
@@ -156,6 +152,6 @@ export const useGameStore = defineStore("gamestore", () => {
     startLobbyLiveUpdate,
     updatePlayerList,
     disconnect,
-    reset
+    reset,
   };
 });

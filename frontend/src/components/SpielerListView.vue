@@ -27,18 +27,6 @@ watch(() => gameStore.gameData.isHost, (newVal) => {
 const spielerListe = computed(() => gameStore.gameData.players)
 const selectedPlayer = ref<string | null>(null)
 
-onMounted(async () => {
-  const gameCode = gameStore.gameData.gameCode
-
-  if (!gameCode) {
-    console.warn("No game code found!")
-    return
-  }
-
-  gameStore.startLobbyLiveUpdate(gameCode)
-  await gameStore.updatePlayerList(gameCode)
-})
-
 function handleDelete(id: string) {
   gameStore.gameData.players = gameStore.gameData.players.filter(p => p.id !== id)
 }

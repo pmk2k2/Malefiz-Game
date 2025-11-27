@@ -19,7 +19,7 @@ const faceRotations: Record<number, { x: number; y: number }> = {
 }
 
 async function getDiceRollFromServer(): Promise<number> {
-  const res = await fetch('http://localhost:8080/api/daten/roll')
+  const res = await fetch('/api/daten/roll')
   const data = await res.json()
   return data.value // Wert aus dem JSON vom Backend
 }

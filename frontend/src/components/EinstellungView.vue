@@ -34,7 +34,7 @@ import { ref, onMounted } from 'vue'
 const time = ref(1)
 
 onMounted(async () => {
-  const res = await fetch("http://localhost:8080/api/daten/cooldown")
+  const res = await fetch("/api/daten/cooldown")
   time.value = await res.json()
 })
 
@@ -49,7 +49,7 @@ function decrease() {
 }
 
 async function sendCooldown() {
-  await fetch("http://localhost:8080/api/daten/cooldown?seconds=" + time.value, {
+  await fetch("/api/daten/cooldown?seconds=" + time.value, {
     method: "Post"
   });
   
