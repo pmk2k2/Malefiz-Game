@@ -1,11 +1,12 @@
 import { defineStore } from "pinia";
-import { reactive } from "vue";
+import { reactive, watch } from "vue";
 import SockJS from "sockjs-client";
 import { Client } from '@stomp/stompjs';
 import type { IFrontendNachrichtEvent } from '@/services/IFrontendNachrichtEvent';
 //import { useInfo } from "@/composable/useInfo";
 import type { ISpielerDTD } from "./ISpielerDTD";
 import type { LobbyID } from './LobbyID'; 
+import { mapBackendPlayersToDTD } from '@/stores/mapper';
 
 //const { setzeInfo } = useInfo();
 
@@ -15,12 +16,25 @@ export const useGameStore = defineStore("gamestore", () => {
     players: ISpielerDTD[];
     lobby: LobbyID[];
     gameCode: string | null;
+    playerId: string | null;
+    playerName: string | null;
+    isHost: boolean | null;
   }>({
     ok: false,
     players: [],
     lobby: [],
-    gameCode: null
+    gameCode: null,
+    playerId: null,
+    playerName: null,
+    isHost: null
   });
+
+  loadFromLocalStorage();
+  watch(
+  () => gameData,
+  () => saveToLocalStorage(),
+  { deep: true }
+);
 
   let stompClient: Client | null = null;
 
@@ -61,7 +75,7 @@ export const useGameStore = defineStore("gamestore", () => {
     try {
       //setzeInfo("Lobby-Daten wurden aktualisiert");
       console.log("updatePlayerList aufgerufen für Code:", gameCode);
-      const response = await fetch(`/api/game/get?code=${gameCode}`, {
+      const response = await fetch(`http://localhost:8080/api/game/get?code=${gameCode}`, {
         headers: {
           // 'Authorization': `Bearer ${loginStore.jwt}`, // Falls JWT benötigt
         },
@@ -71,10 +85,17 @@ export const useGameStore = defineStore("gamestore", () => {
       if (!response.ok) throw new Error(response.statusText);
 
       const jsonData = await response.json();
-      gameData.players = jsonData.players || []; 
+
+      gameData.players = mapBackendPlayersToDTD(jsonData.players || []);
       gameData.lobby = jsonData.lobby || [];
       gameData.ok = true;
       gameData.gameCode = gameCode;
+
+      if (gameData.playerId) {
+        const me = (gameData.players as any[]).find(p => p.id === gameData.playerId);
+        gameData.isHost = !!(me && me.isHost);
+      }
+
       console.log("[updatePlayerList] Daten aktualisiert:", jsonData);
     } catch (error) {
       console.error("[updatePlayerList] Fehler:", error);
@@ -89,6 +110,8 @@ export const useGameStore = defineStore("gamestore", () => {
     }
   }
 
+  
+
   function disconnect() {
     if (stompClient) {
       stompClient.deactivate();
@@ -96,10 +119,43 @@ export const useGameStore = defineStore("gamestore", () => {
     }
   }
 
+  function reset() {
+    console.log("Reset gameData");
+    gameData.playerId = null;
+    gameData.playerName = null;
+    gameData.gameCode = null;
+    gameData.isHost = null;
+    gameData.players = [];
+    gameData.lobby = [];
+    gameData.ok = false;
+
+    localStorage.removeItem("gameData");
+  }
+
+  function saveToLocalStorage() {
+    localStorage.setItem("gameData", JSON.stringify(gameData));
+}
+
+  function loadFromLocalStorage() {
+    const raw = localStorage.getItem("gameData");
+    if (!raw) return;
+
+    try {
+      const data = JSON.parse(raw);
+      Object.assign(gameData, data);
+    } catch (e) {
+      console.error("load fail", e);
+    }
+  }
+
+
+
+
   return {
     gameData,
     startLobbyLiveUpdate,
     updatePlayerList,
-    disconnect
+    disconnect,
+    reset
   };
 });

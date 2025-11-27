@@ -6,6 +6,7 @@ import LoginView from '../views/LoginView.vue'
 import Beitrittscode from '@/views/Beitrittscode.vue'
 import PlayingFieldView from '@/views/PlayingFieldView.vue'
 import GameView from '../components/GameView.vue'
+import { useGameStore } from '@/stores/gamestore'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -20,8 +21,9 @@ const router = createRouter({
 })
 router.beforeEach((to, from, next) => {
   const protectedPages = ['/main', '/join', '/lobby']
-  const loggedIn = !!localStorage.getItem("playerName")
-  const gameCode = !!localStorage.getItem("gameCode")
+  const gameStore = useGameStore()
+  const loggedIn = !!gameStore.gameData.playerName
+  const gameCode = !!gameStore.gameData.gameCode
 
   if (protectedPages.includes(to.path) && !loggedIn) {
     return next('/')

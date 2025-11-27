@@ -6,7 +6,7 @@
   >
     <div class="spieler-info">
       <img
-        v-if="spieler.spielfiguren.length"
+        v-if="spieler.spielfiguren && spieler.spielfiguren.length"
         :src="spieler.spielfiguren[0].icon"
         alt="Spielfigur"
         class="spielfigur"
@@ -18,7 +18,7 @@
     </div>
 
     <div class="spieler-status">
-      <span v-if="spieler.bereitschaft" class="status bereit">bereit</span>
+      <span v-if="spieler.isReady" class="status bereit">bereit</span>
       <span v-else class="status nicht-bereit">Nicht bereit</span>
     </div>
 
@@ -32,6 +32,9 @@
 
 <script setup lang="ts">
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
+import { useGameStore } from '@/stores/gamestore'
+
+const gameStore = useGameStore()
 
 const props = defineProps<{
   spieler: ISpielerDTD,
@@ -50,7 +53,7 @@ function selectRow() {
 
 async function kicken() {
   
-  const gameCode = localStorage.getItem("gameCode");
+  const gameCode = gameStore.gameData.gameCode
   const playerIdKick = props.spieler.id;
 
   try {
@@ -59,7 +62,8 @@ async function kicken() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         code: gameCode,
-        playerId: playerIdKick
+        playerId: playerIdKick,
+        requesterId: gameStore.gameData.playerId
       })
     });
 

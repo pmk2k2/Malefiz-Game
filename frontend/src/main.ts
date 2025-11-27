@@ -3,6 +3,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
+import { useGameStore } from './stores/gamestore'
 
 // Create Vue app
 const app = createApp(App)

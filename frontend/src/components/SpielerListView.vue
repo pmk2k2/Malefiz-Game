@@ -13,43 +13,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import SpielerListeZeile from './SpielerListeZeile.vue'
 import { mapBackendPlayersToDTD } from '@/stores/mapper'
+import { useGameStore } from '@/stores/gamestore'
+const gameStore = useGameStore()
+const currentUserIsHost = computed(() => gameStore.gameData.isHost === true)
+watch(() => gameStore.gameData.isHost, (newVal) => {
+  console.log("Updated host value:", newVal);
+});
 
-const spielerListe = ref<ISpielerDTD[]>([])
+const spielerListe = computed(() => gameStore.gameData.players)
 const selectedPlayer = ref<string | null>(null)
-const currentUserIsHost = ref(false)
 
 onMounted(async () => {
-  const gameCode = localStorage.getItem("gameCode")
-
-  currentUserIsHost.value = localStorage.getItem('isHost') === 'true';
+  const gameCode = gameStore.gameData.gameCode
 
   if (!gameCode) {
     console.warn("No game code found!")
     return
   }
 
-  try {
-
-    const res = await fetch(`http://localhost:8080/api/game/get?code=${gameCode}`)
-    if (!res.ok) throw new Error("HTTP error " + res.status)
-
-    const backendData = await res.json()
-
-    spielerListe.value = mapBackendPlayersToDTD(backendData.players)
-
-    console.log("Spieler geladen:", spielerListe.value)
-
-  } catch (err) {
-    console.error("Failed to load players:", err)
-  }
+  gameStore.startLobbyLiveUpdate(gameCode)
+  await gameStore.updatePlayerList(gameCode)
 })
 
 function handleDelete(id: string) {
-  spielerListe.value = spielerListe.value.filter(item => item.id !== id)
+  gameStore.gameData.players = gameStore.gameData.players.filter(p => p.id !== id)
 }
 defineExpose({ handleDelete, spielerListe })
 </script>

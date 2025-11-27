@@ -15,8 +15,9 @@
     <EinstellungView v-if="showSettings" />
 
     <SpielerListeView 
-    ref = "spielerListeRef"
-    @deleteZeile="onDeleteZeile"/>
+      ref="spielerListeRef"
+      @deleteZeile="onDeleteZeile"
+/>
 
     <div class="buttons">
       <button @click="clearRoll">Löschen</button>
@@ -32,7 +33,7 @@
 import type { LobbyID } from '@/stores/LobbyID'
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import SpielerListeView from '@/components/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -40,9 +41,9 @@ import { onMounted } from "vue";
 import { useGameStore } from "@/stores/gamestore";
 
 
-
+const gameStore = useGameStore();
 const loppyID = ref({
-  LoppyID: localStorage.getItem('gameCode'),
+  LoppyID: gameStore.gameData.gameCode,
 })
 
 const router = useRouter()
@@ -50,14 +51,13 @@ const router = useRouter()
 const roll = ref<number | null>(null)
 const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
 
-const gameStore = useGameStore();
-
 onMounted(() => {
-  const code = localStorage.getItem("gameCode");
-  if (!code) return;
-  gameStore.startLobbyLiveUpdate(code);
-  gameStore.updatePlayerList(code);
-});
+  const code = gameStore.gameData.gameCode
+  if (!code) return
+  gameStore.startLobbyLiveUpdate(code)
+  gameStore.updatePlayerList(code)
+  console.log(code)
+})
 
 
 function rollDice() {
@@ -85,8 +85,7 @@ function clearRoll() {
 }
 
 async function goBack() {
-  const playerId = localStorage.getItem("playerId");
-  const gameCode = localStorage.getItem("gameCode");
+  const { playerId, gameCode } = gameStore.gameData
 
   if (playerId && gameCode) {
     await fetch("http://localhost:8080/api/game/leave", {
@@ -97,7 +96,7 @@ async function goBack() {
         code: gameCode
       })
     });
-  localStorage.removeItem("gameCode")
+  gameStore.gameData.gameCode = null
   router.push("/main");
 }
 }
