@@ -5,32 +5,46 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import de.hsrm.mi.swtpr.milefiz.entities.board.Field;
-import de.hsrm.mi.swtpr.milefiz.entities.board.FieldDTO;
-import de.hsrm.mi.swtpr.milefiz.entities.board.TemporaryBoard;
-import de.hsrm.mi.swtpr.milefiz.entities.board.TemporaryBoardDTO;
+import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
+import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
+import de.hsrm.mi.swtpr.milefiz.service.GameService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api")
 public class BoardController {
-    public TemporaryBoardDTO thisBoard;
+    @Autowired
+    private GameService service;
+    private Logger logger = LoggerFactory.getLogger(BoardController.class);
 
-    @PostMapping("/temporary-board")
-    public TemporaryBoard receiveBoard(@RequestBody TemporaryBoardDTO dto) {
-        Field[][] board = new Field[dto.getRows()][dto.getCols()];
-        System.err.println(dto);
-
-        for (int j = 0; j < dto.getRows(); j++) {
-            for (int i = 0; i < dto.getCols(); i++) {
-                FieldDTO f = dto.getGrid()[j][i];
-                board[j][i] = new Field(f.getI(), f.getJ(), f.getType());
-            }
+    @PostMapping("/board")
+    public void receiveBoard(@RequestBody Board board, @RequestParam("code") String code) {
+        if (board.getGrid() != null) {
+            logger.info("BACKEND HAT DAS SPIELFELD GENOMMEN");
+            Game theGame = service.getGame(code);
+            theGame.setBoard(board);
+        } else {
+            logger.info("NICHTS GENOMMEN");
         }
+    }
 
-        TemporaryBoard temporaryBoard = new TemporaryBoard(dto.getCols(), dto.getRows(), board);
-        return temporaryBoard;
+    @GetMapping("/board")
+    public Board sendBoard(@RequestParam("code") String code) {
+        try {
+            Game theGame = service.getGame(code);
+            logger.info("THE GAME IS LOADED:" + theGame.toString() + "and its board: " + theGame.getBoard().toString());
+            if (theGame.getBoard().getCols() == 0) { // Board is leer
+                return null;
+            }
+            return theGame.getBoard();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 }

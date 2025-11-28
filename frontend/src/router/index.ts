@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoppyView from '@/views/LoppyView.vue'
+import LobbyView from '@/views/LobbyView.vue'
 
 import MainMenu from '../views/MainMenu.vue'
 import LobbyTemp from '../views/LobbyTemp.vue';
@@ -8,13 +8,14 @@ import Beitrittscode from '@/views/Beitrittscode.vue';
 import PlayingFieldView from '@/views/PlayingFieldView.vue';
 import GridView from '../components/GridView.vue'
 import DiceView from '@/views/DiceView.vue'
+import { useGameStore } from '@/stores/gamestore';
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: LoginView },
     { path: '/join', component: Beitrittscode },
-    { path: '/lobby', component: LoppyView },
+    { path: '/lobby', component: LobbyView },
     { path: '/main', component: MainMenu },
     { path: '/grid', component: GridView },
     { path: '/field', component: PlayingFieldView }
@@ -22,8 +23,9 @@ const router = createRouter({
 })
 router.beforeEach((to, from, next) => {
   const protectedPages = ['/main', '/join', '/lobby']
-  const loggedIn = !!localStorage.getItem("playerName")
-  const gameCode = !!localStorage.getItem("gameCode")
+  const gameStore = useGameStore()
+  const loggedIn = !!gameStore.gameData.playerName
+  const gameCode = !!gameStore.gameData.gameCode
 
   if (protectedPages.includes(to.path) && !loggedIn) {
     return next('/')

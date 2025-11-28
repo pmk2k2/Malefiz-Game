@@ -1,3 +1,14 @@
+<!-- Infobox (useInfo) 
+<template>
+  <div class="lobby-container">
+    <div v-if="infoText" class="info-box"> 
+      {{ infoText }}
+    </div>
+  </div>
+</template>
+
+-->
+
 <template>
   <div class="container">
     <header class="header">
@@ -22,8 +33,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import hoverSoundFile from '../assets/button_hover.mp3'
+import { useGameStore } from '@/stores/gamestore';
+
+const gameStore = useGameStore();
 
 const router = useRouter();
 const name = ref("");
@@ -34,10 +49,8 @@ function login() {
     return;
   }
 
-  
-
-  localStorage.setItem("playerName", name.value)
-  router.push("/main")
+  gameStore.gameData.playerName = name.value;
+  router.push('/main')
 }
 </script>
 

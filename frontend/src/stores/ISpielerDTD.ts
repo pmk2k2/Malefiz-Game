@@ -1,9 +1,9 @@
 import type { ISpielfigurDTD } from "./ISpielfigurDTD"
 
 export interface ISpielerDTD {
-  id: number
+  id: string
   name: string 
-  bereitschaft: boolean
+  isReady: boolean
   spielfiguren: Array<ISpielfigurDTD>
   isHost: boolean
 }

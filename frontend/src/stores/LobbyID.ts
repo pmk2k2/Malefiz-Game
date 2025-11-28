@@ -1,3 +1,3 @@
 export interface LobbyID{
-  LobbyID: string
+  LoppyID: string
 }

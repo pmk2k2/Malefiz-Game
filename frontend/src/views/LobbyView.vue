@@ -7,10 +7,9 @@
       <button type="button">
         <img :src="infoIcon" alt="Info" />
       </button>
-         <button type="button" @click="toggleSettingsView">
+      <button type="button" @click="toggleSettingsView">
         <img :src="einstellungIcon" alt="Einstellungen" />
       </button>
-
     </div>
 
     <EinstellungView v-if="showSettings" />
@@ -20,7 +19,6 @@
       @deleteZeile="onDeleteZeile"
 />
 
-
     <div class="buttons">
       <button @click="isBereit">Bereit</button>
       <button v-if="isHost" @click="gameStarten">Starten</button>
@@ -28,9 +26,7 @@
 
     </div>
 
-    <div v-if="roll !== null" class="roll-result">
-      Würfel: {{ roll }}
-    </div>
+    <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
   </div>
 </template>
 
@@ -38,7 +34,7 @@
 import type { LobbyID } from '@/stores/LobbyID'
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
-import { onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import SpielerListeView from '@/components/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -47,16 +43,7 @@ import { useGameStore } from "@/stores/gamestore";
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import { mapBackendPlayersToDTD } from '@/stores/mapper'
 
-
-
-
-const isHost = ref(false);
-onMounted(() => {
-  isHost.value = gameStore.gameData.isHost === true;
-});
-
-
-
+const isHost = computed(() => gameStore.gameData.isHost === true)
 const gameStore = useGameStore();
 const router = useRouter()
 
@@ -80,7 +67,7 @@ onUnmounted(() => {
 
 
 function rollDice() {
-router.push("/grid")
+  router.push('/game')
 }
 
 function onDeleteZeile(playerId: string) {
@@ -95,12 +82,6 @@ function clearRoll() {
   // Würfel zurücksetzen
   roll.value = null
 
-  // Alle Spieler löschen über handleDelete
-  if (spielerListeRef.value) {
-    // Kopie der IDs, um nicht während des Iterierens das Array zu verändern
-    const allIds = [...spielerListeRef.value.spielerListe.map(s => s.id)]
-    allIds.forEach(id => spielerListeRef.value?.handleDelete(id))
-  }
 }
 
 async function goBack() {
@@ -130,8 +111,6 @@ const props = defineProps<{ spieler: ISpielerDTD , meHost: boolean}>();
 
 async function gameStarten(){
   const gameCode = gameStore.gameData.gameCode
-  const playerAdmin= props.spieler.isHost;
-
 
   if(!gameCode){
     console.warn("Kein gameCode vorhanden");
@@ -198,6 +177,7 @@ const showSettings = ref(false)
 function toggleSettingsView() {
   showSettings.value = !showSettings.value
 }
+
 </script>
 
 <style scoped>
@@ -234,16 +214,15 @@ button:hover {
 }
 
 button img {
-  width: 62px; 
+  width: 62px;
   height: 62px;
-  margin: 0 300px; 
+  margin: 0 300px;
 }
 
-button:has(img) { 
+button:has(img) {
   background-color: transparent;
   padding: 0;
   border-radius: 0;
-
 }
 .icon-button button {
   background-color: transparent;

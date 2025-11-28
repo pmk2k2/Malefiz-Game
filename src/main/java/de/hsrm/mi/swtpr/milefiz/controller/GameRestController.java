@@ -4,6 +4,7 @@ import java.util.Map;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
+import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.service.CodeGeneratorService;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
 import jakarta.servlet.http.HttpSession;
@@ -36,7 +37,7 @@ public class GameRestController {
         String code = service.createGame();
         String playerId = session.getId();
 
-        service.addPlayer(code, playerId, name, true);
+        service.addPlayer(code, playerId, name, true, false);
         Game game = service.getGame(code);
 
         return Map.of(
@@ -44,7 +45,8 @@ public class GameRestController {
                 "playerName", name,
                 "players", game.getPlayers(),
                 "playerId", playerId,
-                "isHost", true);
+                "isHost", true,
+                "isReady", false);
     }
 
     @PostMapping("/join")
@@ -53,18 +55,19 @@ public class GameRestController {
         String code = body.get("code");
         String playerId = session.getId();
 
-        boolean success = service.addPlayer(code, playerId, name, false);
+        boolean success = service.addPlayer(code, playerId, name, false, false);
         if (!success) {
             return Map.of("error", "Invalid game code");
         }
-
         Game game = service.getGame(code);
+
         return Map.of(
                 "gameCode", code,
                 "playerName", name,
                 "players", game.getPlayers(),
                 "playerId", playerId,
-                "isHost", false);
+                "isHost", false,
+                "isReady", false);
     }
 
     @PostMapping("/leave")
@@ -82,12 +85,31 @@ public class GameRestController {
     }
 
     @GetMapping("/get")
-    public Map<String, Object> getPlayers(@RequestParam("code")  String code) {
+    public Map<String, Object> getPlayers(@RequestParam("code") String code) {
         Game game = service.getGame(code);
         if (game == null)
             return Map.of("error", "Game not found");
 
         return Map.of("players", game.getPlayers());
+    }
+
+    @PostMapping("/setReady")
+    public ResponseEntity<Map<String, Object>> setReady(@RequestBody Map<String, String> body, HttpSession session) {
+        String gameCode = body.get("code");
+        String playerId = body.get("playerId");
+        boolean isReady = Boolean.parseBoolean(body.get("isReady"));
+
+        Game game = service.getGame(gameCode);
+        if (game == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
+        }
+
+        boolean updated = service.setPlayerReady(gameCode, playerId, isReady);
+        if (!updated) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Player not found"));
+        }
+
+        return ResponseEntity.ok(Map.of("playerId", playerId, "isReady", isReady));
     }
 
 }

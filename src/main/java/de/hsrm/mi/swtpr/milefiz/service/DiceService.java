@@ -23,6 +23,10 @@ public class DiceService {
         this.cooldown = seconds * 1_000_000_000;
     }
 
+     public long getCooldown() {
+        return cooldown/1_000_000_000;
+    }
+
     // Spieler mit ihrem letzten Zeitpunkt des Wurfs speichern
     private Map<String, Long> playerCooldown = new HashMap<>(); 
 

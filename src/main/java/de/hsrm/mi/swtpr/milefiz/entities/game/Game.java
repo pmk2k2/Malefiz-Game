@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
 import de.hsrm.mi.swtpr.milefiz.entities.board.Figure;
-import de.hsrm.mi.swtpr.milefiz.entities.board.TemporaryBoard;
+import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 
 public class Game {
@@ -27,12 +27,12 @@ public class Game {
 
     public Game() {
         playerList = new HashMap<>();
-        this.board = new TemporaryBoard(); // Board direkt anlegen
+        this.board = new Board(); // Board direkt anlegen
     }
 
     public boolean addPlayer(Player player, String playerId) {
         if (playerList.containsKey(playerId)) {
-            logger.info("Player" + player.getName() + "already exist!!!!!!");
+            logger.info("Player " + player.getName() + "already exist!!!!!!");
             return false;
         }
         playerList.put(playerId, player);
@@ -41,17 +41,16 @@ public class Game {
         return true;
     }
 
-    public Player getPlayer(String name) {
-        for (Player p : playerList.values()) {
-            if (p.getName().equals(name)) {
-                return p;
-            }
-        }
-        return null;
+    public Player getPlayer(String playerId) {
+        return playerList.get(playerId);
     }
 
     public List<Player> getPlayers() {
         return playerList.values().stream().toList();
+    }
+
+    public Player getPlayerById(String playerId) {
+        return playerList.get(playerId);
     }
 
     public boolean removePlayer(String playerId) {

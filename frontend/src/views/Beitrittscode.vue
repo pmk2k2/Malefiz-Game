@@ -30,11 +30,19 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import hoverSoundFile from '../assets/button_hover.mp3'
+import { useGameStore } from '@/stores/gamestore'
 
 const router = useRouter()
+const gameStore = useGameStore()
 
-const playerName = localStorage.getItem("playerName")
-const code = ref("")
+const playerName = gameStore.gameData.playerName
+console.log(playerName)
+const code = ref('')
+
+function playHover() {
+  new Audio(hoverSoundFile).play()
+}
 
 async function beitreten() {
   if (!code.value) {
@@ -42,19 +50,20 @@ async function beitreten() {
     return
   }
 
-  const res = await fetch("/api/game/join", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: playerName, code: code.value })
+  const res = await fetch('/api/game/join', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: playerName, code: code.value }),
   })
 
   const data = await res.json()
 
-  if (! data.error) {
-    localStorage.setItem("playerId", data.playerId)
-    localStorage.setItem("gameCode", data.gameCode)
-  router.push("/lobby")
-  }else{
+  if (!data.error) {
+    gameStore.gameData.playerId = data.playerId
+    gameStore.gameData.gameCode = data.gameCode
+    gameStore.gameData.isHost = false
+    router.push('/lobby')
+  } else {
     alert(data.error)
   }
 
