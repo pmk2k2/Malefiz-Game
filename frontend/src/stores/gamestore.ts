@@ -29,9 +29,14 @@ export const useGameStore = defineStore("gamestore", () => {
 
   loadFromLocalStorage();
   watch(
-  () => gameData,
-  () => saveToLocalStorage(),
-  { deep: true }
+  () => ({
+    players: gameData.players,
+    gameCode: gameData.gameCode, 
+    playerId: gameData.playerId,
+    playerName: gameData.playerName,
+    isHost: gameData.isHost
+  }),
+  saveToLocalStorage
 );
 
   let stompClient: Client | null = null;
@@ -87,7 +92,6 @@ export const useGameStore = defineStore("gamestore", () => {
 
       gameData.players = mapBackendPlayersToDTD(jsonData.players || []);
       gameData.ok = true;
-      gameData.gameCode = gameCode;
 
       if (gameData.playerId) {
         const me = (gameData.players as any[]).find(p => p.id === gameData.playerId);
@@ -128,6 +132,11 @@ export const useGameStore = defineStore("gamestore", () => {
     localStorage.removeItem("gameData");
   }
 
+    function resetGameCode() {
+    gameData.gameCode = null;
+    console.log(JSON.stringify(gameData));
+  }
+
   function saveToLocalStorage() {
     localStorage.setItem("gameData", JSON.stringify(gameData));
 }
@@ -153,5 +162,6 @@ export const useGameStore = defineStore("gamestore", () => {
     updatePlayerList,
     disconnect,
     reset,
+    resetGameCode
   };
 });

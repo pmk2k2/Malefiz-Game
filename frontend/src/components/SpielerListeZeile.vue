@@ -70,7 +70,6 @@ async function kicken() {
 
     if (res.ok) {
       emit("deletezeile", playerIdKick);
-      router.push("/main")
     } else {
       console.log("Fehler beim Kicken (res nicht ok)")
     }

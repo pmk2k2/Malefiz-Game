@@ -99,7 +99,8 @@ async function goBack() {
         code: gameCode
       })
     });
-  gameStore.gameData.gameCode=null
+    gameStore.disconnect();
+    gameStore.resetGameCode()
   console.log(gameStore.gameData.gameCode)
   console.log("game code rm"+gameCode)
   router.push("/main");
