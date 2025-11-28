@@ -17,7 +17,7 @@ const router = createRouter({
     { path: '/join', component: Beitrittscode },
     { path: '/lobby', component: LobbyView },
     { path: '/main', component: MainMenu },
-    { path: '/grid', component: GridView },
+    { path: '/game', component: GridView },
     { path: '/field', component: PlayingFieldView }
   ],
 })

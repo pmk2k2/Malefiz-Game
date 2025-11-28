@@ -8,6 +8,8 @@ import TheCrown from './TheCrown.vue'
 import TheGrass from './TheGrass.vue'
 import RollButton from '@/components/RollButton.vue'
 import Dice3D, { rollDice } from '@/components/Dice3D.vue'
+import { useGameStore } from '@/stores/gamestore'
+
 
 // Zellentypen
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL'
@@ -26,14 +28,16 @@ interface Board {
   grid: Field[][]
 }
 
+const gameStore = useGameStore()
 const CELL_SIZE = 2
 const board = ref<Board | null>(null)
 const isLoading = ref(true)
-const gameCode = localStorage.getItem('gameCode')
+const gameCode = gameStore.gameData.gameCode
 
 onMounted(async () => {
   isLoading.value = true
   const fetched = await getBoardFromBackend()
+  console.log(fetched)
   if (fetched) {
     board.value = fetched
   }
@@ -67,10 +71,10 @@ async function getBoardFromBackend(): Promise<Board | null> {
     })
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-    
+
     // Check if body exists before parsing
     const text = await response.text()
-    if (!text) return null 
+    if (!text) return null
 
     const data = JSON.parse(text) as Board
     console.log('Board received', data)
@@ -137,11 +141,11 @@ function onRoll(id: string) {
 
     <div class="ui-overlay">
       <h1 class="title">Malefiz – Würfeltest</h1>
-      
+
       <div v-if="isLoading">Loading Board...</div>
       <div v-else>
-         <RollButton buttonId="diceButton" @trigger="onRoll" />
-         <Dice3D />
+        <RollButton buttonId="diceButton" @trigger="onRoll" />
+        <Dice3D />
       </div>
     </div>
   </div>

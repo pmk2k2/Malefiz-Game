@@ -14,10 +14,7 @@
 
     <EinstellungView v-if="showSettings" />
 
-    <SpielerListeView 
-      ref="spielerListeRef"
-      @deleteZeile="onDeleteZeile"
-/>
+    <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
 
     <div class="buttons">
       <button @click="isBereit">Bereit</button>
@@ -72,7 +69,7 @@ function rollDice() {
 
 function onDeleteZeile(playerId: string) {
   if (spielerListeRef.value) {
-    spielerListeRef.value.spielerListe = 
+    spielerListeRef.value.spielerListe =
       spielerListeRef.value.spielerListe.filter(spieler => spieler.id !== playerId);
   }
 }
@@ -98,35 +95,36 @@ async function goBack() {
     });
     gameStore.disconnect();
     gameStore.resetGameCode()
-  console.log(gameStore.gameData.gameCode)
-  console.log("game code rm"+gameCode)
-  router.push("/main");
+    console.log(gameStore.gameData.gameCode)
+    console.log("game code rm" + gameCode)
+    router.push("/main");
+  }
 }
-}
 
 
-const props = defineProps<{ spieler: ISpielerDTD , meHost: boolean}>();
+const props = defineProps<{ spieler: ISpielerDTD, meHost: boolean }>();
 
 
 
-async function gameStarten(){
+async function gameStarten() {
   const gameCode = gameStore.gameData.gameCode
+  router.push("/game")
 
-  if(!gameCode){
-    console.warn("Kein gameCode vorhanden");
-    return;
-  }
-  try{
-    const res = await fetch(`/api/game/start?code=${gameCode}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: gameCode, isReady: true })
-    });
-    if(!res.ok) throw new Error("Fehler beim Starten des Spiels");
-    router.push('/game');
-  } catch(err){
-    console.error(err);
-  }
+  // if(!gameCode){
+  //   console.warn("Kein gameCode vorhanden");
+  //   return;
+  // }
+  // try{
+  //   const res = await fetch(`/api/game/start?code=${gameCode}`, {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ code: gameCode, isReady: true })
+  //   });
+  //   if(!res.ok) throw new Error("Fehler beim Starten des Spiels");
+  //   router.push('/game');
+  // } catch(err){
+  //   console.error(err);
+  // }
 }
 
 
@@ -224,6 +222,7 @@ button:has(img) {
   padding: 0;
   border-radius: 0;
 }
+
 .icon-button button {
   background-color: transparent;
   padding: 0;
@@ -232,7 +231,8 @@ button:has(img) {
 }
 
 .icon-button button:hover {
-  background-color: transparent; /* verhindert den weißen Hover */
+  background-color: transparent;
+  /* verhindert den weißen Hover */
 }
 
 .roll-result {
