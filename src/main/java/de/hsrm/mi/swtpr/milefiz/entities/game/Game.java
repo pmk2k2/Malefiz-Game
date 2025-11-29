@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
 import de.hsrm.mi.swtpr.milefiz.entities.board.Figure;
-import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 
 public class Game {

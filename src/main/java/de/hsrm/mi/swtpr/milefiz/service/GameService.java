@@ -23,8 +23,9 @@ public class GameService {
 
     private Map<String, Game> games = new HashMap<>();
     private CodeGeneratorService codeService;
+
     @Autowired
-    private DummyBoardService dummyBoardService;
+    private BoardService boardService;
 
     private ApplicationEventPublisher publisher;
 
@@ -36,7 +37,8 @@ public class GameService {
     public String createGame() {
         String gameCode = codeService.generateCode();
         Game newGame = new Game();
-        newGame.setBoard(dummyBoardService.createDummyBoard());
+        // Nach(Während) dem Spielerstellung ist ein Board ausgewählt
+        newGame.setBoard(boardService.getBoardFromJson("SmallerBoard.json")); // Hier kann man den Name des JSON Datei
         games.put(gameCode, newGame);
         logger.info("All the games:  "
                 + Arrays.toString(games.keySet().stream().toArray(String[]::new)));
