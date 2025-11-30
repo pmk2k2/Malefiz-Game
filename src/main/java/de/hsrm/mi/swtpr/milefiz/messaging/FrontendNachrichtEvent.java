@@ -1,5 +1,9 @@
 package de.hsrm.mi.swtpr.milefiz.messaging;
 
+import java.time.Instant;
+
+import de.hsrm.mi.swtpr.milefiz.model.GameState;
+
 public class FrontendNachrichtEvent {
 
     public enum Nachrichtentyp {
@@ -9,8 +13,12 @@ public class FrontendNachrichtEvent {
 
     public enum Operation {
         LEFT,
-        JOINED
-        // weitere Operationen können hier später ergänzt werden.
+        JOINED,
+        READY_UPDATED,
+        COUNTDOWN_STARTED,
+        GAME_STARTED_BY_ADMIN,
+        GAME_RUNNING,
+        PLAYER_LIMIT_ERROR
     }
 
     private Nachrichtentyp typ;
@@ -18,6 +26,8 @@ public class FrontendNachrichtEvent {
     private Operation operation;
     private String gameCode; // an die bestimmte Lobby
     private String playerName;
+    private Instant countdownStartedAt;
+    private GameState gameState;
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -26,6 +36,11 @@ public class FrontendNachrichtEvent {
         this.operation = operation;
         this.gameCode = gameCode;
         this.playerName = playerName;
+    }
+       public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode, String playerName, Instant countdownStartedAt, GameState gameState) {
+        this(typ, id, operation, gameCode, playerName);
+        this.countdownStartedAt = countdownStartedAt;
+        this.gameState = gameState;
     }
 
     public Nachrichtentyp getTyp() {
@@ -77,5 +92,21 @@ public class FrontendNachrichtEvent {
                 ", lobby=" + gameCode +
                 ", playerName=" + playerName +
                 '}';
+    }
+
+    public Instant getCountdownStartedAt() {
+        return countdownStartedAt;
+    }
+
+    public void setCountdownStartedAt(Instant t) {
+        this.countdownStartedAt = t;
+    }
+
+    public GameState getGameState() {
+        return gameState;
+    }
+
+    public void setGameState(GameState s) {
+        this.gameState = s;
     }
 }

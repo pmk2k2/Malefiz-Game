@@ -1,5 +1,6 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +16,7 @@ import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
+import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
 @Service
 public class GameService {
@@ -22,7 +24,7 @@ public class GameService {
 
     private Map<String, Game> games = new HashMap<>();
     private CodeGeneratorService codeService;
-
+    private final int MAX_PLAYERS = 2;
     private ApplicationEventPublisher publisher;
 
     public GameService(CodeGeneratorService codeService, ApplicationEventPublisher publisher) {
@@ -105,7 +107,7 @@ public class GameService {
         return true;
     }
 
-    public boolean setPlayerReady(String gameCode, String playerId, boolean isReady) {
+    public synchronized boolean setPlayerReady(String gameCode, String playerId, boolean isReady) {
         Game game = games.get(gameCode);
         if (game == null)
             return false;
@@ -115,7 +117,149 @@ public class GameService {
             return false;
 
         player.setReady(isReady);
+
+        //  Prüfen, ob alle Ready sind
+        boolean allReady = game.getPlayers().size() > 0 &&
+                game.getPlayers().stream().allMatch(Player::isReady);
+
+        if (allReady) {
+            // Countdown starten + WS Event an alle Spieler senden
+            startCountdown(gameCode);
+        }
         return true;
+    }
+
+    private static FrontendNachrichtEvent limitEvent(String gameCode) {
+        return new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.PLAYER_LIMIT_ERROR,
+                gameCode,
+                null);
+    }
+
+    public synchronized boolean setPlayerReadyAndCheckStart(String gameCode, String playerId, boolean isReady) {
+        Game game = games.get(gameCode);
+        if (game == null)
+            return false;
+
+        if (game.getPlayers().size() > MAX_PLAYERS) {
+            publisher.publishEvent(limitEvent(gameCode));
+            return false;
+        }
+
+        Player player = game.getPlayerById(playerId);
+        if (player == null)
+            return false;
+
+        player.setReady(isReady);
+
+        publisher.publishEvent(new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                playerId,
+                Operation.READY_UPDATED,
+                gameCode,
+                player.getName()));
+
+        if (game.getPlayers().stream().allMatch(Player::isReady)
+                && game.getState() == GameState.WAITING) {
+
+            game.startCountdown();
+            publisher.publishEvent(countdownEvent(gameCode, game.getCountdownStartedAt()));
+        }
+
+        return true;
+    }
+
+ public void startCountdown(String gameCode) {
+    Game game = games.get(gameCode);
+    if (game == null) return;
+
+    game.setState(GameState.COUNTDOWN);
+    Instant now = Instant.now();
+    game.setCountdownStartedAt(now);
+
+    publisher.publishEvent(new FrontendNachrichtEvent(
+        FrontendNachrichtEvent.Nachrichtentyp.LOBBY,
+        "server",
+        FrontendNachrichtEvent.Operation.COUNTDOWN_STARTED,
+        gameCode,
+        null,
+        now, null
+    ));
+}
+
+    private FrontendNachrichtEvent countdownEvent(String gameCode, Instant startedAt) {
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.COUNTDOWN_STARTED,
+                gameCode,
+                null);
+        e.setCountdownStartedAt(startedAt);
+        return e;
+    }
+
+    public synchronized boolean triggerAdminStart(String gameCode, String adminId) {
+        Game game = games.get(gameCode);
+        if (game == null)
+            return false;
+
+        if (game.getPlayers().size() > MAX_PLAYERS) {
+            publisher.publishEvent(limitEvent(gameCode));
+            return false;
+        }
+
+        boolean start = game.adminStart();
+        if (!start)
+            return false;
+
+        publisher.publishEvent(new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                adminId,
+                Operation.GAME_STARTED_BY_ADMIN,
+                gameCode,
+                null));
+
+        publisher.publishEvent(new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.GAME_RUNNING,
+                gameCode,
+                null));
+
+        return true;
+    }
+
+    public void publishPlayerLimitEvent(String gameCode) {
+        publisher.publishEvent(new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.PLAYER_LIMIT_ERROR,
+                gameCode,
+                null));
+    }
+
+    public void publishReadyUpdateEvent(String gameCode, String playerId, boolean ready, String name) {
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                playerId,
+                Operation.READY_UPDATED,
+                gameCode,
+                name);
+        publisher.publishEvent(e);
+    }
+
+    public void publishCountdownStartEvent(String gameCode, Instant startedAt) {
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.COUNTDOWN_STARTED,
+                gameCode,
+                null);
+        e.setCountdownStartedAt(startedAt);
+        e.setGameState(GameState.COUNTDOWN);
+        publisher.publishEvent(e);
     }
 
 }

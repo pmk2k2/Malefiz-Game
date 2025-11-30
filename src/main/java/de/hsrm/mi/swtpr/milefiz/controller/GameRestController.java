@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
+import de.hsrm.mi.swtpr.milefiz.model.GameState;
 import de.hsrm.mi.swtpr.milefiz.service.CodeGeneratorService;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
 import jakarta.servlet.http.HttpSession;
@@ -93,23 +94,46 @@ public class GameRestController {
         return Map.of("players", game.getPlayers());
     }
 
-    @PostMapping("/setReady")
-    public ResponseEntity<Map<String, Object>> setReady(@RequestBody Map<String, String> body, HttpSession session) {
-        String gameCode = body.get("code");
-        String playerId = body.get("playerId");
-        boolean isReady = Boolean.parseBoolean(body.get("isReady"));
+@PostMapping("/setReady")
+public ResponseEntity<Map<String, Object>> setReady(@RequestBody Map<String, String> body, HttpSession session) {
+    String gameCode = body.get("code");
+    String playerId = body.get("playerId");
+    boolean isReady = Boolean.parseBoolean(body.get("isReady"));
 
-        Game game = service.getGame(gameCode);
-        if (game == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Game not found"));
-        }
-
-        boolean updated = service.setPlayerReady(gameCode, playerId, isReady);
-        if (!updated) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Player not found"));
-        }
-
-        return ResponseEntity.ok(Map.of("playerId", playerId, "isReady", isReady));
+    Game game = service.getGame(gameCode);
+    if (game == null) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Game not found"));
     }
+
+    // 👥 Spielerlimit prüfen (≤ 4)
+    if (game.getPlayers().size() > 4) {
+        service.publishPlayerLimitEvent(gameCode);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "Player limit exceeded (max 4)"));
+    }
+
+    // Use the method that publishes READY_UPDATED and starts countdown when appropriate
+    boolean updated = service.setPlayerReadyAndCheckStart(gameCode, playerId, isReady);
+    if (!updated) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "Player not found"));
+    }
+
+    //  Optional: READY Updated Event broadcasten
+    service.publishReadyUpdateEvent(gameCode, playerId, isReady, game.getPlayerById(playerId).getName());
+
+    // ⏱ Countdown starten wenn ALLE Ready + WAITING
+    if (game.getPlayers().stream().allMatch(Player::isReady)
+            && game.getState() == GameState.WAITING) {
+
+        game.startCountdown();
+
+        service.publishCountdownStartEvent(gameCode, game.getCountdownStartedAt());
+    }
+
+    return ResponseEntity.ok(Map.of("playerId", playerId, "isReady", isReady));
+}
+
 
 }

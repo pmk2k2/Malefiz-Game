@@ -1,5 +1,6 @@
 package de.hsrm.mi.swtpr.milefiz.entities.game;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -9,12 +10,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
+import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
 public class Game {
 
     private static final Logger logger = LoggerFactory.getLogger(Game.class);
     // @Size(min = 1, max = )
     private Map<String, Player> playerList;
+    private GameState state = GameState.WAITING;
+    private Instant countdownStartedAt;
 
     public Game() {
         playerList = new HashMap<>();
@@ -48,6 +52,34 @@ public class Game {
         logger.info("The game now has players: "
                 + Arrays.toString(playerList.values().stream().map(Player::getName).toArray(String[]::new)));
         return removed != null;
+    }
+
+    public GameState getState() {
+        return state;
+    }
+
+    public Instant getCountdownStartedAt() {
+        return countdownStartedAt;
+    }
+
+    public void startCountdown() {
+        this.state = GameState.COUNTDOWN;
+        this.countdownStartedAt = Instant.now();
+    }
+
+    public void setState(GameState state) {
+        this.state = state;
+    }
+
+    public void setCountdownStartedAt(Instant countdownStartedAt) {
+        this.countdownStartedAt = countdownStartedAt;
+    }
+
+    public boolean adminStart() {
+        if (playerList.size() > 4)
+            return false;
+        this.state = GameState.RUNNING;
+        return true;
     }
 
 }
