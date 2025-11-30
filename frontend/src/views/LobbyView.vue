@@ -25,7 +25,7 @@
       <button @click="goBack">Verlassen</button>
 
     </div>
-    <Counter />
+    <Counter v-if="showCounter"/>
 
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
   </div>
@@ -52,6 +52,10 @@ const router = useRouter()
 const roll = ref<number | null>(null)
 const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
 
+const showCounter = computed(() => 
+  gameStore.gameData.players.length >0 && gameStore.gameData.players.every(p => p.isReady)
+);
+ 
 onMounted(() => {
   const code = gameStore.gameData.gameCode
   if (!code) {
@@ -68,9 +72,6 @@ onUnmounted(() => {
 });
 
 
-function rollDice() {
-  router.push('/game')
-}
 
 function onDeleteZeile(playerId: string) {
   if (spielerListeRef.value) {
@@ -125,7 +126,7 @@ async function gameStarten(){
       body: JSON.stringify({ code: gameCode, isReady: true })
     });
     if(!res.ok) throw new Error("Fehler beim Starten des Spiels");
-    router.push('/game');
+    router.push('/field');
   } catch(err){
     console.error(err);
   }

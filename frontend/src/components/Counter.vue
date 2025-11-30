@@ -21,7 +21,9 @@ const selectedTime = computed(() => store.countdown ?? 30)
 
 <style scoped>
 .clock {
-  position: relative;
+  position: fixed;
+  top: 5cm;
+  left: 75%;
   width: 200px;
   height: 200px;
   background: #f5f0e1;
