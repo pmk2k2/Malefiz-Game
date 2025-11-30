@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { reactive, watch } from "vue";
+import { reactive, ref, watch } from "vue";
 import SockJS from "sockjs-client";
 import { Client } from '@stomp/stompjs';
 import type { IFrontendNachrichtEvent } from '@/services/IFrontendNachrichtEvent';
@@ -7,8 +7,14 @@ import type { IFrontendNachrichtEvent } from '@/services/IFrontendNachrichtEvent
 import type { ISpielerDTD } from "./ISpielerDTD";
 import type { LobbyID } from './LobbyID'; 
 import { mapBackendPlayersToDTD } from '@/stores/mapper';
+import { useRouter } from "vue-router";
 
 //const { setzeInfo } = useInfo();
+
+const router = useRouter();
+const countdown = ref<number | null>(null);
+const gameState = ref<string>("WAITING");
+let countdownInterval: any = null;
 
 export const useGameStore = defineStore("gamestore", () => { 
   const gameData = reactive<{
@@ -41,38 +47,81 @@ export const useGameStore = defineStore("gamestore", () => {
 
   let stompClient: Client | null = null;
 
-  function startLobbyLiveUpdate(gameCode: string) {
-    if (stompClient && stompClient.active) {
-      console.log("STOMP-Client existiert bereits oder ist aktiv.");
-      return;
-    }
-
-    stompClient = new Client({
-      webSocketFactory: () => new SockJS('/stompbroker'),
-      reconnectDelay: 5000,
-      debug: str => console.log('[STOMP]', str),
-    });
-
-    stompClient.onConnect = () => {
-      console.log("STOMP verbunden, abonniere /topic/gameSession/" + gameCode);
-      stompClient!.subscribe(`/topic/gameSession/${gameCode}`, message => {
-        try {
-          const event: IFrontendNachrichtEvent = JSON.parse(message.body);
-          console.log("Empfangenes Event:", JSON.stringify(event));
-          if (event.typ === "LOBBY") { //bei event JOINED und LEFT
-            updatePlayerList(gameCode);
-          }
-          //TODO: Mehrere if (FrontEndNacrichtEvents) aufzählen, wo die UI live geupdated werden muss)
-        } catch (err) {
-          //setzeInfo("Fehler beim Verarbeiten einer Live-Nachricht");
-          console.error(err);
-          console.log("FEHLER")
-        }
-      });
-    };
-
-    stompClient.activate();
+function startLobbyLiveUpdate(gameCode: string) {
+  if (stompClient && stompClient.active) {
+    console.log("STOMP-Client existiert bereits oder ist aktiv.");
+    return;
   }
+
+  stompClient = new Client({
+    webSocketFactory: () => new SockJS('/stompbroker'),
+    reconnectDelay: 5000,
+    debug: str => console.log('[STOMP]', str),
+  });
+
+  stompClient.onConnect = () => {
+    console.log("STOMP verbunden, abonniere /topic/gameSession/" + gameCode);
+
+    stompClient!.subscribe(`/topic/gameSession/${gameCode}`, message => {
+      try {
+        const event: IFrontendNachrichtEvent = JSON.parse(message.body);
+        console.log("Empfangenes Event:", JSON.stringify(event));
+
+        //  Lobby update wenn Spieler joint/left/ready ändert
+        if (event.operation === "JOINED" || event.operation === "LEFT" || event.operation === "READY_UPDATED") {
+          updatePlayerList(gameCode);
+        }
+
+        //  Countdown starten
+        if (event.operation === "COUNTDOWN_STARTED") {
+          gameState.value = "COUNTDOWN";
+          countdown.value = 30;
+
+          if (countdownInterval) clearInterval(countdownInterval);
+
+          const start = new Date(event.countdownStartedAt!).getTime();
+
+          countdownInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - start) / 1000);
+            countdown.value = 30 - elapsed;
+
+            if (countdown.value <= 0) {
+              clearInterval(countdownInterval);
+              countdownInterval = null;
+              triggerGameStart(gameCode);
+            }
+          }, 500);
+        }
+
+        // Admin oder Server startet Spiel → kein Countdown, direkt rein
+        if (event.operation === "GAME_STARTED_BY_ADMIN" || event.operation === "GAME_RUNNING") {
+          gameState.value = "RUNNING";
+          disconnect(); // Store-Disconnect nutzen 
+          router.push(`/game/${event.gameCode}`);
+        }
+
+        //  Spielerlimit überschritten
+        if (event.operation === "PLAYER_LIMIT_ERROR") {
+          alert("Lobby ist voll! Max 4 Spieler erlaubt.");
+        }
+
+      } catch (err) {
+        console.error("WS Fehler:", err);
+      }
+    });
+  };
+
+  stompClient.activate();
+}
+async function triggerGameStart(gameCode: string) {
+  await fetch("/api/game/start", {
+    method: "POST",
+    body: JSON.stringify({ code: gameCode }),
+    headers: { "Content-Type": "application/json" }
+  });
+  gameState.value = "RUNNING";
+}
+
 
   async function updatePlayerList(gameCode: string) {
     try {
@@ -157,11 +206,13 @@ export const useGameStore = defineStore("gamestore", () => {
 
 
   return {
-    gameData,
-    startLobbyLiveUpdate,
-    updatePlayerList,
-    disconnect,
-    reset,
-    resetGameCode
+  gameData,
+  countdown,
+  gameState,
+  startLobbyLiveUpdate,
+  updatePlayerList,
+  disconnect,
+  reset,
+  resetGameCode
   };
 });

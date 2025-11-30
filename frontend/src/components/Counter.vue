@@ -11,9 +11,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { useGameStore } from '@/stores/gamestore';
+import { computed, ref } from 'vue'
+const store = useGameStore();
 
-const selectedTime = ref(30)
+// Computed aus dem Store nutzen
+const selectedTime = computed(() => store.countdown ?? 30)
 </script>
 
 <style scoped>

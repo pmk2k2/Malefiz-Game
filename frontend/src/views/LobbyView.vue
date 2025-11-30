@@ -20,11 +20,12 @@
 />
 
     <div class="buttons">
-      <button @click="isBereit">Bereit</button>
+      <button @click="isBereit" :disabled="gameStore.countdown !== null">Bereit</button>
       <button v-if="isHost" @click="gameStarten">Starten</button>
       <button @click="goBack">Verlassen</button>
 
     </div>
+    <Counter />
 
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
   </div>
@@ -42,9 +43,10 @@ import { onMounted } from "vue";
 import { useGameStore } from "@/stores/gamestore";
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import { mapBackendPlayersToDTD } from '@/stores/mapper'
+import Counter from '@/components/Counter.vue'
 
-const isHost = computed(() => gameStore.gameData.isHost === true)
 const gameStore = useGameStore();
+const isHost = computed(() => gameStore.gameData.isHost === true)
 const router = useRouter()
 
 const roll = ref<number | null>(null)
@@ -117,7 +119,7 @@ async function gameStarten(){
     return;
   }
   try{
-    const res = await fetch(`/api/game/start?code=${gameCode}`, {
+    const res = await fetch(`/api/game?code=${gameCode}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: gameCode, isReady: true })

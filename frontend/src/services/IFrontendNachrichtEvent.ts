@@ -4,4 +4,5 @@ export interface IFrontendNachrichtEvent {
     operation: string; // Operation (z.B. LEFT)
     gameCode: string; // Game-Code der Lobby
     playerName: string; // Name des Spielers
+    countdownStartedAt?: string;
 }
