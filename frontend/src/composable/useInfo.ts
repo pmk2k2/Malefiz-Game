@@ -12,6 +12,10 @@ export function useInfo(){
 
     function setzeInfo(nachricht: string){
         info.inhalt = nachricht
+
+        setTimeout(() => {
+        info.inhalt = "";
+        }, 3000); //Infobox verschwindet nach 3 sekunden
     }
 
 

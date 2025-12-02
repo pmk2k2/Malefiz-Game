@@ -3,14 +3,14 @@ import { reactive, ref, watch } from "vue";
 import SockJS from "sockjs-client";
 import { Client } from '@stomp/stompjs';
 import type { IFrontendNachrichtEvent } from '@/services/IFrontendNachrichtEvent';
-//import { useInfo } from "@/composable/useInfo";
+import { useInfo } from "@/composable/useInfo";
 import type { ISpielerDTD } from "./ISpielerDTD";
 import type { LobbyID } from './LobbyID'; 
 import { mapBackendPlayersToDTD } from '@/stores/mapper';
 import { useRouter } from "vue-router";
 
-//const { setzeInfo } = useInfo();
 
+const { setzeInfo } = useInfo();
 const router = useRouter();
 const countdown = ref<number | null>(null);
 const gameState = ref<string>("WAITING");
@@ -47,7 +47,7 @@ export const useGameStore = defineStore("gamestore", () => {
 
   let stompClient: Client | null = null;
 
-function startLobbyLiveUpdate(gameCode: string) {
+function startLobbyLiveUpdate(gameCode: string) { //Websocket anknüpfung zum backend (FrontendNachrichtenService API) Webbasierte Anwendungen Praktikum-Blatt10
   if (stompClient && stompClient.active) {
     console.log("STOMP-Client existiert bereits oder ist aktiv.");
     return;
@@ -67,12 +67,22 @@ function startLobbyLiveUpdate(gameCode: string) {
         const event: IFrontendNachrichtEvent = JSON.parse(message.body);
         console.log("Empfangenes Event:", JSON.stringify(event));
 
-        //  Lobby update wenn Spieler joint/left/ready ändert
-        if (event.operation === "JOINED" || event.operation === "LEFT" || event.operation === "READY_UPDATED") {
+        //  Ausschließlich Lobby updates (Joined, left, Countdown usw...)
+        if (event.typ === "LOBBY") {
+
           updatePlayerList(gameCode);
-        }
 
         //  Countdown starten
+
+        if(event.operation === "JOINED" && event.playerName){
+          setzeInfo(`${event.playerName} ist der Lobby beigetreten.`) //InfoBox setzen wenn Player
+        }
+
+        if(event.operation === "LEFT" && event.playerName){
+          setzeInfo(`${event.playerName} hat die Lobby verlassen.`)//InfoBox setzen wenn Player die Lobby verlässt
+        }
+
+
         if (event.operation === "COUNTDOWN_STARTED") {
           gameState.value = "COUNTDOWN";
           countdown.value = 30;
@@ -104,6 +114,8 @@ function startLobbyLiveUpdate(gameCode: string) {
         if (event.operation === "PLAYER_LIMIT_ERROR") {
           alert("Lobby ist voll! Max 4 Spieler erlaubt.");
         }
+        }
+
 
       } catch (err) {
         console.error("WS Fehler:", err);

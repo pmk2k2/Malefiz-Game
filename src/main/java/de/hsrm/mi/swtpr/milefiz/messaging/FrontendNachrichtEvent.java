@@ -28,6 +28,7 @@ public class FrontendNachrichtEvent {
     private String playerName;
     private Instant countdownStartedAt;
     private GameState gameState;
+    // Muhannad: warum gameState
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -37,7 +38,10 @@ public class FrontendNachrichtEvent {
         this.gameCode = gameCode;
         this.playerName = playerName;
     }
-       public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode, String playerName, Instant countdownStartedAt, GameState gameState) {
+
+    // Muhannad: Warum 2mal konstruktor?
+    public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
+            String playerName, Instant countdownStartedAt, GameState gameState) {
         this(typ, id, operation, gameCode, playerName);
         this.countdownStartedAt = countdownStartedAt;
         this.gameState = gameState;
@@ -109,4 +113,6 @@ public class FrontendNachrichtEvent {
     public void setGameState(GameState s) {
         this.gameState = s;
     }
+    // Muhannad: Was ist Gamestate?
+    // TODO: Gamestate anpassen
 }
