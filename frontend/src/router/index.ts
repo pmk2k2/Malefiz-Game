@@ -2,12 +2,10 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LobbyView from '@/views/LobbyView.vue'
 
 import MainMenu from '../views/MainMenu.vue'
-import LobbyTemp from '../views/LobbyTemp.vue';
 import LoginView from '../views/LoginView.vue';
 import Beitrittscode from '@/views/Beitrittscode.vue';
 import PlayingFieldView from '@/views/PlayingFieldView.vue';
 import GridView from '../components/GridView.vue'
-import DiceView from '@/views/DiceView.vue'
 import { useGameStore } from '@/stores/gamestore';
 
 const router = createRouter({

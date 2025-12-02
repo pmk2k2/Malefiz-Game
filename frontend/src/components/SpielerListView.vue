@@ -14,9 +14,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import SpielerListeZeile from './SpielerListeZeile.vue'
-import { mapBackendPlayersToDTD } from '@/stores/mapper'
 import { useGameStore } from '@/stores/gamestore'
 const gameStore = useGameStore()
 const currentUserIsHost = computed(() => gameStore.gameData.isHost === true)
