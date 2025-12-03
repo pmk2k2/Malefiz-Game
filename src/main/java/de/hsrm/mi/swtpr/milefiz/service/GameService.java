@@ -25,6 +25,7 @@ public class GameService {
     private Map<String, Game> games = new HashMap<>();
     private CodeGeneratorService codeService;
     private final int MAX_PLAYERS = 2;
+    private final long COUNTDOWN_DURATION_SECONDS = 10;
     private ApplicationEventPublisher publisher;
 
     public GameService(CodeGeneratorService codeService, ApplicationEventPublisher publisher) {
@@ -118,7 +119,7 @@ public class GameService {
 
         player.setReady(isReady);
 
-        //  Prüfen, ob alle Ready sind
+        // Prüfen, ob alle Ready sind
         boolean allReady = game.getPlayers().size() > 0 &&
                 game.getPlayers().stream().allMatch(Player::isReady);
 
@@ -171,23 +172,17 @@ public class GameService {
         return true;
     }
 
- public void startCountdown(String gameCode) {
-    Game game = games.get(gameCode);
-    if (game == null) return;
+    public void startCountdown(String gameCode) {
+        Game game = games.get(gameCode);
+        if (game == null)
+            return;
 
-    game.setState(GameState.COUNTDOWN);
-    Instant now = Instant.now();
-    game.setCountdownStartedAt(now);
+        game.setState(GameState.COUNTDOWN);
+        Instant now = Instant.now();
+        game.setCountdownStartedAt(now);
 
-    publisher.publishEvent(new FrontendNachrichtEvent(
-        FrontendNachrichtEvent.Nachrichtentyp.LOBBY,
-        "server",
-        FrontendNachrichtEvent.Operation.COUNTDOWN_STARTED,
-        gameCode,
-        null,
-        now, null
-    ));
-}
+        publishCountdownStartEvent(gameCode, now);
+    }
 
     private FrontendNachrichtEvent countdownEvent(String gameCode, Instant startedAt) {
         FrontendNachrichtEvent e = new FrontendNachrichtEvent(
@@ -202,6 +197,29 @@ public class GameService {
 
     public synchronized boolean triggerAdminStart(String gameCode, String adminId) {
         Game game = games.get(gameCode);
+        if (game == null || game.getState() != GameState.COUNTDOWN)
+            return false;
+
+        if (game.getPlayers().size() > MAX_PLAYERS) {
+            publisher.publishEvent(limitEvent(gameCode));
+            return false;
+        }
+        boolean start = game.adminStart();
+        if (!start)
+            return false;
+        
+        game.setState(GameState.RUNNING);
+        publisher.publishEvent(new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.GAME_RUNNING,
+                gameCode,
+                null));
+
+        return true;
+    }
+      public synchronized boolean triggerCounterStart(String gameCode, String adminId) {
+        Game game = games.get(gameCode);
         if (game == null)
             return false;
 
@@ -209,17 +227,13 @@ public class GameService {
             publisher.publishEvent(limitEvent(gameCode));
             return false;
         }
+        if (game.getState() != GameState.COUNTDOWN) {
+        return false;
+        }
 
-        boolean start = game.adminStart();
+        boolean start = game.counterStart(COUNTDOWN_DURATION_SECONDS);;
         if (!start)
-            return false;
-
-        publisher.publishEvent(new FrontendNachrichtEvent(
-                Nachrichtentyp.LOBBY,
-                adminId,
-                Operation.GAME_STARTED_BY_ADMIN,
-                gameCode,
-                null));
+        return false;
 
         publisher.publishEvent(new FrontendNachrichtEvent(
                 Nachrichtentyp.LOBBY,
@@ -259,6 +273,7 @@ public class GameService {
                 null);
         e.setCountdownStartedAt(startedAt);
         e.setGameState(GameState.COUNTDOWN);
+        e.setCountdownDurationSeconds(COUNTDOWN_DURATION_SECONDS);
         publisher.publishEvent(e);
     }
 

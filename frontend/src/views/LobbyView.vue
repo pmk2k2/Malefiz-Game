@@ -26,7 +26,7 @@
 
     <div class="buttons">
       <button @click="isBereit" :disabled="gameStore.countdown !== null">Bereit</button>
-      <button v-if="isHost" @click="gameStarten">Starten</button>
+      <button v-if="isHost" @click="gameStartenByAdmin">Starten</button>
       <button @click="goBack">Verlassen</button>
 
     </div>
@@ -62,6 +62,7 @@ const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
 
 const showCounter = computed(() => 
   gameStore.gameData.players.length >0 && gameStore.gameData.players.every(p => p.isReady)
+  
 );
  
 onMounted(() => {
@@ -120,25 +121,29 @@ const props = defineProps<{ spieler: ISpielerDTD , meHost: boolean}>();
 
 
 
-async function gameStarten(){
+async function gameStartenByAdmin(){
   const gameCode = gameStore.gameData.gameCode
-
+  const playerId = gameStore.gameData.playerId;
   if(!gameCode){
     console.warn("Kein gameCode vorhanden");
     return;
   }
   try{
-    const res = await fetch(`/api/game?code=${gameCode}`, {
+   const res = await fetch(`/api/game/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: gameCode, isReady: true })
+      body: JSON.stringify({ code: gameCode, playerId  })
     });
-    if(!res.ok) throw new Error("Fehler beim Starten des Spiels");
+        if(!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error("Fehler beim Starten des Spiels: " + (err.error || res.statusText));
+    }
     router.push('/field');
   } catch(err){
     console.error(err);
   }
 }
+
 
 
 

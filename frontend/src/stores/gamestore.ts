@@ -5,18 +5,19 @@ import { Client } from '@stomp/stompjs';
 import type { IFrontendNachrichtEvent } from '@/services/IFrontendNachrichtEvent';
 import { useInfo } from "@/composable/useInfo";
 import type { ISpielerDTD } from "./ISpielerDTD";
-import type { LobbyID } from './LobbyID'; 
+import type { LobbyID } from './LobbyID';
 import { mapBackendPlayersToDTD } from '@/stores/mapper';
 import { useRouter } from "vue-router";
 
 
-const { setzeInfo } = useInfo();
-const router = useRouter();
-const countdown = ref<number | null>(null);
-const gameState = ref<string>("WAITING");
-let countdownInterval: any = null;
+export const useGameStore = defineStore("gamestore", () => {
+  
+  const { setzeInfo } = useInfo();
+  const router = useRouter();
+  const countdown = ref<number | null>(null);
+  const gameState = ref<string>("WAITING");
+  let countdownInterval: any = null;
 
-export const useGameStore = defineStore("gamestore", () => { 
   const gameData = reactive<{
     ok: boolean;
     players: ISpielerDTD[];
@@ -24,29 +25,32 @@ export const useGameStore = defineStore("gamestore", () => {
     playerId: string | null;
     playerName: string | null;
     isHost: boolean | null;
+    counterWert: number | null;
   }>({
     ok: false,
     players: [],
     gameCode: null,
     playerId: null,
     playerName: null,
-    isHost: null
+    isHost: null,
+    counterWert: null
   });
 
   loadFromLocalStorage();
   watch(
-  () => ({
-    players: gameData.players,
-    gameCode: gameData.gameCode, 
-    playerId: gameData.playerId,
-    playerName: gameData.playerName,
-    isHost: gameData.isHost
-  }),
-  saveToLocalStorage
-);
+    () => ({
+      players: gameData.players,
+      gameCode: gameData.gameCode,
+      playerId: gameData.playerId,
+      playerName: gameData.playerName,
+      isHost: gameData.isHost
+    }),
+    saveToLocalStorage
+  );
 
   let stompClient: Client | null = null;
 
+  
 function startLobbyLiveUpdate(gameCode: string) { //Websocket anknüpfung zum backend (FrontendNachrichtenService API) Webbasierte Anwendungen Praktikum-Blatt10
   if (stompClient && stompClient.active) {
     console.log("STOMP-Client existiert bereits oder ist aktiv.");
@@ -54,26 +58,27 @@ function startLobbyLiveUpdate(gameCode: string) { //Websocket anknüpfung zum ba
     
   }
 
-  stompClient = new Client({
-    webSocketFactory: () => new SockJS('/stompbroker'),
-    reconnectDelay: 5000,
-    debug: str => console.log('[STOMP]', str),
-  });
 
-  stompClient.onConnect = () => {
-    console.log("STOMP verbunden, abonniere /topic/gameSession/" + gameCode);
+    stompClient = new Client({
+      webSocketFactory: () => new SockJS('/stompbroker'),
+      reconnectDelay: 5000,
+      debug: str => console.log('[STOMP]', str),
+    });
 
-    stompClient!.subscribe(`/topic/gameSession/${gameCode}`, message => {
-      try {
-        const event: IFrontendNachrichtEvent = JSON.parse(message.body);
-        console.log("Empfangenes Event:", JSON.stringify(event));
+    stompClient.onConnect = () => {
+      console.log("STOMP verbunden, abonniere /topic/gameSession/" + gameCode);
+
+      stompClient!.subscribe(`/topic/gameSession/${gameCode}`, message => {
+        try {
+          const event: IFrontendNachrichtEvent = JSON.parse(message.body);
+          console.log("Empfangenes Event:", JSON.stringify(event));
 
         //  Ausschließlich Lobby updates (Joined, left, Countdown usw...)
         if (event.typ === "LOBBY") {
 
-          updatePlayerList(gameCode);
+            updatePlayerList(gameCode);
 
-        //  Countdown starten
+          //  Countdown starten
 
         if(event.operation === "JOINED" && event.playerName){
           setzeInfo(`${event.playerName} ist der Lobby beigetreten.`) //InfoBox setzen wenn Player
@@ -84,56 +89,81 @@ function startLobbyLiveUpdate(gameCode: string) { //Websocket anknüpfung zum ba
         }
 
 
-        if (event.operation === "COUNTDOWN_STARTED") {
-          gameState.value = "COUNTDOWN";
-          countdown.value = 30;
+          if (event.operation === "COUNTDOWN_STARTED") {
+            gameState.value = "COUNTDOWN";
 
-          if (countdownInterval) clearInterval(countdownInterval);
+            const duration = event.countdownDurationSeconds || 10; // 30 als Fallback
+            countdown.value = duration;
+            //countdown.value = 10;
 
-          const start = new Date(event.countdownStartedAt!).getTime();
+            if (countdownInterval) clearInterval(countdownInterval);
 
-          countdownInterval = setInterval(() => {
-            const elapsed = Math.floor((Date.now() - start) / 1000);
-            countdown.value = 30 - elapsed;
+            const start = new Date(event.countdownStartedAt!).getTime();
 
-            if (countdown.value <= 0) {
-              clearInterval(countdownInterval);
-              countdownInterval = null;
-              triggerGameStart(gameCode);
-            }
-          }, 500);
+            countdownInterval = setInterval(() => {
+              const elapsed = Math.floor((Date.now() - start) / 1000);
+              countdown.value = 10 - elapsed;
+
+              if (countdown.value <= 0) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+                triggerGameStart(gameCode);
+              }
+            }, 500);
+          }
+
+          // Admin oder Server startet Spiel → kein Countdown, direkt rein
+          if (event.operation === "GAME_RUNNING") {
+            gameState.value = "RUNNING";
+            disconnect();
+            router.push(`/field`);
+          }
+
+
+          //  Spielerlimit überschritten
+          if (event.operation === "PLAYER_LIMIT_ERROR") {
+            alert("Lobby ist voll! Max 4 Spieler erlaubt.");
+          }
+
+        } catch (err) {
+          console.error("WS Fehler:", err);
         }
+      });
+    };
 
-        // Admin oder Server startet Spiel → kein Countdown, direkt rein
-        if (event.operation === "GAME_STARTED_BY_ADMIN" || event.operation === "GAME_RUNNING") {
-          gameState.value = "RUNNING";
-          disconnect(); // Store-Disconnect nutzen 
-          router.push(`/game/${event.gameCode}`);
-        }
+    stompClient.activate();
+  }
+  async function triggerGameStart(gameCode: string) {
+    const playerId = gameData.playerId;
+    // use the router instance from the store scope
+    if (!gameCode || !playerId) {
+      console.warn("Fehlende Daten für den Spielstart.");
+      return;
+    }
 
-        //  Spielerlimit überschritten
-        if (event.operation === "PLAYER_LIMIT_ERROR") {
-          alert("Lobby ist voll! Max 4 Spieler erlaubt.");
-        }
-        }
+    try {
+      const res = await fetch("/api/game/start", {
+        method: "POST",
+        body: JSON.stringify({
+          code: gameCode,
+          playerId: playerId
+        }),
+        headers: { "Content-Type": "application/json" }
+      });
 
-
-      } catch (err) {
-        console.error("WS Fehler:", err);
+      if (!res.ok) {
+        throw new Error(`Fehler beim Starten des Spiels: ${res.statusText}`);
       }
-    });
-  };
 
-  stompClient.activate();
-}
-async function triggerGameStart(gameCode: string) {
-  await fetch("/api/game/start", {
-    method: "POST",
-    body: JSON.stringify({ code: gameCode }),
-    headers: { "Content-Type": "application/json" }
-  });
-  gameState.value = "RUNNING";
-}
+
+      router.push('/field');
+
+
+
+    } catch (err) {
+      console.error("Fehler beim Starten des Spiels durch Counter:", err);
+    }
+  }
 
 
   async function updatePlayerList(gameCode: string) {
@@ -145,7 +175,7 @@ async function triggerGameStart(gameCode: string) {
           // 'Authorization': `Bearer ${loginStore.jwt}`, // Falls JWT benötigt
         },
         redirect: 'error',
-        
+
       });
       console.log("[updatePlayerList] Response-Status:", response.status);
       if (!response.ok) throw new Error(response.statusText);
@@ -173,7 +203,7 @@ async function triggerGameStart(gameCode: string) {
     }
   }
 
-  
+
 
   function disconnect() {
     if (stompClient) {
@@ -194,14 +224,14 @@ async function triggerGameStart(gameCode: string) {
     localStorage.removeItem("gameData");
   }
 
-    function resetGameCode() {
+  function resetGameCode() {
     gameData.gameCode = null;
     console.log(JSON.stringify(gameData));
   }
 
   function saveToLocalStorage() {
     localStorage.setItem("gameData", JSON.stringify(gameData));
-}
+  }
 
   function loadFromLocalStorage() {
     const raw = localStorage.getItem("gameData");
@@ -219,13 +249,14 @@ async function triggerGameStart(gameCode: string) {
 
 
   return {
-  gameData,
-  countdown,
-  gameState,
-  startLobbyLiveUpdate,
-  updatePlayerList,
-  disconnect,
-  reset,
-  resetGameCode
+    gameData,
+    countdown,
+    gameState,
+    startLobbyLiveUpdate,
+    updatePlayerList,
+    disconnect,
+    reset,
+    resetGameCode,
+    triggerGameStart
   };
 });
