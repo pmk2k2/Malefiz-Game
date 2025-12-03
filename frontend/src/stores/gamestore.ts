@@ -51,6 +51,7 @@ function startLobbyLiveUpdate(gameCode: string) { //Websocket anknüpfung zum ba
   if (stompClient && stompClient.active) {
     console.log("STOMP-Client existiert bereits oder ist aktiv.");
     return;
+    
   }
 
   stompClient = new Client({
