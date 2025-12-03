@@ -14,6 +14,7 @@ public class FrontendNachrichtEvent {
     public enum Operation {
         LEFT,
         JOINED,
+        KICKED,
         READY_UPDATED,
         COUNTDOWN_STARTED,
         GAME_STARTED_BY_ADMIN,

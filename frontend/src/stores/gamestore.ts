@@ -125,7 +125,7 @@ function startLobbyLiveUpdate(gameCode: string) { //Websocket anknüpfung zum ba
             alert("Lobby ist voll! Max 4 Spieler erlaubt.");
           }
 
-        } catch (err) {
+        }} catch (err) {
           console.error("WS Fehler:", err);
         }
       });
@@ -184,6 +184,16 @@ function startLobbyLiveUpdate(gameCode: string) { //Websocket anknüpfung zum ba
 
       gameData.players = mapBackendPlayersToDTD(jsonData.players || []);
       gameData.ok = true;
+
+      if (gameData.playerId && !gameData.players.some(p => p.id === gameData.playerId)) {
+        console.warn("Du wurdest aus der Lobby entfernt");
+        gameData.gameCode = null;
+        gameData.players = [];
+        gameData.isHost = false;
+        gameData.ok = false;
+        router.push("/main");
+        return;
+      }
 
       if (gameData.playerId) {
         const me = (gameData.players as any[]).find(p => p.id === gameData.playerId);
