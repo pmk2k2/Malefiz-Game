@@ -10,23 +10,16 @@
 -->
 
 <template>
-  <div class="container">
+  <div class="login-container">
     <header class="header">
       <h1>Login</h1>
     </header>
 
     <main class="main-content">
       <div class="button-group">
+        <input class="input-name" v-model="name" placeholder="Dein Name" required />
 
-        <input
-          class="input-name"
-          v-model="name"
-          placeholder="Dein Name"
-          required
-        />
-
-        <button class="btn create" @click="login">Weiter</button>
-
+        <button class="btn create" @mouseover="playHover" @click="login">Weiter</button>
       </div>
     </main>
   </div>
@@ -40,13 +33,17 @@ import { useGameStore } from '@/stores/gamestore';
 
 const gameStore = useGameStore();
 
-const router = useRouter();
-const name = ref("");
+const router = useRouter()
+const name = ref('')
+
+function playHover() {
+  new Audio(hoverSoundFile).play()
+}
 
 function login() {
   if (!name.value.trim()) {
-    alert("Bitte Namen eingeben!");
-    return;
+    alert('Bitte Namen eingeben!')
+    return
   }
 
   gameStore.gameData.playerName = name.value;
@@ -55,7 +52,7 @@ function login() {
 </script>
 
 <style scoped>
-.container {
+.login-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -69,12 +66,17 @@ function login() {
   border-radius: 10px;
   border: none;
 }
-.btn {
+.create {
   width: 420px;
   padding: 12px 0;
   font-size: 2.1rem;
   font-weight: bold;
   border-radius: 10px;
   border: none;
+  background: linear-gradient(to bottom, #b77a48, #8a5c32);
+  color: #111827;
+}
+.create:hover {
+  background: linear-gradient(to bottom, #c88b58, #a86e3c);
 }
 </style>

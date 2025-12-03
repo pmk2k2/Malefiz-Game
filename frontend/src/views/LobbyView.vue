@@ -28,19 +28,17 @@
 </template>
 
 <script setup lang="ts">
-import type { LobbyID } from '@/stores/LobbyID'
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
 import { computed, onUnmounted, ref, watch } from 'vue'
 import SpielerListeView from '@/components/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { onMounted } from "vue";
 import { useGameStore } from "@/stores/gamestore";
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
-import { mapBackendPlayersToDTD } from '@/stores/mapper'
 
-const isHost = computed(() => gameStore.gameData.isHost === true)
+const isHost = computed(() => gameStore.gameData.isHost)
 const gameStore = useGameStore();
 const router = useRouter()
 
@@ -108,23 +106,29 @@ const props = defineProps<{ spieler: ISpielerDTD, meHost: boolean }>();
 
 async function gameStarten() {
   const gameCode = gameStore.gameData.gameCode
-  router.push("/game")
+  const playerId = gameStore.gameData.playerId
+  // router.push("/game")
 
-  // if(!gameCode){
-  //   console.warn("Kein gameCode vorhanden");
-  //   return;
-  // }
-  // try{
-  //   const res = await fetch(`/api/game/start?code=${gameCode}`, {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ code: gameCode, isReady: true })
-  //   });
-  //   if(!res.ok) throw new Error("Fehler beim Starten des Spiels");
-  //   router.push('/game');
-  // } catch(err){
-  //   console.error(err);
-  // }
+  if (!gameCode) return
+
+  try {
+    const res = await fetch(`api/game/${gameCode}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ playerId: playerId }),
+    })
+
+    if (res.ok) {
+      router.push('/game')
+    } else {
+      const errorData = await res.json()
+      console.error('Fehler beim Starten:', errorData)
+      alert('Spiel konnte nicht gestartet werden: ' + (errorData.message || res.statusText))
+    }
+  } catch (error) {
+    console.error('Netzwerkfehler beim Starten:', error)
+  }
 }
 
 

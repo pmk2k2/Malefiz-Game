@@ -1,18 +1,10 @@
 <template>
-  <div 
-    class="spieler-zeile"
-    :class="{ selected: selected }"
-    @click="selectRow"
-  >
+  <div class="spieler-zeile" :class="{ selected: selected }" @click="selectRow">
     <div class="spieler-info">
-      <img
-        v-if="spieler.spielfiguren && spieler.spielfiguren.length"
-        :src="spieler.spielfiguren[0].icon"
-        alt="Spielfigur"
-        class="spielfigur"
-      />
+      <img v-if="spieler.spielfiguren.length" :src="spieler.spielfiguren[0]?.icon" alt="Spielfigur"
+        class="spielfigur" />
       <span class="spieler-name">
-        {{ spieler.name }} 
+        {{ spieler.name }}
         <span v-if="spieler.isHost">(Host)</span>
       </span>
     </div>
@@ -21,65 +13,25 @@
       <span v-if="spieler.isReady" class="status bereit">bereit</span>
       <span v-else class="status nicht-bereit">Nicht bereit</span>
     </div>
-
-    <div class="spieler-kicken" v-if="meHost && !spieler.isHost">
-      <button class="kicken" @click.stop="kicken">kicken</button>
-    </div>
-
   </div>
-  
 </template>
 
 <script setup lang="ts">
-import router from '@/router';
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
-import { useGameStore } from '@/stores/gamestore'
-
-const gameStore = useGameStore()
-
 
 const props = defineProps<{
   spieler: ISpielerDTD,
-  selected: boolean,
-  meHost: boolean
+  selected: boolean
 }>()
 
 const emit = defineEmits<{
-  deletezeile: [id:string],
+  deletezeile: [id: string],
   select: []
 }>()
 
 function selectRow() {
-  emit('select')  
+  emit('select')
 }
-
-async function kicken() {
-  
-  const gameCode = gameStore.gameData.gameCode
-  const playerIdKick = props.spieler.id;
-
-  try {
-    const res = await fetch("/api/game/leave", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code: gameCode,
-        playerId: playerIdKick,
-        requesterId: gameStore.gameData.playerId
-      })
-    });
-
-    if (res.ok) {
-      emit("deletezeile", playerIdKick);
-    } else {
-      console.log("Fehler beim Kicken (res nicht ok)")
-    }
-    
-  } catch (err) {
-    console.error("Fehler beim Kicken:", err);
-  }
-}
-
 </script>
 
 <style scoped>
@@ -93,6 +45,7 @@ async function kicken() {
   font-size: 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
+
 }
 
 /* Hover-Effekt */
@@ -102,7 +55,8 @@ async function kicken() {
 
 /* Aktive Auswahl */
 .spieler-zeile.selected {
-  background-color: rgba(0, 128, 255, 0.3); /* Hervorhebung */
+  background-color: rgba(0, 128, 255, 0.3);
+  /* Hervorhebung */
   border-radius: 8px;
   font-weight: bold;
 }

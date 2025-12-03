@@ -3,14 +3,16 @@ package de.hsrm.mi.swtpr.milefiz.entities.board;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
+
 public class Field {
     private int i;
     private int j;
     private CellType type;
     private List<Figure> figures = new ArrayList<>();
 
-    public Field(){
-        
+    public Field() {
+
     }
 
     public Field(int i, int j, CellType type) {
@@ -19,8 +21,8 @@ public class Field {
         this.type = type;
     }
 
-    public void addFigure(Figure figure) {
-        figures.add(figure);
+    public void addFigure(Figure fig) {
+        figures.add(fig);
     }
 
     public void removeFigure(Figure figure) {

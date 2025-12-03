@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
-import de.hsrm.mi.swtpr.milefiz.entities.board.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 
 public class Game {
@@ -23,6 +22,9 @@ public class Game {
     private Board board;
     // Figuren in Backend
     private List<Figure> figures = new ArrayList<>();
+
+    private int currentMovementAmount = 0; // Speichert die gewuerfelte Zahl serverseitig
+    private String playerWhoRolledId = null; // Speichert, wer gewuerfelt hat
 
     public Game() {
         playerList = new HashMap<>();
@@ -67,14 +69,28 @@ public class Game {
         return board;
     }
 
-    public List <Figure> getFigures () {
+    public List<Figure> getFigures() {
         return figures;
     }
 
     public void addFigure(Figure fig) {
         figures.add(fig);
-        board.get(fig.getI(), fig.getJ()).addFigure(fig);   // Auf Feld setzen
+        board.get(fig.getGridI(), fig.getGridJ()).addFigure(fig);   // Auf Feld setzen
     }
 
+    public int getCurrentMovementAmount() {
+        return currentMovementAmount;
+    }
 
+    public void setCurrentMovementAmount(int currentMovementAmount) {
+        this.currentMovementAmount = currentMovementAmount;
+    }
+
+    public String getPlayerWhoRolledId() {
+        return playerWhoRolledId;
+    }
+
+    public void setPlayerWhoRolledId(String playerWhoRolledId) {
+        this.playerWhoRolledId = playerWhoRolledId;
+    }
 }

@@ -5,7 +5,6 @@ import { Client } from '@stomp/stompjs';
 import type { IFrontendNachrichtEvent } from '@/services/IFrontendNachrichtEvent';
 //import { useInfo } from "@/composable/useInfo";
 import type { ISpielerDTD } from "./ISpielerDTD";
-import type { LobbyID } from './LobbyID'; 
 import { mapBackendPlayersToDTD } from '@/stores/mapper';
 
 //const { setzeInfo } = useInfo();

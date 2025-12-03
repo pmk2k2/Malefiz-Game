@@ -1,9 +1,6 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +8,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
@@ -19,15 +17,22 @@ import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
 
 @Service
 public class GameService {
+
     private static final Logger logger = LoggerFactory.getLogger(GameService.class);
 
-    private Map<String, Game> games = new HashMap<>();
-    private CodeGeneratorService codeService;
+    private final Map<String, Game> games = new HashMap<>();
+    private final CodeGeneratorService codeService;
+    private final ApplicationEventPublisher publisher;
 
     @Autowired
     private BoardService boardService;
 
-    private ApplicationEventPublisher publisher;
+    // Farben für Spieler
+    private static final List<String> PLAYER_COLORS = List.of(
+            "#ff0000",
+            "#ffff00",
+            "#0000ff",
+            "#00ff00");
 
     public GameService(CodeGeneratorService codeService, ApplicationEventPublisher publisher) {
         this.codeService = codeService;
@@ -37,23 +42,36 @@ public class GameService {
     public String createGame() {
         String gameCode = codeService.generateCode();
         Game newGame = new Game();
-        // Nach(Während) dem Spielerstellung ist ein Board ausgewählt
-        newGame.setBoard(boardService.getBoardFromJson("SmallerBoard.json")); // Hier kann man den Name des JSON Datei
+        newGame.setBoard(boardService.getBoardFromJson("DummyBoard.json"));
         games.put(gameCode, newGame);
-        logger.info("All the games:  "
-                + Arrays.toString(games.keySet().stream().toArray(String[]::new)));
+
+        logger.info("All the games: {}", Arrays.toString(games.keySet().toArray()));
         return gameCode;
     }
 
-    public boolean addPlayer(String gameCode, String playerId, String name, boolean isHost, boolean isReady) {
+    public boolean addPlayer(String gameCode, String playerId, String name, boolean isHost) {
         Game game = games.get(gameCode);
-        if (games.get(gameCode) == null) {
+        if (game == null) {
             return false;
         }
-        //
-        boolean playerAdded = game.addPlayer(new Player(name, playerId, isHost, isReady), playerId);
 
-        // Event nach add veröffentlichen
+        // Farbe zuweisen
+        int colorIndex = game.getPlayers().size();
+        if (colorIndex >= PLAYER_COLORS.size()) {
+            logger.error("Max Anzahl von Spielern erreicht.");
+            return false;
+        }
+        String assignedColor = PLAYER_COLORS.get(colorIndex);
+
+        Player player = new Player(name, playerId, isHost, assignedColor);
+        player.setReady(false);
+
+        boolean playerAdded = game.addPlayer(player, playerId);
+        if (!playerAdded) {
+            return false;
+        }
+
+        // LOBBY EVENT
         publisher.publishEvent(new FrontendNachrichtEvent(
                 Nachrichtentyp.LOBBY,
                 playerId,
@@ -61,14 +79,7 @@ public class GameService {
                 gameCode,
                 name));
 
-        if (!playerAdded) {
-            return false;
-        }
         return true;
-    }
-
-    public Game getGame(String code) {
-        return games.get(code);
     }
 
     public boolean removePlayer(String gameCode, String playerId) {
@@ -78,18 +89,17 @@ public class GameService {
         }
 
         Player removedPlayer = game.getPlayerById(playerId);
-        logger.info("Player leaving: " + playerId);
         if (removedPlayer == null) {
             return false;
         }
 
         boolean wasHost = removedPlayer.isHost();
-
-        boolean removed = game.removePlayer(playerId); // huer wird der player removed
+        boolean removed = game.removePlayer(playerId);
         if (!removed) {
             return false;
         }
-        // Event nach Entfernung veröffentlichen
+
+        // LOBBY EVENT
         publisher.publishEvent(new FrontendNachrichtEvent(
                 Nachrichtentyp.LOBBY,
                 playerId,
@@ -98,15 +108,18 @@ public class GameService {
                 removedPlayer.getName()));
 
         List<Player> players = game.getPlayers();
+
+        // Wenn niemand mehr da -> Spiel löschen
         if (players.isEmpty()) {
             games.remove(gameCode);
-            logger.info("Game " + gameCode + " removed as no players left.");
+            logger.info("Game {} removed (no players left).", gameCode);
             return true;
         }
 
+        // Host neu bestimmen
         if (wasHost) {
             players.get(0).setHost(true);
-            logger.info("New host: " + players.get(0).getName());
+            logger.info("New host: {}", players.get(0).getName());
         }
 
         return true;
@@ -125,4 +138,45 @@ public class GameService {
         return true;
     }
 
+    public boolean startGame(String gameCode) {
+        Game game = games.get(gameCode);
+
+        // Spiel existiert nicht ODER Figuren wurden bereits erstellt
+        if (game == null || !game.getFigures().isEmpty()) {
+            return false;
+        }
+
+        final int FIGURES_PER_PLAYER = 5;
+        final int START_I = 5;
+        final int START_J = 2;
+
+        for (Player player : game.getPlayers()) {
+            String playerId = player.getId();
+            String color = player.getColor();
+
+            for (int i = 1; i <= FIGURES_PER_PLAYER; i++) {
+                String figureId = playerId + "-fig-" + i;
+                Figure newFigure = new Figure(figureId, playerId, color, START_J, START_I);
+                game.addFigure(newFigure);
+            }
+        }
+
+        logger.info("Spiel {} gestartet: {} Figuren für {} Spieler",
+                gameCode, game.getFigures().size(), game.getPlayers().size());
+
+        return true;
+    }
+
+    public Game getGame(String code) {
+        return games.get(code);
+    }
+
+    public List<Figure> getFigures(String gameCode) {
+        Game game = getGame(gameCode);
+        if (game == null) {
+            return Collections.emptyList();
+        }
+
+        return game.getFigures();
+    }
 }

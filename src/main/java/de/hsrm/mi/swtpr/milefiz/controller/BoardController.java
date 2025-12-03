@@ -37,7 +37,7 @@ public class BoardController {
     public Board sendBoard(@RequestParam("code") String code) {
         try {
             Game theGame = service.getGame(code);
-            logger.info("THE GAME IS LOADED:" + theGame.toString() + "and its board: " + theGame.getBoard().toString());
+            // logger.info("THE GAME IS LOADED:" + theGame.toString() + "and its board: " + theGame.getBoard().toString());
             if (theGame.getBoard().getCols() == 0) { // Board is leer
                 return null;
             }

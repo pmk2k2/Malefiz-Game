@@ -19,8 +19,9 @@ public class FrontendNachrichtService {
     @EventListener
     public void sendEvent(FrontendNachrichtEvent ev) {
         String destination = "/topic/gameSession/" + ev.getGameCode();
-        logger.info("Sende STOMP-Event an {}: {} ", destination, ev);
+        // logger.info("Sende STOMP-Event an {}: {} ", destination, ev);
         messagingTemplate.convertAndSend(destination, ev);
-        // daten aus FrontEndNachrichtEvent werden übertragen, wenn event (JOINED,LEFT, usw) getriggert werden.
+        // daten aus FrontEndNachrichtEvent werden übertragen, wenn event (JOINED,LEFT,
+        // usw) getriggert werden.
     }
 }
