@@ -1,5 +1,6 @@
 package de.hsrm.mi.swtpr.milefiz.entities.game;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -80,6 +81,22 @@ public class Game {
             return false;
         this.state = GameState.RUNNING;
         return true;
+    }
+    public boolean counterStart(long requiredCountdownSeconds){
+    if (this.state != GameState.COUNTDOWN || this.countdownStartedAt == null) {
+        return false;
+    }
+
+    Instant now = Instant.now();
+    Duration elapsed = Duration.between(this.countdownStartedAt, now);
+
+    if (elapsed.getSeconds() >= requiredCountdownSeconds) {
+        this.state = GameState.RUNNING;
+        logger.info("Game started after countdown.");
+        return true;
+    }
+    
+    return false;
     }
 
 }

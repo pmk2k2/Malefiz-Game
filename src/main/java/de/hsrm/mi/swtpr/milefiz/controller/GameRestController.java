@@ -84,6 +84,25 @@ public class GameRestController {
         }
         return Map.of("removed", removed);
     }
+    @PostMapping("/start")
+   public ResponseEntity<Map<String, Object>> startGame(@RequestBody Map<String, String> body, HttpSession session) {
+        String gameCode = body.get("code");
+        String playerId = body.get("playerId");
+        logger.info("The player with id " + playerId + " is leaving the game " + gameCode);
+
+        //Game game = service.getGame(gameCode);
+
+        boolean successByAdmin= service.triggerAdminStart(gameCode, playerId);
+        boolean successByCounter= service.triggerCounterStart(gameCode, playerId);
+
+        if(successByAdmin || successByCounter){
+            return ResponseEntity.ok(Map.of("success", true));
+        }
+        else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Only the host can start the game"));
+                }
+    }
 
     @GetMapping("/get")
     public Map<String, Object> getPlayers(@RequestParam("code") String code) {
@@ -106,7 +125,7 @@ public ResponseEntity<Map<String, Object>> setReady(@RequestBody Map<String, Str
                 .body(Map.of("error", "Game not found"));
     }
 
-    // 👥 Spielerlimit prüfen (≤ 4)
+    //  Spielerlimit prüfen (≤ 4)
     if (game.getPlayers().size() > 4) {
         service.publishPlayerLimitEvent(gameCode);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -120,10 +139,10 @@ public ResponseEntity<Map<String, Object>> setReady(@RequestBody Map<String, Str
                 .body(Map.of("error", "Player not found"));
     }
 
-    //  Optional: READY Updated Event broadcasten
+    // READY Updated Event broadcasten
     service.publishReadyUpdateEvent(gameCode, playerId, isReady, game.getPlayerById(playerId).getName());
 
-    // ⏱ Countdown starten wenn ALLE Ready + WAITING
+    //  Countdown starten wenn ALLE Ready + WAITING
     if (game.getPlayers().stream().allMatch(Player::isReady)
             && game.getState() == GameState.WAITING) {
 
