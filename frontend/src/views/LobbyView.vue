@@ -138,7 +138,7 @@ async function gameStartenByAdmin(){
       const err = await res.json().catch(() => ({}));
       throw new Error("Fehler beim Starten des Spiels: " + (err.error || res.statusText));
     }
-    router.push('/field');
+    router.push('/game');
   } catch(err){
     console.error(err);
   }

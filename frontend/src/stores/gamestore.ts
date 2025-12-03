@@ -26,6 +26,7 @@ export const useGameStore = defineStore("gamestore", () => {
     playerName: string | null;
     isHost: boolean | null;
     counterWert: number | null;
+    isBereit:boolean|null
   }>({
     ok: false,
     players: [],
@@ -33,7 +34,8 @@ export const useGameStore = defineStore("gamestore", () => {
     playerId: null,
     playerName: null,
     isHost: null,
-    counterWert: null
+    counterWert: null,
+    isBereit:null,
   });
 
   loadFromLocalStorage();
@@ -43,7 +45,8 @@ export const useGameStore = defineStore("gamestore", () => {
       gameCode: gameData.gameCode,
       playerId: gameData.playerId,
       playerName: gameData.playerName,
-      isHost: gameData.isHost
+      isHost: gameData.isHost,
+      isBereit: gameData.isBereit
     }),
     saveToLocalStorage
   );
@@ -116,7 +119,7 @@ function startLobbyLiveUpdate(gameCode: string) { //Websocket anknüpfung zum ba
           if (event.operation === "GAME_RUNNING") {
             gameState.value = "RUNNING";
             disconnect();
-            router.push(`/field`);
+            router.push(`/game`);
           }
 
 
@@ -156,7 +159,7 @@ function startLobbyLiveUpdate(gameCode: string) { //Websocket anknüpfung zum ba
       }
 
 
-      router.push('/field');
+      router.push('/game');
 
 
 
@@ -213,13 +216,21 @@ function startLobbyLiveUpdate(gameCode: string) { //Websocket anknüpfung zum ba
     }
   }
 
-
+  function stopCountdown() {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+      countdown.value = null; 
+      gameState.value = "WAITING";
+    }
 
   function disconnect() {
     if (stompClient) {
       stompClient.deactivate();
       stompClient = null;
     }
+    stopCountdown();
   }
 
   function reset() {
@@ -230,13 +241,20 @@ function startLobbyLiveUpdate(gameCode: string) { //Websocket anknüpfung zum ba
     gameData.isHost = null;
     gameData.players = [];
     gameData.ok = false;
+    stopCountdown();
 
     localStorage.removeItem("gameData");
   }
 
   function resetGameCode() {
     gameData.gameCode = null;
+    gameData.isHost =null;
+    gameData.playerId=null;
+    gameData.isBereit= false;
+
+    stopCountdown();
     console.log(JSON.stringify(gameData));
+
   }
 
   function saveToLocalStorage() {
@@ -267,6 +285,7 @@ function startLobbyLiveUpdate(gameCode: string) { //Websocket anknüpfung zum ba
     disconnect,
     reset,
     resetGameCode,
-    triggerGameStart
+    triggerGameStart,
+    stopCountdown
   };
 });
