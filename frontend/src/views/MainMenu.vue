@@ -50,8 +50,11 @@ function goJoin() {
   router.push('/join')
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+
 async function spielErstellen() {
-  const res = await fetch('/api/game/create', {
+  const res = await fetch(`${API_BASE_URL}/game/create`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: playerName.value }),
@@ -69,7 +72,7 @@ async function logout() {
   const { playerId, gameCode } = gameStore.gameData
 
   if (playerId && gameCode) {
-    await fetch('/api/game/leave', {
+    await fetch(`${API_BASE_URL}/game/leave`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

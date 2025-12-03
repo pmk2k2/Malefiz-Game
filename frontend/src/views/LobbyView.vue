@@ -20,8 +20,9 @@
     <EinstellungView v-if="showSettings" />
 
     <SpielerListeView 
-      ref="spielerListeRef"
+      ref="spielerListeRef"      
       @deleteZeile="onDeleteZeile"
+
 />
 
     <div class="buttons">
@@ -37,22 +38,20 @@
 </template>
 
 <script setup lang="ts">
-import type { LobbyID } from '@/stores/LobbyID'
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
 import { computed, onUnmounted, ref, watch } from 'vue'
 import SpielerListeView from '@/components/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { onMounted } from "vue";
 import { useGameStore } from "@/stores/gamestore";
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
-import { mapBackendPlayersToDTD } from '@/stores/mapper'
 import Counter from '@/components/Counter.vue'
 import { useInfo } from '@/composable/useInfo'
 
 
-const { info, setzeInfo, loescheInfo } = useInfo()
+const { info, loescheInfo } = useInfo()
 const gameStore = useGameStore();
 const isHost = computed(() => gameStore.gameData.isHost === true)
 const router = useRouter()
@@ -79,9 +78,6 @@ onMounted(() => {
 onUnmounted(() => {
   gameStore.disconnect();
 });
-
-
-
 function onDeleteZeile(playerId: string) {
   if (spielerListeRef.value) {
     spielerListeRef.value.spielerListe = 
@@ -95,6 +91,7 @@ function clearRoll() {
   roll.value = null
 
 }
+
 
 async function goBack() {
   const { playerId, gameCode } = gameStore.gameData
@@ -173,14 +170,13 @@ async function isBereit() {
 
     const data = await res.json();
 
-    // Update lokal, falls die Spieler-Liste verfügbar ist
+// Update lokal, falls die Spieler-Liste verfügbar ist
     if (spielerListeRef.value?.spielerListe) {
       const player = spielerListeRef.value.spielerListe.find((s: any) => s.id === playerId);
       if (player) {
         player.isReady = data.isReady;
       }
     }
-
     // Event an Parent senden
     emit("isReady", true);
   } catch (err) {

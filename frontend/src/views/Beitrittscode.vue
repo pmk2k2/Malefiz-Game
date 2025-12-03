@@ -34,13 +34,15 @@ function playHover() {
   new Audio(hoverSoundFile).play()
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
 async function beitreten() {
   if (!code.value) {
     alert('Bitte Spielcode eingeben!')
     return
   }
 
-  const res = await fetch('/api/game/join', {
+  const res = await fetch(`${API_BASE_URL}/game/join`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: playerName, code: code.value }),
