@@ -3,6 +3,11 @@
     <h1>Malefiz</h1>
     <h2>{{ gameStore.gameData.gameCode ?? 'kein LoppyID vorhanden' }}</h2>
 
+    <div class="info-box" v-if="info.inhalt">
+      <button @click="loescheInfo" class="cancel-button">✕</button> 
+        <span class="info-text">{{ info.inhalt }}</span>
+    </div>
+
     <div class="icon-button">
       <button type="button">
         <img :src="infoIcon" alt="Info" />
@@ -44,7 +49,10 @@ import { useGameStore } from "@/stores/gamestore";
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import { mapBackendPlayersToDTD } from '@/stores/mapper'
 import Counter from '@/components/Counter.vue'
+import { useInfo } from '@/composable/useInfo'
 
+
+const { info, setzeInfo, loescheInfo } = useInfo()
 const gameStore = useGameStore();
 const isHost = computed(() => gameStore.gameData.isHost === true)
 const router = useRouter()

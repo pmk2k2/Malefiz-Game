@@ -5,5 +5,9 @@ export interface IFrontendNachrichtEvent {
     gameCode: string; // Game-Code der Lobby
     playerName: string; // Name des Spielers
     countdownStartedAt?: string;
+
     countdownDurationSeconds?: number;
+    gameState: string;
+    //Muhanad: warum gameState
+
 }

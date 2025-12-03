@@ -30,6 +30,8 @@ public class FrontendNachrichtEvent {
     private Instant countdownStartedAt;
     private GameState gameState;
     private long countdownDurationSeconds;
+    // Muhannad: warum gameState
+
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -39,6 +41,9 @@ public class FrontendNachrichtEvent {
         this.gameCode = gameCode;
         this.playerName = playerName;
     }
+
+
+    // Muhannad: Warum 2mal konstruktor?
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName, Instant countdownStartedAt, GameState gameState) {
@@ -114,6 +119,7 @@ public class FrontendNachrichtEvent {
         this.gameState = s;
     }
 
+
     public long getCountdownDurationSeconds() {
         return countdownDurationSeconds;
     }
@@ -121,4 +127,8 @@ public class FrontendNachrichtEvent {
     public void setCountdownDurationSeconds(long seconds) {
         this.countdownDurationSeconds = seconds;
     }
+
+    // Muhannad: Was ist Gamestate?
+    // TODO: Gamestate anpassen
+
 }

@@ -3,13 +3,12 @@ import { reactive, ref, watch } from "vue";
 import SockJS from "sockjs-client";
 import { Client } from '@stomp/stompjs';
 import type { IFrontendNachrichtEvent } from '@/services/IFrontendNachrichtEvent';
-//import { useInfo } from "@/composable/useInfo";
+import { useInfo } from "@/composable/useInfo";
 import type { ISpielerDTD } from "./ISpielerDTD";
 import type { LobbyID } from './LobbyID';
 import { mapBackendPlayersToDTD } from '@/stores/mapper';
 import { useRouter } from "vue-router";
 
-//const { setzeInfo } = useInfo();
 
 export const useGameStore = defineStore("gamestore", () => {
   
