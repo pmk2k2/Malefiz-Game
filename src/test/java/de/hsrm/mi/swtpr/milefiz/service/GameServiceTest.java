@@ -3,22 +3,30 @@ package de.hsrm.mi.swtpr.milefiz.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+
 import static org.mockito.Mockito.when;
 
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 
+@ExtendWith(MockitoExtension.class)
 class GameServiceTest {
 
+    @Mock
+    private ApplicationEventPublisher publisher; 
+
+    @Mock
     private CodeGeneratorService codeGeneratorService;
+
+    @InjectMocks
     private GameService gameService;
 
-    @BeforeEach
-    void setUp() {
-        codeGeneratorService = Mockito.mock(CodeGeneratorService.class);
-        gameService = new GameService(codeGeneratorService, null);
-    }
 
     /**
      * #21 Raum/Spiel erstellen:
