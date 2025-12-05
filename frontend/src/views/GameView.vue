@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import RollButton from '@/components/RollButton.vue'
 import Dice3D, { rollDice } from '@/components/Dice3D.vue'
-import GridView from '@/components/GridView.vue'
+import GridView from '@/components/playingfield/TheGrid.vue'
 
 function onRoll(id: string) {
   console.log('Button pressed:', id)

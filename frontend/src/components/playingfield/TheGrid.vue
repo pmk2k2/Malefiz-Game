@@ -2,10 +2,10 @@
 import { TresCanvas, type TresObject } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
-import TheRock from './playingfield/models/TheRock.vue'
-import TheTree from './playingfield/models/TheTree.vue'
-import TheCrown from './playingfield/models/TheCrown.vue'
-import TheGrass from './playingfield/models/TheGrass.vue'
+import TheRock from './models/TheRock.vue'
+import TheTree from './models/TheTree.vue'
+import TheCrown from './models/TheCrown.vue'
+import TheGrass from './models/TheGrass.vue'
 import ThePlayerFigure from '@/components/playingfield/ThePlayerFigure.vue'
 import RollButton from '@/components/RollButton.vue'
 import Dice3D, { rollDice } from '@/components/Dice3D.vue'
@@ -64,20 +64,17 @@ const allPlayers = computed(() => {
 
 onMounted(async () => {
   isLoading.value = true
+
   const fetched = await getBoardFromBackend()
-  console.log(fetched)
   if (fetched) {
     board.value = fetched
+    await fetchGameState()
+  } else {
+    console.error('Board konnte nich geladen werden, Figuren-Rendering wird übersprungen.')
   }
-  isLoading.value = false
-
-  // Fetch player figures
-  await fetchGameState()
-
-  console.log(`Anzahl der Figuren: ` + figures)
-
   // Add keyboard listener
   window.addEventListener('keydown', onKeyDown)
+  isLoading.value = false
 })
 
 onUnmounted(() => {
@@ -103,7 +100,7 @@ async function sendBoard(boardData: Board) {
 
 async function getBoardFromBackend(): Promise<Board | null> {
   try {
-    const response = await fetch(`/api/board?code=${gameCode}`, {
+    const response = await fetch(`${API_BASE_URL}/board?code=${gameCode}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -129,11 +126,11 @@ async function fetchGameState() {
   if (!gameCode) return
 
   try {
-    const res = await fetch(`api/game/${gameCode}/figures`)
+    const res = await fetch(`${API_BASE_URL}/game/${gameCode}/figures`)
     if (!res.ok) throw new Error('Failed to fetch figures')
 
     const backendFigures: IPlayerFigure[] = await res.json()
-    console.log("FIGURES WE GET FROM THE BACKEND" + backendFigures)
+    console.log('FIGURES WE GET FROM THE BACKEND: ' + backendFigures.length)
 
     const players = [...new Set(backendFigures.map((f) => f.playerId))].sort()
 
@@ -155,6 +152,9 @@ async function fetchGameState() {
 function _calculateHomeBaseOffset(playerIndex: number, playersCount: number) {
   const b = board.value
   if (!b) {
+    console.error(
+      'FIGURE STACKING ERROR: Board data (b.cols/b.rows) is missing or NULL. Using (0, 0).',
+    )
     // board not loaded yet — return sensible default so callers don't crash
     return { x: 0, z: 0 }
   }
@@ -307,8 +307,12 @@ function onRoll(id: string) {
           <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
         </TresMesh>
 
-        <TresMesh v-for="cell in allCells" :key="`cell-${cell.i}-${cell.j}`" :position="cellToField(cell)"
-          :rotation="[-Math.PI / 2, 0, 0]">
+        <TresMesh
+          v-for="cell in allCells"
+          :key="`cell-${cell.i}-${cell.j}`"
+          :position="cellToField(cell)"
+          :rotation="[-Math.PI / 2, 0, 0]"
+        >
           <template v-if="cell.type === 'PATH' || cell.type === 'START'">
             <TheRock />
           </template>
@@ -324,29 +328,31 @@ function onRoll(id: string) {
 
         <!-- Home bases for players -->
         <template v-for="(player, index) in allPlayers" :key="`home-${player.id}`">
-          <TresMesh :position="[calculateHomeCenter(player.id).x, -0.01, calculateHomeCenter(player.id).z]"
-            :rotation="[-Math.PI / 2, 0, 0]">
+          <TresMesh
+            :position="[calculateHomeCenter(player.id).x, -0.01, calculateHomeCenter(player.id).z]"
+            :rotation="[-Math.PI / 2, 0, 0]"
+          >
             <TresPlaneGeometry :args="[6, 3]" />
             <TresMeshStandardMaterial :color="player.color || '#cccccc'" />
           </TresMesh>
         </template>
 
         <!-- Player figures -->
-        <ThePlayerFigure v-for="fig in figures" :key="fig.id" :position="fig.position" :color="fig.color"
-          :orientation="fig.orientation" />
+        <ThePlayerFigure
+          v-for="fig in figures"
+          :key="fig.id"
+          :position="fig.position"
+          :color="fig.color"
+          :orientation="fig.orientation"
+        />
       </template>
-
     </TresCanvas>
 
     <div class="ui-overlay">
       <h1 class="title">Malefiz – Würfeltest</h1>
 
-      <div v-if="!egoPersp" class="controls-hint">
-        Press 'E' for ego perspective
-      </div>
-      <div v-else class="controls-hint">
-        Press 'E' to exit | ← → to switch figures
-      </div>
+      <div v-if="!egoPersp" class="controls-hint">Press 'E' for ego perspective</div>
+      <div v-else class="controls-hint">Press 'E' to exit | ← → to switch figures</div>
 
       <div v-if="isLoading">Loading Board...</div>
       <div v-else>

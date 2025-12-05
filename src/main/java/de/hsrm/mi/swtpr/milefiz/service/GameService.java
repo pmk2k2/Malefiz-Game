@@ -1,6 +1,7 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +9,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import de.hsrm.mi.swtpr.milefiz.controller.dto.FigureDto;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
@@ -171,12 +173,14 @@ public class GameService {
         return games.get(code);
     }
 
-    public List<Figure> getFigures(String gameCode) {
+    public List<FigureDto> getFiguresasDto(String gameCode) {
         Game game = getGame(gameCode);
         if (game == null) {
             return Collections.emptyList();
         }
 
-        return game.getFigures();
+        return game.getFigures().stream()
+            .map(f -> new FigureDto(f.getId(), f.getColor(), f.getOwnerPlayerId(), f.getOrientation(), f.getGridI(), f.getGridJ()))
+            .collect(Collectors.toList());
     }
 }

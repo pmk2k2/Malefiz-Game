@@ -5,8 +5,8 @@ import java.util.Map;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import de.hsrm.mi.swtpr.milefiz.controller.dto.FigureDto;
 import de.hsrm.mi.swtpr.milefiz.controller.dto.PlayerDto;
-import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
@@ -93,10 +93,10 @@ public class GameRestController {
     }
 
     @GetMapping("/{code}/figures")
-    public List<Figure> getFigures(@PathVariable String code) {
+    public List<FigureDto> getFigures(@PathVariable String code) {
         logger.info("Request figures for game code: {}", code);
         try {
-            return service.getFigures(code);
+            return service.getFiguresasDto(code);
         } catch (Exception e) {
             logger.error("Error fetching figures for game {}: {}", code, e.getMessage());
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found or error occurred");

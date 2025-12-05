@@ -5,7 +5,7 @@
       :key="spieler.id"
       :spieler="spieler"
       :selected="selectedPlayer === spieler.id"
-      :meHost="currentUserIsHost" 
+      :meHost="currentUserIsHost"
       @deletezeile="handleDelete"
       @select="selectedPlayer = spieler.id"
     />
@@ -13,20 +13,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
-import SpielerListeZeile from './SpielerListeZeile.vue'
+import { ref, computed, watch } from 'vue'
+import SpielerListeZeile from '@/components/SpielerListeZeile.vue'
 import { useGameStore } from '@/stores/gamestore'
 const gameStore = useGameStore()
 const currentUserIsHost = computed(() => gameStore.gameData.isHost === true)
-watch(() => gameStore.gameData.isHost, (newVal) => {
-  console.log("Updated host value:", newVal);
-});
+watch(
+  () => gameStore.gameData.isHost,
+  (newVal) => {
+    console.log('Updated host value:', newVal)
+  },
+)
 
 const spielerListe = computed(() => gameStore.gameData.players)
 const selectedPlayer = ref<string | null>(null)
 
 function handleDelete(id: string) {
-  gameStore.gameData.players = gameStore.gameData.players.filter(p => p.id !== id)
+  gameStore.gameData.players = gameStore.gameData.players.filter((p) => p.id !== id)
 }
 defineExpose({ handleDelete, spielerListe })
 </script>

@@ -3,17 +3,17 @@ package de.hsrm.mi.swtpr.milefiz.entities.board;
 import java.util.Arrays;
 
 public class Board {
-    private int rows;
     private int cols;
+    private int rows;
     private Field[][] grid = {};
 
     public Board() {
 
     }
 
-    public Board(int rows, int cols, Field[][] grid) {
-        this.rows = rows;
+    public Board(int cols, int rows, Field[][] grid) {
         this.cols = cols;
+        this.rows = rows;
         this.grid = grid;
     }
 

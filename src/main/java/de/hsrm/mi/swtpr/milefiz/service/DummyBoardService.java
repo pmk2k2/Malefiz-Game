@@ -12,7 +12,7 @@ public class DummyBoardService {
         int cols = 11;
         int rows = 8;
 
-        Field[][] grid = new Field[rows][cols];
+        Field[][] grid = new Field[cols][rows];
 
         // Row 0
         grid[0] = new Field[] {

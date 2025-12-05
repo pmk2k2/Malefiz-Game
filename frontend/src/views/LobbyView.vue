@@ -20,7 +20,6 @@
       <button @click="isBereit">Bereit</button>
       <button v-if="isHost" @click="gameStarten">Starten</button>
       <button @click="goBack">Verlassen</button>
-
     </div>
 
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
@@ -30,16 +29,16 @@
 <script setup lang="ts">
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
-import { computed, onUnmounted, ref, watch } from 'vue'
-import SpielerListeView from '@/components/SpielerListView.vue'
+import { computed, onUnmounted, ref } from 'vue'
+import SpielerListeView from '@/views/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
 import { useRouter } from 'vue-router'
-import { onMounted } from "vue";
-import { useGameStore } from "@/stores/gamestore";
+import { onMounted } from 'vue'
+import { useGameStore } from '@/stores/gamestore'
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 
 const isHost = computed(() => gameStore.gameData.isHost)
-const gameStore = useGameStore();
+const gameStore = useGameStore()
 const router = useRouter()
 
 const roll = ref<number | null>(null)
@@ -48,8 +47,8 @@ const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
 onMounted(() => {
   const code = gameStore.gameData.gameCode
   if (!code) {
-    router.push('/main');
-    return;
+    router.push('/main')
+    return
   }
   gameStore.startLobbyLiveUpdate(code)
   gameStore.updatePlayerList(code)
@@ -57,9 +56,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  gameStore.disconnect();
-});
-
+  gameStore.disconnect()
+})
 
 function rollDice() {
   router.push('/game')
@@ -67,42 +65,38 @@ function rollDice() {
 
 function onDeleteZeile(playerId: string) {
   if (spielerListeRef.value) {
-    spielerListeRef.value.spielerListe =
-      spielerListeRef.value.spielerListe.filter(spieler => spieler.id !== playerId);
+    spielerListeRef.value.spielerListe = spielerListeRef.value.spielerListe.filter(
+      (spieler) => spieler.id !== playerId,
+    )
   }
 }
-
 
 function clearRoll() {
   // Würfel zurücksetzen
   roll.value = null
-
 }
 
 async function goBack() {
   const { playerId, gameCode } = gameStore.gameData
 
   if (playerId && gameCode) {
-    await fetch("/api/game/leave", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    await fetch('/api/game/leave', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         playerId,
-        code: gameCode
-      })
-    });
-    gameStore.disconnect();
+        code: gameCode,
+      }),
+    })
+    gameStore.disconnect()
     gameStore.resetGameCode()
     console.log(gameStore.gameData.gameCode)
-    console.log("game code rm" + gameCode)
-    router.push("/main");
+    console.log('game code rm' + gameCode)
+    router.push('/main')
   }
 }
 
-
-const props = defineProps<{ spieler: ISpielerDTD, meHost: boolean }>();
-
-
+const props = defineProps<{ spieler: ISpielerDTD; meHost: boolean }>()
 
 async function gameStarten() {
   const gameCode = gameStore.gameData.gameCode
@@ -131,46 +125,42 @@ async function gameStarten() {
   }
 }
 
-
-
 const emit = defineEmits<{
-  (e: "isReady", value: boolean): void
-}>();
-
-
+  (e: 'isReady', value: boolean): void
+}>()
 
 async function isBereit() {
   const playerId = gameStore.gameData.playerId
   const gameCode = gameStore.gameData.gameCode
   if (!playerId || !gameCode) {
-    console.warn("Keine playerId oder gameCode vorhanden");
-    return;
+    console.warn('Keine playerId oder gameCode vorhanden')
+    return
   }
 
   try {
     // Backend-Call
-    const res = await fetch("/api/game/setReady", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ playerId, code: gameCode, isReady: true })
-    });
+    const res = await fetch('/api/game/setReady', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerId, code: gameCode, isReady: true }),
+    })
 
-    if (!res.ok) throw new Error("Failed to set ready");
+    if (!res.ok) throw new Error('Failed to set ready')
 
-    const data = await res.json();
+    const data = await res.json()
 
     // Update lokal, falls die Spieler-Liste verfügbar ist
     if (spielerListeRef.value?.spielerListe) {
-      const player = spielerListeRef.value.spielerListe.find((s: any) => s.id === playerId);
+      const player = spielerListeRef.value.spielerListe.find((s: any) => s.id === playerId)
       if (player) {
-        player.isReady = data.isReady;
+        player.isReady = data.isReady
       }
     }
 
     // Event an Parent senden
-    emit("isReady", true);
+    emit('isReady', true)
   } catch (err) {
-    console.error(err);
+    console.error(err)
   }
 }
 
@@ -179,7 +169,6 @@ const showSettings = ref(false)
 function toggleSettingsView() {
   showSettings.value = !showSettings.value
 }
-
 </script>
 
 <style scoped>
