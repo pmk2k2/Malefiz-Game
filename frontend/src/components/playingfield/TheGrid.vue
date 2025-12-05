@@ -294,110 +294,56 @@ function onRoll(id: string) {
 </script>
 
 <template>
-  <div class="game-wrapper">
-    <TresCanvas clear-color="#87CEEB" class="game-canvas">
-      <TresPerspectiveCamera ref="camRef" :position="default_cam_pos" :look-at="[0, 0, 0]" />
-      <OrbitControls v-if="!egoPersp" />
+  <TresCanvas clear-color="#87CEEB" class="w-full h-full">
+    <TresPerspectiveCamera ref="camRef" :position="default_cam_pos" :look-at="[0, 0, 0]" />
+    <OrbitControls v-if="!egoPersp" />
 
-      <TresDirectionalLight :position="[20, 40, 10]" :intensity="1.5" />
+    <TresDirectionalLight :position="[20, 40, 10]" :intensity="1.5" />
 
-      <template v-if="board">
-        <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
-          <TresPlaneGeometry :args="[board.cols * CELL_SIZE * 5, board.rows * CELL_SIZE * 5]" />
-          <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
-        </TresMesh>
+    <template v-if="board">
+      <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
+        <TresPlaneGeometry :args="[board.cols * CELL_SIZE * 5, board.rows * CELL_SIZE * 5]" />
+        <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
+      </TresMesh>
 
+      <TresMesh
+        v-for="cell in allCells"
+        :key="`cell-${cell.i}-${cell.j}`"
+        :position="cellToField(cell)"
+        :rotation="[-Math.PI / 2, 0, 0]"
+      >
+        <template v-if="cell.type === 'PATH' || cell.type === 'START'">
+          <TheRock />
+        </template>
+        <template v-else-if="cell.type === 'BLOCKED'">
+          <TheTree />
+          <TheGrass />
+        </template>
+        <template v-else-if="cell.type === 'GOAL'">
+          <TheRock />
+          <TheCrown />
+        </template>
+      </TresMesh>
+
+      <!-- Home bases for players -->
+      <template v-for="(player, index) in allPlayers" :key="`home-${player.id}`">
         <TresMesh
-          v-for="cell in allCells"
-          :key="`cell-${cell.i}-${cell.j}`"
-          :position="cellToField(cell)"
+          :position="[calculateHomeCenter(player.id).x, -0.01, calculateHomeCenter(player.id).z]"
           :rotation="[-Math.PI / 2, 0, 0]"
         >
-          <template v-if="cell.type === 'PATH' || cell.type === 'START'">
-            <TheRock />
-          </template>
-          <template v-else-if="cell.type === 'BLOCKED'">
-            <TheTree />
-            <TheGrass />
-          </template>
-          <template v-else-if="cell.type === 'GOAL'">
-            <TheRock />
-            <TheCrown />
-          </template>
+          <TresPlaneGeometry :args="[6, 3]" />
+          <TresMeshStandardMaterial :color="player.color || '#cccccc'" />
         </TresMesh>
-
-        <!-- Home bases for players -->
-        <template v-for="(player, index) in allPlayers" :key="`home-${player.id}`">
-          <TresMesh
-            :position="[calculateHomeCenter(player.id).x, -0.01, calculateHomeCenter(player.id).z]"
-            :rotation="[-Math.PI / 2, 0, 0]"
-          >
-            <TresPlaneGeometry :args="[6, 3]" />
-            <TresMeshStandardMaterial :color="player.color || '#cccccc'" />
-          </TresMesh>
-        </template>
-
-        <!-- Player figures -->
-        <ThePlayerFigure
-          v-for="fig in figures"
-          :key="fig.id"
-          :position="fig.position"
-          :color="fig.color"
-          :orientation="fig.orientation"
-        />
       </template>
-    </TresCanvas>
 
-    <div class="ui-overlay">
-      <h1 class="title">Malefiz – Würfeltest</h1>
-
-      <div v-if="!egoPersp" class="controls-hint">Press 'E' for ego perspective</div>
-      <div v-else class="controls-hint">Press 'E' to exit | ← → to switch figures</div>
-
-      <div v-if="isLoading">Loading Board...</div>
-      <div v-else>
-        <RollButton buttonId="diceButton" @trigger="onRoll" />
-        <Dice3D />
-      </div>
-    </div>
-  </div>
+      <!-- Player figures -->
+      <ThePlayerFigure
+        v-for="fig in figures"
+        :key="fig.id"
+        :position="fig.position"
+        :color="fig.color"
+        :orientation="fig.orientation"
+      />
+    </template>
+  </TresCanvas>
 </template>
-
-<style scoped>
-.game-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.game-canvas {
-  width: 100%;
-  height: 100%;
-}
-
-.ui-overlay {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 8px;
-  color: #fff;
-  backdrop-filter: blur(4px);
-}
-
-.title {
-  margin: 0;
-  font-size: 1.2rem;
-}
-
-.controls-hint {
-  font-size: 0.85rem;
-  opacity: 0.9;
-}
-</style>
