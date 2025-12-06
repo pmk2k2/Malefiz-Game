@@ -210,6 +210,11 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown)
 })
+
+defineExpose({
+  dummyGrid,
+  figures
+})
 </script>
 
 <template>
