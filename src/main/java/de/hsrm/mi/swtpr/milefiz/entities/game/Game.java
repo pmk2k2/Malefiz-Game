@@ -2,6 +2,7 @@ package de.hsrm.mi.swtpr.milefiz.entities.game;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
@@ -21,8 +23,17 @@ public class Game {
     private GameState state = GameState.WAITING;
     private Instant countdownStartedAt;
 
+    // temporäres Feld
+    private Board board;
+    // Figuren in Backend
+    private List<Figure> figures = new ArrayList<>();
+
+    private int currentMovementAmount = 0; // Speichert die gewuerfelte Zahl serverseitig
+    private String playerWhoRolledId = null; // Speichert, wer gewuerfelt hat
+
     public Game() {
         playerList = new HashMap<>();
+        this.board = new Board(); // Board direkt anlegen
     }
 
     public boolean addPlayer(Player player, String playerId) {
@@ -99,4 +110,36 @@ public class Game {
     return false;
     }
 
+    public void setBoard(Board board) {
+        this.board = board;
+    }
+
+    public Board getBoard() {
+        return board;
+    }
+
+    public List<Figure> getFigures() {
+        return figures;
+    }
+
+    public void addFigure(Figure fig) {
+        figures.add(fig);
+        board.get(fig.getGridI(), fig.getGridJ()).addFigure(fig);   // Auf Feld setzen
+    }
+
+    public int getCurrentMovementAmount() {
+        return currentMovementAmount;
+    }
+
+    public void setCurrentMovementAmount(int currentMovementAmount) {
+        this.currentMovementAmount = currentMovementAmount;
+    }
+
+    public String getPlayerWhoRolledId() {
+        return playerWhoRolledId;
+    }
+
+    public void setPlayerWhoRolledId(String playerWhoRolledId) {
+        this.playerWhoRolledId = playerWhoRolledId;
+    }
 }

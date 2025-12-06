@@ -89,16 +89,14 @@ export const useGameStore = defineStore('gamestore', () => {
               gameState.value = 'COUNTDOWN'
 
               const duration = event.countdownDurationSeconds || 10 // 30 als Fallback
-              countdown.value = duration
-              //countdown.value = 10;
+              //countdown.value = duration
+              const startTimeMs = new Date(event.countdownStartedAt!).getTime()
 
               if (countdownInterval) clearInterval(countdownInterval)
 
-              const start = new Date(event.countdownStartedAt!).getTime()
-
               countdownInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - start) / 1000)
-                countdown.value = 10 - elapsed
+                const elapsed = Math.floor((Date.now() - startTimeMs) / 1000)
+                countdown.value = duration - elapsed
 
                 if (countdown.value <= 0) {
                   clearInterval(countdownInterval)
