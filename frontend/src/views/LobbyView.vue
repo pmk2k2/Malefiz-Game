@@ -1,7 +1,12 @@
 <template>
   <div class="background">
     <h1>Malefiz</h1>
-    <h2>{{ loppyID?.LoppyID ?? 'kein LoppyID vorhanden' }}</h2>
+    <h2>{{ gameStore.gameData.gameCode ?? 'kein LoppyID vorhanden' }}</h2>
+
+    <div class="info-box" v-if="info.inhalt">
+      <button @click="loescheInfo" class="cancel-button">✕</button>
+      <span class="info-text">{{ info.inhalt }}</span>
+    </div>
 
     <div class="icon-button">
       <button type="button">
@@ -14,13 +19,14 @@
 
     <EinstellungView v-if="showSettings" />
 
-    <SpielerListeView />
+    <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
 
     <div class="buttons">
-      <button @click="clearRoll">Löschen</button>
-      <button @click="rollDice">Bereit</button>
+      <button @click="isBereit" :disabled="gameStore.countdown !== null">Bereit</button>
+      <button v-if="isHost" @click="gameStartenByAdmin">Starten</button>
       <button @click="goBack">Verlassen</button>
     </div>
+    <Counter v-if="showCounter" />
 
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
   </div>
@@ -29,44 +35,60 @@
 <script setup lang="ts">
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
-import { ref } from 'vue'
-import SpielerListeView from '@/views/SpielerListView.vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
+import SpielerListeView from './SpielerListeView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
+import { onMounted } from 'vue'
+import { useGameStore } from '@/stores/gamestore'
+import type { ISpielerDTD } from '@/stores/ISpielerDTD'
+import Counter from '@/components/Counter.vue'
+import { useInfo } from '@/composable/useInfo'
 
-const loppyID = ref({
-  LoppyID: localStorage.getItem('gameCode'),
-})
-
+const { info, loescheInfo } = useInfo()
+const gameStore = useGameStore()
+const isHost = computed(() => gameStore.gameData.isHost)
 const router = useRouter()
 
 const roll = ref<number | null>(null)
 const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
 
-function rollDice() {
-  router.push('/game')
+const showCounter = computed(
+  () => gameStore.gameData.players.length > 0 && gameStore.gameData.players.every((p) => p.isReady),
+)
+
+onMounted(() => {
+  const code = gameStore.gameData.gameCode
+  if (!code) {
+    router.push('/main')
+    return
+  }
+  gameStore.startLobbyLiveUpdate(code)
+  gameStore.updatePlayerList(code)
+  console.log(code)
+})
+
+onUnmounted(() => {
+  gameStore.disconnect()
+})
+function onDeleteZeile(playerId: string) {
+  if (spielerListeRef.value) {
+    spielerListeRef.value.spielerListe = spielerListeRef.value.spielerListe.filter(
+      (spieler) => spieler.id !== playerId,
+    )
+  }
 }
 
 function clearRoll() {
   // Würfel zurücksetzen
   roll.value = null
-
-  // Alle Spieler löschen über handleDelete
-  if (spielerListeRef.value) {
-    // Kopie der IDs, um nicht während des Iterierens das Array zu verändern
-    const allIds = [...spielerListeRef.value.spielerListe.map((s) => s.id)]
-    allIds.forEach((id) => spielerListeRef.value?.handleDelete(id))
-  }
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-
 async function goBack() {
-  const playerId = localStorage.getItem('playerId')
-  const gameCode = localStorage.getItem('gameCode')
+  const { playerId, gameCode } = gameStore.gameData
 
   if (playerId && gameCode) {
-    await fetch(`${API_BASE_URL}/game/create`, {
+    await fetch('/api/game/leave', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -74,8 +96,74 @@ async function goBack() {
         code: gameCode,
       }),
     })
-    localStorage.removeItem('gameCode')
+    gameStore.disconnect()
+    gameStore.resetGameCode()
+    console.log(gameStore.gameData.gameCode)
+    console.log('game code rm' + gameCode)
     router.push('/main')
+  }
+}
+
+const props = defineProps<{ spieler: ISpielerDTD; meHost: boolean }>()
+
+async function gameStartenByAdmin() {
+  const gameCode = gameStore.gameData.gameCode
+  const playerId = gameStore.gameData.playerId
+  if (!gameCode) {
+    console.warn('Kein gameCode vorhanden')
+    return
+  }
+  try {
+    const res = await fetch(`/api/game/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: gameCode, playerId }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error('Fehler beim Starten des Spiels: ' + (err.error || res.statusText))
+    }
+    router.push('/game')
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const emit = defineEmits<{
+  (e: 'isReady', value: boolean): void
+}>()
+
+async function isBereit() {
+  const playerId = gameStore.gameData.playerId
+  const gameCode = gameStore.gameData.gameCode
+  if (!playerId || !gameCode) {
+    console.warn('Keine playerId oder gameCode vorhanden')
+    return
+  }
+
+  try {
+    // Backend-Call
+    const res = await fetch('/api/game/setReady', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerId, code: gameCode, isReady: true }),
+    })
+
+    if (!res.ok) throw new Error('Failed to set ready')
+
+    const data = await res.json()
+
+    // Update lokal, falls die Spieler-Liste verfügbar ist
+    if (spielerListeRef.value?.spielerListe) {
+      const player = spielerListeRef.value.spielerListe.find((s: any) => s.id === playerId)
+      if (player) {
+        player.isReady = data.isReady
+      }
+    }
+    // Event an Parent senden
+    emit('isReady', true)
+  } catch (err) {
+    console.error(err)
   }
 }
 

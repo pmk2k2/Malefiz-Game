@@ -21,10 +21,13 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import hoverSoundFile from '../assets/button_hover.mp3'
+import { useGameStore } from '@/stores/gamestore'
 
 const router = useRouter()
+const gameStore = useGameStore()
 
-const playerName = localStorage.getItem('playerName')
+const playerName = gameStore.gameData.playerName
+console.log(playerName)
 const code = ref('')
 
 function playHover() {
@@ -48,8 +51,9 @@ async function beitreten() {
   const data = await res.json()
 
   if (!data.error) {
-    localStorage.setItem('playerId', data.playerId)
-    localStorage.setItem('gameCode', data.gameCode)
+    gameStore.gameData.playerId = data.playerId
+    gameStore.gameData.gameCode = data.gameCode
+    gameStore.gameData.isHost = false
     router.push('/lobby')
   } else {
     alert(data.error)

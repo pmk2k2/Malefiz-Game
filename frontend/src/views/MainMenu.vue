@@ -29,13 +29,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import hoverSoundFile from '../assets/button_hover.mp3'
+import { useGameStore } from '@/stores/gamestore'
+
+const gameStore = useGameStore()
 
 const route = useRoute()
 const router = useRouter()
-const playerName = ref(localStorage.getItem('playerName') || '')
+const playerName = computed(() => gameStore.gameData.playerName ?? '')
 
 const players = ref<{ id: string; name: string }[]>([])
 
@@ -59,17 +62,17 @@ async function spielErstellen() {
 
   const data = await res.json()
 
-  localStorage.setItem('playerId', data.playerId)
-  localStorage.setItem('gameCode', data.gameCode)
+  gameStore.gameData.playerId = data.playerId
+  gameStore.gameData.gameCode = data.gameCode
+  gameStore.gameData.isHost = true
   router.push('/lobby')
 }
 
 async function logout() {
-  const playerId = localStorage.getItem('playerId')
-  const gameCode = localStorage.getItem('gameCode')
+  const { playerId, gameCode } = gameStore.gameData
 
   if (playerId && gameCode) {
-    await fetch(`${API_BASE_URL}/game/create`, {
+    await fetch(`${API_BASE_URL}/game/leave`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -78,7 +81,7 @@ async function logout() {
       }),
     })
   }
-  localStorage.clear()
+  gameStore.reset()
   router.push('/')
 }
 </script>

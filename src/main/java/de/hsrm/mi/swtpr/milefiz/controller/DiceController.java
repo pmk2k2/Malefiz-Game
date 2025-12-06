@@ -36,4 +36,9 @@ public class DiceController {
         diceService.setCooldown(seconds);
     }
 
+    @GetMapping("/cooldown")
+    public long getCooldown() {
+        return diceService.getCooldown();
+    }
+
 }
