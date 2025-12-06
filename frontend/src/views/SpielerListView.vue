@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
-import SpielerListeZeile from './SpielerListeZeile.vue'
+import SpielerListeZeile from '@/components/SpielerListeZeile.vue'
 import { mapBackendPlayersToDTD } from '@/stores/mapper'
 
 const spielerListe = ref<ISpielerDTD[]>([])
@@ -22,31 +22,29 @@ const selectedPlayer = ref<number | null>(null)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 onMounted(async () => {
-  const gameCode = localStorage.getItem("gameCode")
+  const gameCode = localStorage.getItem('gameCode')
 
   if (!gameCode) {
-    console.warn("No game code found!")
+    console.warn('No game code found!')
     return
   }
 
   try {
-
     const res = await fetch(`${API_BASE_URL}/game/get?code=${gameCode}`)
-    if (!res.ok) throw new Error("HTTP error " + res.status)
+    if (!res.ok) throw new Error('HTTP error ' + res.status)
 
     const backendData = await res.json()
 
     spielerListe.value = mapBackendPlayersToDTD(backendData.players)
 
-    console.log("Spieler geladen:", spielerListe.value)
-
+    console.log('Spieler geladen:', spielerListe.value)
   } catch (err) {
-    console.error("Failed to load players:", err)
+    console.error('Failed to load players:', err)
   }
 })
 
 function handleDelete(id: number) {
-  spielerListe.value = spielerListe.value.filter(item => item.id !== id)
+  spielerListe.value = spielerListe.value.filter((item) => item.id !== id)
 }
 defineExpose({ handleDelete, spielerListe })
 </script>

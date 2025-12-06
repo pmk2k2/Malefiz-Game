@@ -27,11 +27,10 @@
 </template>
 
 <script setup lang="ts">
-import type { LoppyID } from '@/stores/LoppyID'
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
 import { ref } from 'vue'
-import SpielerListeView from '@/components/SpielerListView.vue'
+import SpielerListeView from '@/views/SpielerListView.vue'
 import EinstellungView from '@/components/EinstellungView.vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -63,21 +62,21 @@ function clearRoll() {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 async function goBack() {
-  const playerId = localStorage.getItem("playerId");
-  const gameCode = localStorage.getItem("gameCode");
+  const playerId = localStorage.getItem('playerId')
+  const gameCode = localStorage.getItem('gameCode')
 
   if (playerId && gameCode) {
     await fetch(`${API_BASE_URL}/game/create`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         playerId,
-        code: gameCode
-      })
-    });
-  localStorage.removeItem("gameCode")
-  router.push("/main");
-}
+        code: gameCode,
+      }),
+    })
+    localStorage.removeItem('gameCode')
+    router.push('/main')
+  }
 }
 
 const showSettings = ref(false)

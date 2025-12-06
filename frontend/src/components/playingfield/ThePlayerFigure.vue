@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ThePawn from './models/ThePawn.vue'
 import { Align } from '@tresjs/cientos'
-import type { IPlayerFigure } from '@/IPlayerFigure'
+import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 
 type PlayerFigureProps = Pick<IPlayerFigure, 'position' | 'color' | 'orientation'> & {
   model?: string

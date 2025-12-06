@@ -2,13 +2,13 @@
 import { TresCanvas, type TresObject } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
 import { computed, ref, shallowRef, onMounted, onUnmounted } from 'vue'
-import TheRock from './TheRock.vue'
-import TheTree from './TheTree.vue'
-import TheCrown from './TheCrown.vue'
-import TheGrass from './TheGrass.vue'
+import TheRock from './models/TheRock.vue'
+import TheTree from './models/TheTree.vue'
+import TheCrown from './models/TheCrown.vue'
+import TheGrass from './models/TheGrass.vue'
 
-import ThePlayerFigure from './playingfield/ThePlayerFigure.vue'
-import type { IPlayerFigure } from '@/IPlayerFigure'
+import ThePlayerFigure from './ThePlayerFigure.vue'
+import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 
 //Zellentypen
 type CellType = 'path' | 'start' | 'goal' | 'blocked'

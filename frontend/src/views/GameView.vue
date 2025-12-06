@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import RollButton from './RollButton.vue'
-import Dice3D, { rollDice } from './Dice3D.vue'
-import GameBoard from './GameBoard.vue'
+import RollButton from '@/components/RollButton.vue'
+import Dice3D, { rollDice } from '@/components/Dice3D.vue'
+import TheGrid from '@/components/playingfield/TheGrid.vue'
 
 function onRoll(id: string) {
   console.log('Button pressed:', id)
@@ -12,7 +12,7 @@ function onRoll(id: string) {
 <template>
   <div class="relative h-screen w-screen overflow-hidden bg-[#111827]">
     <!-- 3D-Spielfeld -->
-    <GameBoard />
+    <TheGrid />
 
     <!-- Overlay-UI oben links -->
     <div class="pointer-events-none absolute inset-0 flex items-start m-2">
