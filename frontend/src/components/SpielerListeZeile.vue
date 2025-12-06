@@ -92,7 +92,8 @@ async function kicken() {
 
 /* Aktive Auswahl */
 .spieler-zeile.selected {
-  background-color: rgba(0, 128, 255, 0.3); /* Hervorhebung */
+  background-color: rgba(0, 128, 255, 0.3);
+  /* Hervorhebung */
   border-radius: 8px;
   font-weight: bold;
 }

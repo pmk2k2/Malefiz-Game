@@ -11,9 +11,9 @@
 </template>
 
 <script setup lang="ts">
-import { useGameStore } from '@/stores/gamestore';
+import { useGameStore } from '@/stores/gamestore'
 import { computed, ref } from 'vue'
-const store = useGameStore();
+const store = useGameStore()
 
 // Computed aus dem Store nutzen
 const selectedTime = computed(() => store.countdown ?? 30)
@@ -33,9 +33,10 @@ const selectedTime = computed(() => store.countdown ?? 30)
   align-items: center;
   justify-content: center;
   margin: 2rem auto;
-  box-shadow: inset -4px -4px 8px rgba(0,0,0,0.2),
-              inset 4px 4px 8px rgba(255,255,255,0.5),
-              0 4px 15px rgba(0,0,0,0.3);
+  box-shadow:
+    inset -4px -4px 8px rgba(0, 0, 0, 0.2),
+    inset 4px 4px 8px rgba(255, 255, 255, 0.5),
+    0 4px 15px rgba(0, 0, 0, 0.3);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -49,7 +50,7 @@ const selectedTime = computed(() => store.countdown ?? 30)
   height: 12px;
   background: #333;
   border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Zahl in der Mitte */
@@ -57,6 +58,6 @@ const selectedTime = computed(() => store.countdown ?? 30)
   font-size: 3rem;
   font-weight: bold;
   color: #333;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
 }
 </style>

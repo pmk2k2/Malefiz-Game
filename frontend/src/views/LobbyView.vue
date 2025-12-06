@@ -42,13 +42,14 @@ import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
-import Counter from '@/components/Counter.vue'
+import Counter from '@/components/playingfield/models/Counter.vue'
 import { useInfo } from '@/composable/useInfo'
 
 const { info, loescheInfo } = useInfo()
 const gameStore = useGameStore()
 const isHost = computed(() => gameStore.gameData.isHost)
 const router = useRouter()
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 const roll = ref<number | null>(null)
 const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
@@ -79,16 +80,11 @@ function onDeleteZeile(playerId: string) {
   }
 }
 
-function clearRoll() {
-  // Würfel zurücksetzen
-  roll.value = null
-}
-
 async function goBack() {
   const { playerId, gameCode } = gameStore.gameData
 
   if (playerId && gameCode) {
-    await fetch('/api/game/leave', {
+    await fetch(`${API_BASE_URL}/game/leave`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -109,19 +105,26 @@ const props = defineProps<{ spieler: ISpielerDTD; meHost: boolean }>()
 async function gameStartenByAdmin() {
   const gameCode = gameStore.gameData.gameCode
   const playerId = gameStore.gameData.playerId
-  if (!gameCode) {
-    console.warn('Kein gameCode vorhanden')
+  if (!gameCode || !playerId) {
+    console.warn('Kein gameCode oder playerId vorhanden.')
     return
   }
+
   try {
-    const res = await fetch(`/api/game/start`, {
+    const res = await fetch(`${API_BASE_URL}/game/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: gameCode, playerId }),
     })
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      throw new Error('Fehler beim Starten des Spiels: ' + (err.error || res.statusText))
+
+      const errorMessage = err.error || res.statusText || 'Unbekannter Fehler'
+
+      info.inhalt = 'Startfehler: ' + errorMessage
+
+      throw new Error(errorMessage)
     }
     router.push('/game')
   } catch (err) {
@@ -137,31 +140,24 @@ async function isBereit() {
   const playerId = gameStore.gameData.playerId
   const gameCode = gameStore.gameData.gameCode
   if (!playerId || !gameCode) {
-    console.warn('Keine playerId oder gameCode vorhanden')
+    info.inhalt = 'Fehler: Spieler-ID oder Game-Code fehlt.'
     return
   }
 
   try {
     // Backend-Call
-    const res = await fetch('/api/game/setReady', {
+    const res = await fetch(`${API_BASE_URL}/game/setReady`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ playerId, code: gameCode, isReady: true }),
     })
 
-    if (!res.ok) throw new Error('Failed to set ready')
-
-    const data = await res.json()
-
-    // Update lokal, falls die Spieler-Liste verfügbar ist
-    if (spielerListeRef.value?.spielerListe) {
-      const player = spielerListeRef.value.spielerListe.find((s: any) => s.id === playerId)
-      if (player) {
-        player.isReady = data.isReady
-      }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      const errorMessage = err.error || res.statusText || 'Fehler beim Setzen des Ready-Status.'
+      info.inhalt = errorMessage
+      throw new Error(errorMessage)
     }
-    // Event an Parent senden
-    emit('isReady', true)
   } catch (err) {
     console.error(err)
   }
@@ -218,6 +214,7 @@ button:has(img) {
   padding: 0;
   border-radius: 0;
 }
+
 .icon-button button {
   background-color: transparent;
   padding: 0;
@@ -226,7 +223,8 @@ button:has(img) {
 }
 
 .icon-button button:hover {
-  background-color: transparent; /* verhindert den weißen Hover */
+  background-color: transparent;
+  /* verhindert den weißen Hover */
 }
 
 .roll-result {
