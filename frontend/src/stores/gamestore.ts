@@ -24,6 +24,8 @@ export const useGameStore = defineStore('gamestore', () => {
     isHost: boolean | null
     counterWert: number | null
     isBereit: boolean | null
+    gameOver: boolean | null
+    winnerId: string | null
   }>({
     ok: false,
     players: [],
@@ -33,6 +35,8 @@ export const useGameStore = defineStore('gamestore', () => {
     isHost: null,
     counterWert: null,
     isBereit: null,
+    gameOver: true,
+    winnerId: null,
   })
 
   loadFromLocalStorage()
