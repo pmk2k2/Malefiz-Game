@@ -26,8 +26,7 @@ public class MovementLogicService {
             return FigureMoveResult.fail("Du bist nicht dran oder hast nicht gewürfelt.");
         }
 
-        // Die Figur darf nicht außerhalb der Grenzen des Feldes begehen (nur in dem
-        // programmierten Feld)
+        // Die Figur darf nicht außerhalb der Grenzen des Feldes begehen (nur in dem programmierten Feld)
         if (request.toI < 0 || request.toI >= game.getBoard().getWidth()
                 || request.toJ < 0 || request.toJ >= game.getBoard().getHeight()) {
             return FigureMoveResult.fail("Bewegung außerhalb Spielfelds ist nicht erlaubt");
@@ -56,29 +55,29 @@ public class MovementLogicService {
             return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
         }
 
-        // #4 Nur zwei Figuren können auf das gleiche Feld
+        // #4 Maximal 2 Figuren pro Feld
         if (destinationField.getFigures().size() >= 2) {
-            return FigureMoveResult.fail("Nur zwei Figuren können auf das gleiche Feld");
+            return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
         }
+
 
         int di = request.toI - figure.getGridI();
         int dj = request.toJ - figure.getGridJ();
 
         // Diatanz prüfen #48 Bewegung durch Würfel
         int walkedDistance = Math.abs(di) + Math.abs(dj);
+
         // Validierung der erlaubten Distanz
+        String feldText = "Felder";
         if (walkedDistance != allowedDistance) {
-            return FigureMoveResult.fail("Du musst genau " + allowedDistance + " Felder gehen.");
+            return FigureMoveResult.fail("Du musst genau " + allowedDistance + " " + feldText + " gehen.");
         }
 
-        // Bewegung nur in einer Achse
+
+        // Bewegung nur in einer Achse / Diagonal verboten
         if (Math.abs(di) > 0 && Math.abs(dj) > 0) {
-            return FigureMoveResult.fail("Diagnol nicht erlaubt");
-        }
-
-        // Diagonal verboten
-        if (Math.abs(di) > 0 && Math.abs(dj) > 0)
             return FigureMoveResult.fail("Diagonal verboten");
+        }
 
         // #3 Figur kann kein gesperrtes Feld überspringen
         if (Math.abs(di) > 1 || Math.abs(dj) > 1) {
@@ -100,16 +99,6 @@ public class MovementLogicService {
 
         destinationField.addFigure(figure);
 
-        // #5 Bei der dritten Figur wird das Feld wie ein gesperrtes Feld gewertet
-        if (destinationField.getFigures().size() == 3) {
-            destinationField.setType(CellType.BLOCKED);
-            return FigureMoveResult.fail("Dritte Figur blockiert das Feld");
-        }
-
-        // #5 Bei der dritten Figur wird das Feld wie ein gesperrtes Feld gewertet
-        if (destinationField.getFigures().size() >= 3) {
-            return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
-        }
 
         // #4 Nur zwei Figuren können auf das gleiche Feld
         if (destinationField.getFigures().size() == 2) {
