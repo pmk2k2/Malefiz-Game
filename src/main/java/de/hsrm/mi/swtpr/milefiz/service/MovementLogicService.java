@@ -1,5 +1,8 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.stereotype.Service;
 
 import de.hsrm.mi.swtpr.milefiz.entities.board.CellType;
@@ -11,6 +14,47 @@ import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
 
 @Service
 public class MovementLogicService {
+
+    // alle begehbaren Nachbarfelder
+    public Map<String, Field> getWalkableNeighbors(Game game, Figure figure) {
+
+        Map<String, Field> result = new HashMap<>();
+
+        int i = figure.getGridI();
+        int j = figure.getGridJ();
+
+        // Maske: links, rechts, oben, unten
+        int[][] mask = {
+            {-1, 0}, // links
+            { 1, 0}, // rechts
+            { 0,-1}, // oben (vorne)
+            { 0, 1}  // unten (hinten)
+        };
+
+        String[] names = { "links", "rechts", "vorne", "hinten" };
+
+        for (int k = 0; k < mask.length; k++) {
+            int ni = i + mask[k][0];
+            int nj = j + mask[k][1];
+
+            // Prüfung: innerhalb des Spielfelds
+            if (ni < 0 || nj < 0 || ni >= game.getBoard().getWidth() || nj >= game.getBoard().getHeight()) {
+                continue;
+            }
+
+            Field f = game.getBoard().get(ni, nj);
+
+            // BLOCKED ist nicht begehbar
+            if (f.getType() == CellType.BLOCKED) {
+                continue;
+            }
+
+            result.put(names[k], f);
+        }
+
+        return result;
+    }
+
 
     public FigureMoveResult moveFigure(Game game, FigureMoveRequest request) {
 
@@ -40,6 +84,15 @@ public class MovementLogicService {
 
         if (figure == null) {
             return FigureMoveResult.fail("Es gibt kein Figur oder sie wird nicht gefunden");
+        }
+
+        // Check, ob die Nachbarfelder begehbar sind 
+        Map<String, Field> neighbourFields = getWalkableNeighbors(game, figure);
+        System.out.println("Begehbare Nachbarn: " + neighbourFields.keySet());
+
+        // Check, Kreuzung oder nicht
+        if (neighbourFields.size() > 2) {
+            System.out.println("Figur steht an einer Kreuzung");
         }
 
         // Zuordnung vom Spieler und Figur
