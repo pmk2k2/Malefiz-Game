@@ -1,5 +1,8 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.stereotype.Service;
 
 import de.hsrm.mi.swtpr.milefiz.entities.board.CellType;
@@ -11,6 +14,74 @@ import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
 
 @Service
 public class MovementLogicService {
+
+    // alle begehbaren Nachbarfelder
+    public Map<String, Field> getWalkableNeighbors(Game game, Figure figure) {
+
+        Map<String, Field> result = new HashMap<>();
+
+        int i = figure.getGridI();
+        int j = figure.getGridJ();
+
+        // Maske: links, rechts, oben, unten
+        int[][] mask = {
+            {-1, 0}, // links
+            { 1, 0}, // rechts
+            { 0,-1}, // oben (vorne)
+            { 0, 1}  // unten (hinten)
+        };
+
+        String[] names = { "links", "rechts", "vorne", "hinten" };
+
+        for (int k = 0; k < mask.length; k++) {
+            int ni = i + mask[k][0];
+            int nj = j + mask[k][1];
+
+            // Prüfung: innerhalb des Spielfelds
+            if (ni < 0 || nj < 0 || ni >= game.getBoard().getWidth() || nj >= game.getBoard().getHeight()) {
+                continue;
+            }
+
+            Field f = game.getBoard().get(ni, nj);
+
+            // BLOCKED ist nicht begehbar
+            if (f.getType() == CellType.BLOCKED) {
+                continue;
+            }
+
+            result.put(names[k], f);
+        }
+
+        return result;
+    }
+
+    // Ermittlung von Richtung, Kreuzung
+    public String classifyField(Game game, Figure figure) {
+
+        Map<String, Field> n = getWalkableNeighbors(game, figure);
+
+        boolean left = n.containsKey("links");
+        boolean right = n.containsKey("rechts");
+        boolean forward = n.containsKey("vorne");
+        boolean back = n.containsKey("hinten");
+
+        int count = n.size();
+
+        // Kreuzung wenn >= 3 Richtungen
+        if (count >= 3) return "Kreuzung";
+
+        // Gerade Strecke
+        if (forward && back && !left && !right) return "Gerade";
+
+        // Linkskurve
+        if (left && back && !right && !forward) return "Linkskurve";
+
+        // Rechtskurve
+        if (right && back && !left && !forward) return "Rechtskurve";
+
+        return "Sackgasse";
+    }
+
 
     public FigureMoveResult moveFigure(Game game, FigureMoveRequest request) {
 
@@ -26,8 +97,7 @@ public class MovementLogicService {
             return FigureMoveResult.fail("Du bist nicht dran oder hast nicht gewürfelt.");
         }
 
-        // Die Figur darf nicht außerhalb der Grenzen des Feldes begehen (nur in dem
-        // programmierten Feld)
+        // Die Figur darf nicht außerhalb der Grenzen des Feldes begehen (nur in dem programmierten Feld)
         if (request.toI < 0 || request.toI >= game.getBoard().getWidth()
                 || request.toJ < 0 || request.toJ >= game.getBoard().getHeight()) {
             return FigureMoveResult.fail("Bewegung außerhalb Spielfelds ist nicht erlaubt");
@@ -56,29 +126,29 @@ public class MovementLogicService {
             return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
         }
 
-        // #4 Nur zwei Figuren können auf das gleiche Feld
+        // #4 Maximal 2 Figuren pro Feld
         if (destinationField.getFigures().size() >= 2) {
-            return FigureMoveResult.fail("Nur zwei Figuren können auf das gleiche Feld");
+            return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
         }
+
 
         int di = request.toI - figure.getGridI();
         int dj = request.toJ - figure.getGridJ();
 
         // Diatanz prüfen #48 Bewegung durch Würfel
         int walkedDistance = Math.abs(di) + Math.abs(dj);
+
         // Validierung der erlaubten Distanz
+        String feldText = "Felder";
         if (walkedDistance != allowedDistance) {
-            return FigureMoveResult.fail("Du musst genau " + allowedDistance + " Felder gehen.");
+            return FigureMoveResult.fail("Du musst genau " + allowedDistance + " " + feldText + " gehen.");
         }
 
-        // Bewegung nur in einer Achse
+
+        // Bewegung nur in einer Achse / Diagonal verboten
         if (Math.abs(di) > 0 && Math.abs(dj) > 0) {
-            return FigureMoveResult.fail("Diagnol nicht erlaubt");
-        }
-
-        // Diagonal verboten
-        if (Math.abs(di) > 0 && Math.abs(dj) > 0)
             return FigureMoveResult.fail("Diagonal verboten");
+        }
 
         // #3 Figur kann kein gesperrtes Feld überspringen
         if (Math.abs(di) > 1 || Math.abs(dj) > 1) {
@@ -100,16 +170,13 @@ public class MovementLogicService {
 
         destinationField.addFigure(figure);
 
-        // #5 Bei der dritten Figur wird das Feld wie ein gesperrtes Feld gewertet
-        if (destinationField.getFigures().size() == 3) {
-            destinationField.setType(CellType.BLOCKED);
-            return FigureMoveResult.fail("Dritte Figur blockiert das Feld");
-        }
 
-        // #5 Bei der dritten Figur wird das Feld wie ein gesperrtes Feld gewertet
-        if (destinationField.getFigures().size() >= 3) {
-            return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
-        }
+        Map<String, Field> newNeighbours = getWalkableNeighbors(game, figure);
+        System.out.println("Begehbare: " + newNeighbours.keySet());
+
+        String newType = classifyField(game, figure);
+        System.out.println("Feldtyp: " + newType);
+
 
         // #4 Nur zwei Figuren können auf das gleiche Feld
         if (destinationField.getFigures().size() == 2) {
