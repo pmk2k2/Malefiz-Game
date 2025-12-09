@@ -55,6 +55,33 @@ public class MovementLogicService {
         return result;
     }
 
+    // Ermittlung von Richtung, Kreuzung
+    public String classifyField(Game game, Figure figure) {
+
+        Map<String, Field> n = getWalkableNeighbors(game, figure);
+
+        boolean left = n.containsKey("links");
+        boolean right = n.containsKey("rechts");
+        boolean forward = n.containsKey("vorne");
+        boolean back = n.containsKey("hinten");
+
+        int count = n.size();
+
+        // Kreuzung wenn >= 3 Richtungen
+        if (count >= 3) return "Kreuzung";
+
+        // Gerade Strecke
+        if (forward && back && !left && !right) return "Gerade";
+
+        // Linkskurve
+        if (left && back && !right && !forward) return "Linkskurve";
+
+        // Rechtskurve
+        if (right && back && !left && !forward) return "Rechtskurve";
+
+        return "Sackgasse";
+    }
+
 
     public FigureMoveResult moveFigure(Game game, FigureMoveRequest request) {
 
@@ -84,15 +111,6 @@ public class MovementLogicService {
 
         if (figure == null) {
             return FigureMoveResult.fail("Es gibt kein Figur oder sie wird nicht gefunden");
-        }
-
-        // Check, ob die Nachbarfelder begehbar sind 
-        Map<String, Field> neighbourFields = getWalkableNeighbors(game, figure);
-        System.out.println("Begehbare Nachbarn: " + neighbourFields.keySet());
-
-        // Check, Kreuzung oder nicht
-        if (neighbourFields.size() > 2) {
-            System.out.println("Figur steht an einer Kreuzung");
         }
 
         // Zuordnung vom Spieler und Figur
@@ -151,6 +169,13 @@ public class MovementLogicService {
         figure.setPosition(request.toI, request.toJ);
 
         destinationField.addFigure(figure);
+
+
+        Map<String, Field> newNeighbours = getWalkableNeighbors(game, figure);
+        System.out.println("Begehbare: " + newNeighbours.keySet());
+
+        String newType = classifyField(game, figure);
+        System.out.println("Feldtyp: " + newType);
 
 
         // #4 Nur zwei Figuren können auf das gleiche Feld
