@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Align } from '@tresjs/cientos'
+import { color } from 'three/tsl';
 
 type CensoredFiguresProps = {
     position?: [number,number, number]
@@ -7,8 +8,12 @@ type CensoredFiguresProps = {
 
 // Definieren und festlegen der Props und Defaultwerte
 const props = withDefaults(defineProps<CensoredFiguresProps>(), {
+  key: String,
+  playerId: String,
+  color: String,
   position: () => [0, 0, 0],
 })
+
 </script>
 
 <template>

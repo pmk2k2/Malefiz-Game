@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { TresCanvas, type TresObject } from '@tresjs/core'
-import { computed, onMounted, ref, shallowRef } from 'vue'
+import { TresCanvas } from '@tresjs/core'
+import { computed, onMounted, ref, } from 'vue'
 import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
 import TheGrass from './models/TheGrass.vue'
 import ThePlayerFigureCensored from './ThePlayerFigureCensored.vue'
 import { useGameStore } from '@/stores/gamestore'
+import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 
+const figures = ref<IPlayerFigure[]>([])
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL'
 
 interface Field {
@@ -88,10 +90,10 @@ const camHeight = computed(() => (board.value?.rows || 1) * CELL_SIZE)
     <TresOrthographicCamera
       v-if="board"
       :args="[
-      -camWidth / 2, 
-      camWidth / 2, 
-      camHeight / 2, 
-      -camHeight / 2, 
+      -camWidth / 1, 
+      camWidth / 1, 
+      camHeight / 1.5, 
+      -camHeight / 1.5, 
       0.1, 
       1000
       ]"
@@ -126,6 +128,15 @@ const camHeight = computed(() => (board.value?.rows || 1) * CELL_SIZE)
           <TheCrown />
         </template>
       </TresMesh>
+
+      <ThePlayerFigureCensored
+        v-for="fig in figures"
+        :key="fig.id"
+        :playerId="fig.playerId"
+        :color="fig.color"
+        :position="fig.position"
+      /> 
+
     </template>
   </TresCanvas>
 </template>
