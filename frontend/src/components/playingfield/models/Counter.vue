@@ -16,7 +16,7 @@ import { computed, ref } from 'vue'
 const store = useGameStore()
 
 // Computed aus dem Store nutzen
-const selectedTime = computed(() => store.countdown ?? 30)
+const selectedTime = computed(() => store.countdown ?? 10)
 </script>
 
 <style scoped>
