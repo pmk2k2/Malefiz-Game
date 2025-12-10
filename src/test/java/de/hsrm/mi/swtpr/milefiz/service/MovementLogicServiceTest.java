@@ -1,5 +1,6 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
+import de.hsrm.mi.swtpr.milefiz.entities.board.Barrier;
 import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
 import de.hsrm.mi.swtpr.milefiz.entities.board.CellType;
 import de.hsrm.mi.swtpr.milefiz.entities.board.Field;
@@ -17,6 +18,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Hinzugefügt von Pawel
  * #48 Bewegung durch Würfel:
  * Tests zur Validierung der Abhängigkeit der Bewegung von der Würfelzahl.
+ * #81 Barriere Bewegungslogik:
+ * Tests zur Bewegung auf barrieren und Validierung der Stop Logik vor die barriere
  */
 class MovementLogicServiceTest {
 
@@ -123,14 +126,20 @@ class MovementLogicServiceTest {
         assertEquals("Bewegung außerhalb Spielfelds ist nicht erlaubt", result.message);
     }
     
+    //Test ist fehlgeschlagen wegen Barrieren Logik #81 Barriere Bewegungslogik
+    //Angepasst damit man nicht auf BLOCKED Felder laufen kann, sondern davor stehen bleibt
     @Test
-    void testMoveOntoBlockedField_NotAllowed() {
+    void testMoveOntoBlockedField_StopsBefore() {
         simulateDiceRoll(1);
 
         FigureMoveResult result = movement.moveFigure(game, request(0, 1));
+
+        assertTrue(result.success);
+
+        assertEquals(0, figure.getGridI());
+        assertEquals(0, figure.getGridJ());
         
-        assertFalse(result.success);
-        assertEquals("Figur kann auf kein gesperrtes Feld", result.message);
+        assertEquals(1, game.getCurrentMovementAmount());
     }
 
     @Test
@@ -144,16 +153,21 @@ class MovementLogicServiceTest {
         assertEquals("Diagonal verboten", result.message);
     }
 
+    //Test ist wegen Barrieren Logik #81 Barriere Bewegungslogik fehlgeschlagen
+    //Test angepasst
     @Test
-    void testJumpOverBlockedField_Forbidden() {
+    void testJumpOverBlockedField_StopsBefore() {
         // (0,0) -> (0,2) sind 2 Schritte
         // mittleres Feld = (0,1) = BLOCKED
         simulateDiceRoll(2);
 
         FigureMoveResult result = movement.moveFigure(game, request(0, 2));
-        
-        assertFalse(result.success);
-        assertEquals("Überspringen von blockierten Felder ist verboten", result.message);
+
+        //Spring über 0,1(BLOCKED)
+        assertTrue(result.success);
+        assertEquals(0, figure.getGridI());
+        assertEquals(0, figure.getGridJ());
+        assertEquals(2, game.getCurrentMovementAmount());
     }
 
     @Test
@@ -169,7 +183,7 @@ class MovementLogicServiceTest {
         assertEquals(0, figure.getGridJ());
     }
 
-@Test
+    @Test
     void testTwoFiguresAllowedOnSameField() {
         // Wir platzieren die ZWEITE Figur auf (1,0), damit sie sich bewegen muss
         Figure fig2 = new Figure("F2", PLAYER_ID, "blue", 1, 0);
@@ -214,5 +228,84 @@ class MovementLogicServiceTest {
 
         FigureMoveResult result = movement.moveFigure(game, r);
         assertFalse(result.success);
+    }
+
+    //Barrieren Logik Tests #81 Barriere Bewegungslogik
+    //Test mit den BLOCKED Feldern 
+    @Test
+    void testMoveTowardsBlockedField_StopsBefore() {
+        // Figur ist auf 0,0
+        simulateDiceRoll(2);
+
+        FigureMoveResult result = movement.moveFigure(game, request(0, 2));
+
+        assertTrue(result.success);
+        
+        // Figur muss immer noch auf 0,0 stehen, weil 0,1 blockiert ist
+        assertEquals(0, figure.getGridI());
+        assertEquals(0, figure.getGridJ());
+
+        //Wir haben 0 Schritte gemacht. 2 - 0 = 2 Restenergie
+        assertEquals(2, game.getCurrentMovementAmount());
+        // Spieler bleibt dran
+        //Später kann man eine Option einbauen, dass der Spieler die laufenergie in Sprungenergie umwandeln kann
+        assertEquals(PLAYER_ID, game.getPlayerWhoRolledId());
+    }
+
+    //Test mit den barrieren 
+    @Test
+    void testMoveTowardsBarrier_WithTooMuchEnergy_StopsBefore() {
+        // Setup: Barriere auf (2,0) platzieren. (1,0) ist frei.
+        game.getBoard().get(2, 0).setBarrier(new Barrier(2, 0));
+
+        // Würfel: 3 (Zu viel für die Distanz 2)
+        simulateDiceRoll(3);
+
+        // Versuch: Wir klicken auf die Barriere (2,0).
+        FigureMoveResult result = movement.moveFigure(game, request(2, 0));
+
+        // Erwartung: Success, aber Stop vor der Barriere.
+        assertTrue(result.success);
+
+        // Figur muss auf (1,0) stehen (das Feld vor der Barriere).
+        assertEquals(1, figure.getGridI());
+        assertEquals(0, figure.getGridJ());
+
+        // Energie: 3 gewürfelt - 1 Schritt gemacht = 2 Rest.
+        assertEquals(2, game.getCurrentMovementAmount());
+    }
+
+    @Test
+    void testLandOnBarrier_ExactDistance_Allowed() {
+        //Setze barriere auf 2,0 im globalen Feld
+        game.getBoard().get(2, 0).setBarrier(new Barrier(2, 0));
+
+        simulateDiceRoll(2);
+
+        //Laufen Auf die Barriere drauf
+        FigureMoveResult result = movement.moveFigure(game, request(2, 0));
+
+        assertTrue(result.success);
+        assertEquals(2, figure.getGridI());
+        
+        assertEquals(0, game.getCurrentMovementAmount());
+    }
+
+    @Test
+    void testMoveLongDistance_StopsAtBarrier() {
+        //Setze barriere auf 2,0 im globalen Feld
+        game.getBoard().get(2, 0).setBarrier(new Barrier(2, 0));
+
+        simulateDiceRoll(6);
+        
+        //Wir laufen gegen die Barriere
+        FigureMoveResult result = movement.moveFigure(game, request(2, 0));
+
+        //Stop davor auf 1,0
+        assertTrue(result.success);
+        assertEquals(1, figure.getGridI());
+        
+        //Nur eine Energie sollte für das laufen verwendet werden = 5 Restenergie für Springen
+        assertEquals(5, game.getCurrentMovementAmount());
     }
 }
