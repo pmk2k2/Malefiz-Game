@@ -75,11 +75,6 @@ public class Game {
         return countdownStartedAt;
     }
 
-    public void startCountdown() {
-        this.state = GameState.COUNTDOWN;
-        this.countdownStartedAt = Instant.now();
-    }
-
     public void setState(GameState state) {
         this.state = state;
     }
@@ -99,10 +94,7 @@ public class Game {
         if (this.state != GameState.COUNTDOWN || this.countdownStartedAt == null) {
             return false;
         }
-
-        Instant now = Instant.now();
-        Duration elapsed = Duration.between(this.countdownStartedAt, now);
-
+        Duration elapsed = Duration.between(this.countdownStartedAt, Instant.now());
         if (elapsed.getSeconds() >= requiredCountdownSeconds) {
             this.state = GameState.RUNNING;
             logger.info("Game started after countdown.");

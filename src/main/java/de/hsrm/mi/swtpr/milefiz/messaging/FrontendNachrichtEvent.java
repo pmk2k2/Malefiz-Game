@@ -9,6 +9,7 @@ public class FrontendNachrichtEvent {
     public enum Nachrichtentyp {
         LOBBY
         // weitere typen können hier spätre ergänzt werden
+
     }
 
     public enum Operation {
@@ -21,7 +22,8 @@ public class FrontendNachrichtEvent {
         GAME_STARTED_BY_COUNTER,
         GAME_RUNNING,
         GAME_OVER,
-        PLAYER_LIMIT_ERROR
+        PLAYER_LIMIT_ERROR,
+        COUNTDOWN_ABORTED
     }
 
     private Nachrichtentyp typ;
@@ -32,7 +34,6 @@ public class FrontendNachrichtEvent {
     private Instant countdownStartedAt;
     private GameState gameState;
     private long countdownDurationSeconds;
-    // Muhannad: warum gameState
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -42,8 +43,6 @@ public class FrontendNachrichtEvent {
         this.gameCode = gameCode;
         this.playerName = playerName;
     }
-
-    // Muhannad: Warum 2mal konstruktor?
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName, Instant countdownStartedAt, GameState gameState) {
@@ -132,8 +131,5 @@ public class FrontendNachrichtEvent {
     public void setCountdownDurationSeconds(long seconds) {
         this.countdownDurationSeconds = seconds;
     }
-
-    // Muhannad: Was ist Gamestate?
-    // TODO: Gamestate anpassen
 
 }

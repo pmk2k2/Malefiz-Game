@@ -88,12 +88,16 @@ export const useGameStore = defineStore('gamestore', () => {
 
             if (event.operation === 'LEFT' && event.playerName) {
               setzeInfo(`${event.playerName} hat die Lobby verlassen.`) //InfoBox setzen wenn Player die Lobby verlässt
+              
+            }
+            if(event.operation==='KICKED'){
+              stopCountdown();
             }
 
             if (event.operation === 'COUNTDOWN_STARTED') {
               gameState.value = 'COUNTDOWN'
 
-              const duration = event.countdownDurationSeconds || 10 // 30 als Fallback
+              const duration = event.countdownDurationSeconds || 10 // 10 als Fallback
               //countdown.value = duration
               const startTimeMs = new Date(event.countdownStartedAt!).getTime()
 
@@ -110,6 +114,10 @@ export const useGameStore = defineStore('gamestore', () => {
                 }
               }, 500)
             }
+            if (event.operation ==='COUNTDOWN_ABORTED') {
+              stopCountdown();
+            }
+
 
             // Admin oder Server startet Spiel → kein Countdown, direkt rein
             if (event.operation === 'GAME_RUNNING') {
@@ -139,7 +147,7 @@ export const useGameStore = defineStore('gamestore', () => {
   }
   async function triggerGameStart(gameCode: string) {
     const playerId = gameData.playerId
-    // use the router instance from the store scope
+
     if (!gameCode || !playerId) {
       console.warn('Fehlende Daten für den Spielstart.')
       return
