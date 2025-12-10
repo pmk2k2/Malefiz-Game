@@ -10,7 +10,7 @@ const gridRef = ref<any>(null)
 const sichtbar = ref(false)
 
 const liveGrid = computed(() => {
-  return gridRef.value?.dummyGrid || { cols: 11, rows: 8, cells: [] }
+  return gridRef.value?.grid || { cols: 11, rows: 8, cells: [] }
 })
 
 const liveFigures = computed(() => {
@@ -58,7 +58,7 @@ function closeCensoredMap() {
     <div v-if="sichtbar" class="absolute inset-0 bg-black/80 z-20 flex items-center justify-center">
       <div class="h-[80vh] w-[80vw] bg-[#222] rounded-xl relative">
         <TheMapBarrierEditor 
-            :dummyGrid="liveGrid" 
+            :grid="liveGrid" 
             :figures="liveFigures" 
         />
         <button class="absolute top-4 right-4 bg-red-600 text-white p-2 rounded-full z-30" @click="closeCensoredMap">X</button>

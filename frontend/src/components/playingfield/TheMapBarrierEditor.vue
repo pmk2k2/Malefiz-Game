@@ -1,127 +1,131 @@
 <script setup lang="ts">
 import { TresCanvas, type TresObject } from '@tresjs/core'
-import { computed, shallowRef } from 'vue'
+import { computed, onMounted, ref, shallowRef } from 'vue'
 import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
 import TheGrass from './models/TheGrass.vue'
 import ThePlayerFigureCensored from './ThePlayerFigureCensored.vue'
+import { useGameStore } from '@/stores/gamestore'
 
-//Zellentypen
-type CellType = 'path' | 'start' | 'goal' | 'blocked'
+type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL'
 
-// Zellenkoordinten
-interface CellCoord {
+interface Field {
   i: number
   j: number
   type: CellType
 }
 
-// Das Spielfeld, cells für aktiven Spielfelder
-interface Grid {
+interface Board {
   cols: number
   rows: number
-  cells: CellCoord[]
+  grid: Field[][]
 }
 
-interface ThePlayerFigureCensored {
-    id: string | number
-    position: [number, number, number]
-}
-
-const props = defineProps <{
-    dummyGrid: Grid,
-    figures: ThePlayerFigureCensored[]
-}>()
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+const gameStore = useGameStore()
+const gameCode = gameStore.gameData.gameCode
+const isLoading = ref(true)
 const CELL_SIZE = 2
+const board = ref<Board | null>(null)
 
-// Zellen auf Map-Koordinaten (x, y, z) mappen
-function cellToField(cell: CellCoord): [number, number, number] {
-  const x = (cell.i - props.dummyGrid.cols / 2 + 0.5) * CELL_SIZE // props.
-  const z = -((cell.j - props.dummyGrid.rows / 2 + 0.5) * CELL_SIZE) // props.
- return [x, 0, z]
+
+async function getBoardFromBackend(): Promise<Board | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/board?code=${gameCode}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+
+    const text = await response.text()
+    if (!text) return null
+
+    const data = JSON.parse(text) as Board
+    console.log('MapBarrierEditor: Board received', data)
+    return data
+  } catch (err) {
+    console.error('MapBarrierEditor: Error getting board:', err)
+    return null
+  }
 }
 
-const camRef = shallowRef<TresObject | null>(null)
-const camWidth = props.dummyGrid.cols * CELL_SIZE + 4
-const camHeight = props.dummyGrid.rows * CELL_SIZE + 4
-const distanz = 200
-const default_cam_pos: [number, number, number] = [0, distanz, 0]
-
-// Map aus den explizit gesetzten Feldern
-const cellKey = (i: number, j: number) => `${i},${j}`
-// 2D-Array aller Zellen des Spielfelds mit Typ, wobei nicht gesetzte Zellen 'blocked' sind
-const allCells = computed<CellCoord[]>(() => {
-  // Vom dummyGrid überschriebene Zellen
-  const definedCells = new Map<string, CellType>()
-
-  for (const cell of props.dummyGrid.cells) {
-    definedCells.set(cellKey(cell.i, cell.j), cell.type)
+onMounted(async () => {
+  isLoading.value = true
+  const fetched = await getBoardFromBackend()
+  if (fetched) {
+    board.value = fetched
+  } else {
+    console.error('MapBarrierEditor: Board konnte nicht geladen werden.')
   }
-
-  // vollständiges Grid
-  const gridOut: CellCoord[] = []
-  for (let j = 0; j < props.dummyGrid.rows; j++) {
-    for (let i = 0; i < props.dummyGrid.cols; i++) {
-      gridOut.push({ i, j, type: definedCells.get(cellKey(i, j)) ?? 'blocked' })
-    }
-  }
-  return gridOut
+  isLoading.value = false
 })
 
+const allCells = computed<Field[]>(() => {
+  if (!board.value) return []
+  return board.value.grid.flat()
+})
+
+function cellToField(cell: Field): [number, number, number] {
+  if (!board.value) return [0, 0, 0]
+
+  const x = (cell.i - board.value.cols / 2 + 0.5) * CELL_SIZE
+  const z = -((cell.j - board.value.rows / 2 + 0.5) * CELL_SIZE)
+
+  return [x, 0.05, z]
+}
+
+const camWidth = computed(() => (board.value?.cols || 1) * CELL_SIZE)
+const camHeight = computed(() => (board.value?.rows || 1) * CELL_SIZE)
+
 </script>
-
+  
 <template>
-  <TresCanvas clear-color="#87CEEB" class="w-full h-full">
-    <TresOrthographicCamera 
-    ref="camRef" 
-    :position="default_cam_pos" 
-    :args=" [
-        camWidth / -2,
-        camWidth / 2,
-        camHeight / 2,
-        camHeight / -2,
-        0.1,
-        200
-        ]"
-        :look-at="[0, 0, 0]"
-        />
-
-    <!-- Licht -->
-    <TresDirectionalLight :position="[20, 40, 10]" :intensity="2" />
-
-    <!-- Boden -->
-    <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
-      <TresPlaneGeometry :args="[props.dummyGrid.cols * CELL_SIZE * 5, props.dummyGrid.rows * CELL_SIZE * 5]" />
-      <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
-    </TresMesh>
-
-    <!-- Zellen mit Objekten je nach Typ -->
-    <TresMesh
-      v-for="cell in allCells"
-      :key="`cell-${cell.i}-${cell.j}`"
-      :position="cellToField(cell)"
-      :rotation="[-Math.PI / 2, 0, 0]"
-    >
-      <template v-if="cell.type === 'path' || cell.type === 'start'">
-        <TheRock />
-      </template>
-      <template v-else-if="cell.type === 'blocked'">
-        <TheTree />
-        <TheGrass />
-      </template>
-      <template v-else-if="cell.type === 'goal'">
-        <TheRock />
-        <TheCrown />
-      </template>
-    </TresMesh>
-
-    <!-- Spielfigur(en) -->
-    <ThePlayerFigureCensored
-      v-for="(fig, index) in figures"
-      :key="index"
-      :position="fig.position"
+  <TresCanvas>
+    <TresOrthographicCamera
+      v-if="board"
+      :args="[
+      -camWidth / 2, 
+      camWidth / 2, 
+      camHeight / 2, 
+      -camHeight / 2, 
+      0.1, 
+      1000
+      ]"
+      :position="[0, 50, 0]"
+      :look-at="[0, 0, 0]"
     />
+
+    <TresAmbientLight :intensity="1" />
+    <TresDirectionalLight :position="[10, 20, 10]" :intensity="1" />
+
+    <template v-if="board">
+      <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
+        <TresPlaneGeometry :args="[board.cols * CELL_SIZE * 5, board.rows * CELL_SIZE * 5]" />
+        <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
+      </TresMesh>
+
+      <TresMesh
+        v-for="cell in allCells"
+        :key="`cell-${cell.i}-${cell.j}`"
+        :position="cellToField(cell)"
+        :rotation="[-Math.PI / 2, 0, 0]"
+      >
+        <template v-if="cell.type === 'PATH' || cell.type === 'START'">
+          <TheRock />
+        </template>
+        <template v-else-if="cell.type === 'BLOCKED'">
+          <TheTree />
+          <TheGrass />
+        </template>
+        <template v-else-if="cell.type === 'GOAL'">
+          <TheRock />
+          <TheCrown />
+        </template>
+      </TresMesh>
+    </template>
   </TresCanvas>
 </template>
