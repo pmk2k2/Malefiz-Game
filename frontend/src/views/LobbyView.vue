@@ -9,13 +9,15 @@
     </div>
 
     <div class="icon-button">
-      <button type="button">
+      <button type="button" @click="toggleRulesView">
         <img :src="infoIcon" alt="Info" />
       </button>
       <button type="button" @click="toggleSettingsView">
         <img :src="einstellungIcon" alt="Einstellungen" />
       </button>
     </div>
+
+    <InfoView v-if="showRules" @close="toggleRulesView" />
 
     <EinstellungView v-if="showSettings" />
 
@@ -33,6 +35,7 @@
 </template>
 
 <script setup lang="ts">
+import InfoView from '@/components/InfoView.vue'
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
 import { computed, onUnmounted, ref, watch } from 'vue'
@@ -50,7 +53,6 @@ const { info, loescheInfo } = useInfo()
 const gameStore = useGameStore()
 const isHost = computed(() => gameStore.gameData.isHost)
 const router = useRouter()
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 const roll = ref<number | null>(null)
 const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
@@ -84,11 +86,16 @@ function onDeleteZeile(playerId: string) {
   }
 }
 
+function clearRoll() {
+  // Würfel zurücksetzen
+  roll.value = null
+}
+
 async function goBack() {
   const { playerId, gameCode } = gameStore.gameData
 
   if (playerId && gameCode) {
-    await fetch(`${API_BASE_URL}/game/leave`, {
+    await fetch('/api/game/leave', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -109,26 +116,19 @@ const props = defineProps<{ spieler: ISpielerDTD; meHost: boolean }>()
 async function gameStartenByAdmin() {
   const gameCode = gameStore.gameData.gameCode
   const playerId = gameStore.gameData.playerId
-  if (!gameCode || !playerId) {
-    console.warn('Kein gameCode oder playerId vorhanden.')
+  if (!gameCode) {
+    console.warn('Kein gameCode vorhanden')
     return
   }
-
   try {
-    const res = await fetch(`${API_BASE_URL}/game/start`, {
+    const res = await fetch(`/api/game/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: gameCode, playerId }),
     })
-
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-
-      const errorMessage = err.error || res.statusText || 'Unbekannter Fehler'
-
-      info.inhalt = 'Startfehler: ' + errorMessage
-
-      throw new Error(errorMessage)
+      throw new Error('Fehler beim Starten des Spiels: ' + (err.error || res.statusText))
     }
     router.push('/game')
   } catch (err) {
@@ -147,13 +147,13 @@ async function isReady() {
    const isCurrentlyReady = !gameStore.gameData.isBereit
 
   if (!playerId || !gameCode) {
-    info.inhalt = 'Fehler: Spieler-ID oder Game-Code fehlt.'
+    console.warn('Keine playerId oder gameCode vorhanden')
     return
   }
 
   try {
     // Backend-Call
-    const res = await fetch(`${API_BASE_URL}/game/setReady`, {
+    const res = await fetch('/api/game/setReady', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ playerId, code: gameCode, isReady: isCurrentlyReady }),
@@ -178,8 +178,14 @@ async function isReady() {
 
 const showSettings = ref(false)
 
+const showRules = ref(false)
+
 function toggleSettingsView() {
   showSettings.value = !showSettings.value
+}
+
+function toggleRulesView() {
+  showRules.value = !showRules.value
 }
 </script>
 
@@ -227,7 +233,6 @@ button:has(img) {
   padding: 0;
   border-radius: 0;
 }
-
 .icon-button button {
   background-color: transparent;
   padding: 0;
@@ -236,8 +241,7 @@ button:has(img) {
 }
 
 .icon-button button:hover {
-  background-color: transparent;
-  /* verhindert den weißen Hover */
+  background-color: transparent; /* verhindert den weißen Hover */
 }
 
 .roll-result {
