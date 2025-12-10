@@ -55,6 +55,18 @@ export const useGameStore = defineStore('gamestore', () => {
 
   let stompClient: Client | null = null
 
+  const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
+  const stompEnv = (import.meta.env.VITE_STOMP_URL as string) || ''
+
+  
+
+  function computeSockJsUrl() {
+    if (stompEnv && stompEnv.length) {
+      return stompEnv
+    }
+    return `${location.protocol}//${location.host}/stompbroker`
+  }
+
   function startLobbyLiveUpdate(gameCode: string) {
     //Websocket anknüpfung zum backend (FrontendNachrichtenService API) Webbasierte Anwendungen Praktikum-Blatt10
     if (stompClient && stompClient.active) {
@@ -62,8 +74,10 @@ export const useGameStore = defineStore('gamestore', () => {
       return
     }
 
+    const sockJsUrl = computeSockJsUrl()
+
     stompClient = new Client({
-      webSocketFactory: () => new SockJS('/stompbroker'),
+      webSocketFactory: () => new SockJS(sockJsUrl),
       reconnectDelay: 5000,
       debug: (str) => console.log('[STOMP]', str),
     })
@@ -154,8 +168,7 @@ export const useGameStore = defineStore('gamestore', () => {
     }
 
     try {
-      const res = await fetch('/api/game/start', {
-        method: 'POST',
+      const res = await fetch(`${apiBase}/game/start`, {        method: 'POST',
         body: JSON.stringify({
           code: gameCode,
           playerId: playerId,
@@ -177,7 +190,7 @@ export const useGameStore = defineStore('gamestore', () => {
     try {
       //setzeInfo("Lobby-Daten wurden aktualisiert");
       console.log('updatePlayerList aufgerufen für Code:', gameCode)
-      const response = await fetch(`/api/game/get?code=${gameCode}`, {
+      const response = await fetch(`${apiBase}/game/get?code=${gameCode}`, {
         headers: {
           // 'Authorization': `Bearer ${loginStore.jwt}`, // Falls JWT benötigt
         },
