@@ -114,21 +114,6 @@ class MovementLogicServiceTest {
         assertFalse(result.success);
         assertTrue(result.message.contains("genau 1 Felder"), "Sollte fehlschlagen, da Distanz nicht passt");
     }
-
-    /**
-     * #48 Bewegung durch Würfel:
-     * Testet, dass Bewegung fehlschlägt, wenn die Distanz kleiner als der Würfelwurf ist.
-     */
-    @Test
-    void testMove_TooShort_Fails() {
-        simulateDiceRoll(5);
-
-        // Versuche nur 1 Feld zu gehen
-        FigureMoveResult result = movement.moveFigure(game, request(1, 0));
-
-        assertFalse(result.success);
-    }
-
     
     @Test
     void testMoveOutsideBoard_NotAllowed() {

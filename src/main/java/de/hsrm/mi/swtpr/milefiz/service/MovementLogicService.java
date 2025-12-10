@@ -140,7 +140,7 @@ public class MovementLogicService {
 
         // Validierung der erlaubten Distanz
         String feldText = "Felder";
-        if (walkedDistance != allowedDistance) {
+        if (walkedDistance > allowedDistance) {
             return FigureMoveResult.fail("Du musst genau " + allowedDistance + " " + feldText + " gehen.");
         }
 
@@ -184,8 +184,12 @@ public class MovementLogicService {
             return FigureMoveResult.ok();
         }
 
-        game.setCurrentMovementAmount(0);
-        game.setPlayerWhoRolledId(null);
+        // Speichert den überigen Wert des Würfels für die Sprung Energie in Zukunft 
+        int remainingEnergy = allowedDistance - walkedDistance;
+        game.setCurrentMovementAmount(remainingEnergy);
+        if (remainingEnergy == 0) {
+            game.setPlayerWhoRolledId(null);
+        }
 
         // Bei allen anderen Fällen
         return FigureMoveResult.ok();
