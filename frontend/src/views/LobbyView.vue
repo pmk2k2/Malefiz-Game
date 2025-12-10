@@ -24,7 +24,7 @@
     <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
 
     <div class="buttons">
-      <button @click="isBereit" :disabled="gameStore.countdown !== null">Bereit</button>
+      <button @click="isReady"> {{ gameStore.gameData.isBereit ? "Bereitschaft zurücknehmen" : "Bereit" }}</button>
       <button v-if="isHost" @click="gameStartenByAdmin">Starten</button>
       <button @click="goBack">Verlassen</button>
     </div>
@@ -47,6 +47,7 @@ import { useGameStore } from '@/stores/gamestore'
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import Counter from '@/components/playingfield/models/Counter.vue'
 import { useInfo } from '@/composable/useInfo'
+
 
 const { info, loescheInfo } = useInfo()
 const gameStore = useGameStore()
@@ -79,6 +80,9 @@ function onDeleteZeile(playerId: string) {
     spielerListeRef.value.spielerListe = spielerListeRef.value.spielerListe.filter(
       (spieler) => spieler.id !== playerId,
     )
+    
+    if(gameStore.countdown!== null){
+      gameStore.stopCountdown}
   }
 }
 
@@ -136,9 +140,12 @@ const emit = defineEmits<{
   (e: 'isReady', value: boolean): void
 }>()
 
-async function isBereit() {
+
+async function isReady() {
   const playerId = gameStore.gameData.playerId
   const gameCode = gameStore.gameData.gameCode
+   const isCurrentlyReady = !gameStore.gameData.isBereit
+
   if (!playerId || !gameCode) {
     console.warn('Keine playerId oder gameCode vorhanden')
     return
@@ -149,22 +156,21 @@ async function isBereit() {
     const res = await fetch('/api/game/setReady', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ playerId, code: gameCode, isReady: true }),
+      body: JSON.stringify({ playerId, code: gameCode, isReady: isCurrentlyReady }),
     })
 
-    if (!res.ok) throw new Error('Failed to set ready')
-
-    const data = await res.json()
-
-    // Update lokal, falls die Spieler-Liste verfügbar ist
-    if (spielerListeRef.value?.spielerListe) {
-      const player = spielerListeRef.value.spielerListe.find((s: any) => s.id === playerId)
-      if (player) {
-        player.isReady = data.isReady
-      }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      const errorMessage = err.error || res.statusText || 'Fehler beim Setzen des Ready-Status.'
+      info.inhalt = errorMessage
+      throw new Error(errorMessage)
     }
-    // Event an Parent senden
-    emit('isReady', true)
+    // Start or stop countdown basierend auf dem aktuellen Ready-Status
+    gameStore.gameData.isBereit= isCurrentlyReady 
+    if( isCurrentlyReady == true) {
+      gameStore.countdown
+    }else {gameStore.stopCountdown}
+
   } catch (err) {
     console.error(err)
   }
