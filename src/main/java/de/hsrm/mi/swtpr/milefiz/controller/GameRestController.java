@@ -26,12 +26,10 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@CrossOrigin(
-    origins = {
+@CrossOrigin(origins = {
         "http://localhost:5173",
         "https://dev1.mi.hs-rm.de"
-    }
-)
+})
 @RestController
 @RequestMapping("/api/game")
 public class GameRestController {
@@ -98,12 +96,14 @@ public class GameRestController {
         String playerId = body.get("playerId");
 
         if (gameCode == null || playerId == null || body.get("isReady") == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Fehlende 'code', 'playerId' or 'isReady' in Request-Body"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Fehlende 'code', 'playerId' or 'isReady' in Request-Body"));
         }
 
         boolean isReady = Boolean.parseBoolean(body.get("isReady"));
 
-        // Use the method that publishes READY_UPDATED and starts countdown when appropriate
+        // Use the method that publishes READY_UPDATED and starts countdown when
+        // appropriate
         boolean updated = service.setPlayerReadyAndCheckStart(gameCode, playerId, isReady);
         if (!updated) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -114,18 +114,18 @@ public class GameRestController {
     }
 
     @PostMapping("/start")
-   public ResponseEntity<Map<String, Object>> startGame(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> startGame(@RequestBody Map<String, String> body, HttpSession session) {
         String gameCode = body.get("code");
         String playerId = body.get("playerId");
-        
+
         if (gameCode == null || playerId == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", "Fehlende 'code' or 'playerId' im Request-Body."));
+                    .body(Map.of("error", "Fehlende 'code' or 'playerId' im Request-Body."));
         }
 
         try {
             service.startOrTriggerGame(gameCode, playerId);
-        
+
             // Erfolg
             return ResponseEntity.ok(Map.of("success", true, "gameCode", gameCode));
 
@@ -151,7 +151,7 @@ public class GameRestController {
     }
 
     @GetMapping("/{code}/figures")
-    public List<FigureDto> getFigures(@PathVariable String code) {
+    public List<FigureDto> getFigures(@PathVariable("code") String code) {
         logger.info("Request figures for game code: {}", code);
         List<FigureDto> figures = service.getFiguresasDto(code);
 
