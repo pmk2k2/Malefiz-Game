@@ -1,3 +1,7 @@
+<template>
+  <div ref="container" class="w-full h-full"></div>
+</template>
+
 <script lang="ts">
 import * as THREE from 'three'
 import { defineComponent, onMounted, ref } from 'vue'
@@ -87,7 +91,6 @@ export default defineComponent({
 
     onMounted(() => {
       scene = new THREE.Scene()
-      // Größe aus dem Container lesen
       const rect = container.value?.getBoundingClientRect()
       const width = rect?.width ?? 200
       const height = rect?.height ?? 200
@@ -125,7 +128,3 @@ export default defineComponent({
   },
 })
 </script>
-
-<template>
-  <div ref="container" class="w-full h-full"></div>
-</template>

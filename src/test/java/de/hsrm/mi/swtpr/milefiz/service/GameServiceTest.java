@@ -19,14 +19,17 @@ import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 class GameServiceTest {
 
     @Mock
-    private ApplicationEventPublisher publisher; 
-
-    @Mock
     private CodeGeneratorService codeGeneratorService;
 
     @InjectMocks
     private GameService gameService;
+    private ApplicationEventPublisher publisher;
 
+    @BeforeEach
+    void setUp() {
+        codeGeneratorService = Mockito.mock(CodeGeneratorService.class);
+        gameService = new GameService(codeGeneratorService, publisher);
+    }
 
     /**
      * #21 Raum/Spiel erstellen:
@@ -53,7 +56,7 @@ class GameServiceTest {
         when(codeGeneratorService.generateCode()).thenReturn("ABCD");
         String code = gameService.createGame();
 
-        boolean added = gameService.addPlayer(code, "p1", "Hoang", true, false);
+        boolean added = gameService.addPlayer(code, "p1", "Hoang", true);
 
         assertThat(added).isTrue();
         Game game = gameService.getGame(code);
@@ -68,7 +71,7 @@ class GameServiceTest {
      */
     @Test
     void addPlayer_invalidGameCode_returnsFalse() {
-        boolean added = gameService.addPlayer("UNKNOWN", "p1", "Ramy", false, false);
+        boolean added = gameService.addPlayer("UNKNOWN", "p1", "Ramy", false);
 
         assertThat(added).isFalse();
     }
@@ -82,8 +85,8 @@ class GameServiceTest {
         when(codeGeneratorService.generateCode()).thenReturn("ABCD");
         String code = gameService.createGame();
 
-        boolean first = gameService.addPlayer(code, "p1", "Hoang", true, false);
-        boolean second = gameService.addPlayer(code, "p1", "Ramy", false, false);
+        boolean first = gameService.addPlayer(code, "p1", "Hoang", true);
+        boolean second = gameService.addPlayer(code, "p1", "Ramy", false);
 
         assertThat(first).isTrue();
         assertThat(second).isFalse();
