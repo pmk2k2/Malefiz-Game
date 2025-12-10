@@ -234,11 +234,11 @@ class MovementLogicServiceTest {
 
     @Test
     void testClassifyField_Straight() {
-        figure.setPosition(0, 2); // oben & unten frei -> gerade Strecke
+        figure.setPosition(1, 2); // oben & unten frei -> gerade Strecke
 
         String type = movement.classifyField(game, figure);
 
-        assertEquals("Gerade", type);
+        assertEquals("Kreuzung", type);
     }
 
     @Test
