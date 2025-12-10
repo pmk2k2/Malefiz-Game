@@ -1,7 +1,7 @@
 <template>
   <div class="background">
     <h1>Malefiz</h1>
-    <h2>{{ gameStore.gameData.gameCode ?? 'kein LoppyID vorhanden' }}</h2>
+    <h2>{{ gameStore.gameData.gameCode ?? 'kein LobbyID vorhanden' }}</h2>
 
     <div class="info-box" v-if="info.inhalt">
       <button @click="loescheInfo" class="cancel-button">✕</button>
@@ -61,6 +61,9 @@ const showCounter = computed(
   () => gameStore.gameData.players.length > 0 && gameStore.gameData.players.every((p) => p.isReady),
 )
 
+const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
+
+
 onMounted(() => {
   const code = gameStore.gameData.gameCode
   if (!code) {
@@ -95,7 +98,7 @@ async function goBack() {
   const { playerId, gameCode } = gameStore.gameData
 
   if (playerId && gameCode) {
-    await fetch('/api/game/leave', {
+    await fetch(`${apiBase}/game/leave`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -121,7 +124,7 @@ async function gameStartenByAdmin() {
     return
   }
   try {
-    const res = await fetch(`/api/game/start`, {
+    const res = await fetch(`${apiBase}/game/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: gameCode, playerId }),
@@ -153,7 +156,7 @@ async function isReady() {
 
   try {
     // Backend-Call
-    const res = await fetch('/api/game/setReady', {
+    const res = await fetch(`${apiBase}/game/setReady`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ playerId, code: gameCode, isReady: isCurrentlyReady }),
