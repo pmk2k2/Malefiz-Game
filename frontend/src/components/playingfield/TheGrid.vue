@@ -6,6 +6,7 @@ import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
 import TheGrass from './models/TheGrass.vue'
+import Barrier from './models/Barrier.vue'
 import ThePlayerFigure from '@/components/playingfield/ThePlayerFigure.vue'
 import RollButton from '@/components/RollButton.vue'
 import Dice3D, { rollDice } from '@/components/Dice3D.vue'
@@ -13,7 +14,7 @@ import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 
 // Zellentypen
-type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL'
+type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER'
 
 // Zellenkoordinten
 interface Field {
@@ -314,6 +315,9 @@ function onRoll(id: string) {
       >
         <template v-if="cell.type === 'PATH' || cell.type === 'START'">
           <TheRock />
+        </template>
+        <template v-if="cell.type === 'BARRIER'">
+          <Barrier />
         </template>
         <template v-else-if="cell.type === 'BLOCKED'">
           <TheTree />

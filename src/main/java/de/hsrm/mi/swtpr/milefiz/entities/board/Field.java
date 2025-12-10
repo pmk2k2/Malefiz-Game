@@ -45,6 +45,10 @@ public class Field {
         return type == CellType.BLOCKED;
     }
 
+    public boolean isBarrier() {
+        return type == CellType.BARRIER;
+    }
+
     public int getI() {
         return i;
     }

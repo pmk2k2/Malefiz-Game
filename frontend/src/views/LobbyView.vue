@@ -1,7 +1,7 @@
 <template>
   <div class="background">
     <h1>Malefiz</h1>
-    <h2>{{ gameStore.gameData.gameCode ?? 'kein LoppyID vorhanden' }}</h2>
+    <h2>{{ gameStore.gameData.gameCode ?? 'kein LobbyID vorhanden' }}</h2>
 
     <div class="info-box" v-if="info.inhalt">
       <button @click="loescheInfo" class="cancel-button">✕</button>
