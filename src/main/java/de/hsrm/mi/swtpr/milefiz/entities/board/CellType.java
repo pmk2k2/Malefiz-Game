@@ -4,5 +4,6 @@ public enum CellType {
     PATH,
     START,
     GOAL,
-    BLOCKED
+    BLOCKED,
+    BARRIER
 }

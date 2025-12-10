@@ -1,5 +1,8 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
+import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
+import de.hsrm.mi.swtpr.milefiz.entities.board.CellType;
+import de.hsrm.mi.swtpr.milefiz.entities.board.Field;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
@@ -9,6 +12,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.Map;
 
 // Tests für die Bewegungslogik
 /** Hinzugefügt von Pawel
@@ -27,12 +32,22 @@ class MovementLogicServiceTest {
 
     @BeforeEach
     void setup() {
-        game = new Game();
         movement = new MovementLogicService();
+        game = new Game();
+
+        Field[][] grid = new Field[][] {
+            { new Field(0,0, CellType.PATH),    new Field(1,0, CellType.PATH),    new Field(2,0, CellType.PATH) },
+            { new Field(0,1, CellType.BLOCKED), new Field(1,1, CellType.PATH),    new Field(2,1, CellType.PATH) },
+            { new Field(0,2, CellType.PATH),    new Field(1,2, CellType.PATH),    new Field(2,2, CellType.PATH) },
+            { new Field(0,3, CellType.PATH),    new Field(1,3, CellType.PATH),    new Field(2,3, CellType.GOAL) }
+        };
+
+        game.setBoard(new Board(3, 4, grid));
 
         figure = new Figure(FIGURE_ID, PLAYER_ID, "red", 0, 0);
         game.addFigure(figure);
     }
+
 
     /**
      * Hilfsmethode: Erstellt einen Request
@@ -95,12 +110,12 @@ class MovementLogicServiceTest {
         simulateDiceRoll(1);
 
         // Versuche 3 Felder zu gehen
-        FigureMoveResult result = movement.moveFigure(game, request(3, 0));
+        FigureMoveResult result = movement.moveFigure(game, request(2, 0));
+
 
         assertFalse(result.success);
         assertTrue(result.message.contains("genau 1 Felder"), "Sollte fehlschlagen, da Distanz nicht passt");
     }
-
     
     @Test
     void testMoveOutsideBoard_NotAllowed() {
@@ -181,6 +196,9 @@ class MovementLogicServiceTest {
         game.addFigure(fig2);
         game.addFigure(fig3);
 
+        game.getBoard().get(1, 0).addFigure(fig2);
+        game.getBoard().get(1, 0).addFigure(fig3);
+
         // Unsere Hauptfigur (F1) steht auf (0,0) und will nach (1,0). Distanz 1.
         simulateDiceRoll(1);
         
@@ -199,4 +217,47 @@ class MovementLogicServiceTest {
         FigureMoveResult result = movement.moveFigure(game, r);
         assertFalse(result.success);
     }
+
+    
+    // Testet getWalkableNeighbors() auf einem einfachen geraden Feld
+    @Test
+    void testGetWalkableNeighbors_Intersection() {
+        figure.setPosition(1, 2);
+
+        Map<String, Field> result = movement.getWalkableNeighbors(game, figure);
+
+        assertTrue(result.containsKey("vorne"));
+        assertTrue(result.containsKey("hinten"));
+        assertTrue(result.containsKey("links"));
+        assertTrue(result.containsKey("rechts"));
+    }
+
+    @Test
+    void testClassifyField_Intersection_WithThreeWays() {
+        figure.setPosition(1, 1);
+
+        String type = movement.classifyField(game, figure);
+
+        assertEquals("Kreuzung", type);
+    }
+
+    @Test
+    void testClassifyField_Intersection() {
+        figure.setPosition(1, 2);
+
+        String type = movement.classifyField(game, figure);
+
+        assertEquals("Kreuzung", type);
+    }
+
+    @Test
+    void testClassifyField_DeadEnd() {
+
+        figure.setPosition(0, 3);
+
+        String type = movement.classifyField(game, figure);
+
+        assertEquals("Sackgasse", type);
+    }
+
 }
