@@ -183,7 +183,6 @@ public class MovementLogicService {
         destinationField.addFigure(figure);
 
         // Wenn Spieler die Krone kriegt
-        destinationField.setType(CellType.GOAL);
         if (destinationField.getType() == CellType.GOAL) {
             game.setWinnerId(request.playerId);
             publisher.publishEvent(new FrontendNachrichtEvent(
