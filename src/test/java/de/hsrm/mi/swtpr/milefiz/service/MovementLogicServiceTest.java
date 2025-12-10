@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Map;
+
 // Tests für die Bewegungslogik
 /** Hinzugefügt von Pawel
  * #48 Bewegung durch Würfel:
@@ -215,4 +217,56 @@ class MovementLogicServiceTest {
         FigureMoveResult result = movement.moveFigure(game, r);
         assertFalse(result.success);
     }
+
+    
+    // Testet getWalkableNeighbors() auf einem einfachen geraden Feld
+    @Test
+    void testGetWalkableNeighbors_Intersection() {
+        figure.setPosition(1, 2);
+
+        Map<String, Field> result = movement.getWalkableNeighbors(game, figure);
+
+        assertTrue(result.containsKey("vorne"));
+        assertTrue(result.containsKey("hinten"));
+        assertTrue(result.containsKey("links"));
+        assertTrue(result.containsKey("rechts"));
+    }
+
+    @Test
+    void testClassifyField_Straight() {
+        figure.setPosition(0, 2); // oben & unten frei -> gerade Strecke
+
+        String type = movement.classifyField(game, figure);
+
+        assertEquals("Gerade", type);
+    }
+
+    @Test
+    void testClassifyField_Intersection_WithThreeWays() {
+        figure.setPosition(1, 1);
+
+        String type = movement.classifyField(game, figure);
+
+        assertEquals("Kreuzung", type);
+    }
+
+    @Test
+    void testClassifyField_Intersection() {
+        figure.setPosition(1, 2);
+
+        String type = movement.classifyField(game, figure);
+
+        assertEquals("Kreuzung", type);
+    }
+
+    @Test
+    void testClassifyField_DeadEnd() {
+
+        figure.setPosition(0, 3);
+
+        String type = movement.classifyField(game, figure);
+
+        assertEquals("Sackgasse", type);
+    }
+
 }

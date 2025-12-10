@@ -49,6 +49,11 @@ public class MovementLogicService {
                 continue;
             }
 
+            // Feld mit laufendem Duell (2 Figuren)
+            if (f.getFigures().size() >= 2) {
+                continue;
+            }
+
             result.put(names[k], f);
         }
 
