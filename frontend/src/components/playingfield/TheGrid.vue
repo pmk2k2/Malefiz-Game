@@ -291,6 +291,63 @@ function onRoll(id: string) {
   console.log('Button pressed:', id)
   rollDice()
 }
+
+
+// Asynchrone Funktion, die eine Figur nach Index um x Schritte nach vorne bewegt
+// !!! Momentane Implementation nur zu Testzwecken, da keine Bewegungslogik existiert
+async function moveFigure(index = 0, wuerfelSchritte = 1) {
+  // Fuer Anzahl der angegeben Schritte
+  for(let i = 0; i < wuerfelSchritte; i++){
+    // momentane und Zielposition halten
+    let currentPos = figures.value[index].position
+    // ein Feld = 2 Einheiten
+    // momentan nur hardcoded Bewegung auf x-Achse
+    let targetPos = [currentPos[0] + 2, currentPos[1], currentPos[2]]
+
+    // Aufruf der Animationsfunktion
+    await animateMovement(currentPos, targetPos, index)
+  }
+}
+
+// Funktion zur Animation der Bewegung der Spielfiguren
+function animateMovement(currentPos, targetPos, index) {
+  let duration = 450  // Dauer der Animation in ms
+  let startPos = currentPos
+  const startTime = performance.now();  // Startzeit zum Berechnen der Differenz benoetigt
+
+  // Promise, damit ein jeweils ein Animationszyklus zunaechst beendet wird
+  return new Promise<void>(resolve => {
+    function step(now){
+
+      // Animation laeuft im Grunde von 0-100% durch
+      // Dabei ist "(now-startTime) / duration" der Anteil, wie viel von der Animation abgeschlossen wurde
+      // Da es zeitbasiert ist, sollte es kein Problem mit verschiedenen Framerates geben
+      // Wenn mehr Zeit vergangen ist, als ein Zyklus eigentlich geht, so wird time auf 1
+      // und somit die Animation als fertig gesehen
+      const time = Math.min((now - startTime) / duration, 1);
+
+      let newPos = [0,0,0]
+      newPos[0] = startPos[0] + (targetPos[0] - startPos[0]) * time;  // lineare Bewegung auf x-Koordinate
+      newPos[1] = startPos[1] + Math.sin(Math.PI * time);             // "Huepfen" bei Bewegung auf y-Achse nach halber Sinuskurve
+      newPos[2] = startPos[2] + (targetPos[2] - startPos[2]) * time;  // lineare Bewegung auf z-Koordinate
+
+      figures.value[index].position = newPos  // Figur auf Position bewegen
+      if(time < 1){
+        // bis Animation fertig abgespielt ist, Animation aufrufen
+        requestAnimationFrame(step)
+      } else {
+        // Wenn time > 1 (also Animation 100% durch ist) -> Promise resolven
+        resolve()
+      }
+
+      // Kamera stetig updaten
+      updateCam()
+    }
+
+    requestAnimationFrame(step)
+  })
+}
+
 </script>
 
 <template>
