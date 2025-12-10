@@ -30,6 +30,7 @@ public class Game {
 
     private int currentMovementAmount = 0; // Speichert die gewuerfelte Zahl serverseitig
     private String playerWhoRolledId = null; // Speichert, wer gewuerfelt hat
+    private String winnerId = null; // Speichert, wer Gewinner ist
 
     public Game() {
         playerList = new HashMap<>();
@@ -93,21 +94,22 @@ public class Game {
         this.state = GameState.RUNNING;
         return true;
     }
-    public boolean counterStart(long requiredCountdownSeconds){
-    if (this.state != GameState.COUNTDOWN || this.countdownStartedAt == null) {
+
+    public boolean counterStart(long requiredCountdownSeconds) {
+        if (this.state != GameState.COUNTDOWN || this.countdownStartedAt == null) {
+            return false;
+        }
+
+        Instant now = Instant.now();
+        Duration elapsed = Duration.between(this.countdownStartedAt, now);
+
+        if (elapsed.getSeconds() >= requiredCountdownSeconds) {
+            this.state = GameState.RUNNING;
+            logger.info("Game started after countdown.");
+            return true;
+        }
+
         return false;
-    }
-
-    Instant now = Instant.now();
-    Duration elapsed = Duration.between(this.countdownStartedAt, now);
-
-    if (elapsed.getSeconds() >= requiredCountdownSeconds) {
-        this.state = GameState.RUNNING;
-        logger.info("Game started after countdown.");
-        return true;
-    }
-    
-    return false;
     }
 
     public void setBoard(Board board) {
@@ -124,7 +126,7 @@ public class Game {
 
     public void addFigure(Figure fig) {
         figures.add(fig);
-        board.get(fig.getGridI(), fig.getGridJ()).addFigure(fig);   // Auf Feld setzen
+        board.get(fig.getGridI(), fig.getGridJ()).addFigure(fig); // Auf Feld setzen
     }
 
     public int getCurrentMovementAmount() {
@@ -141,5 +143,13 @@ public class Game {
 
     public void setPlayerWhoRolledId(String playerWhoRolledId) {
         this.playerWhoRolledId = playerWhoRolledId;
+    }
+
+    public String getWinnerId() {
+        return winnerId;
+    }
+
+    public void setWinnerId(String winnerId) {
+        this.winnerId = winnerId;
     }
 }

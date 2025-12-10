@@ -41,6 +41,7 @@ const isWinner = computed(() => {
 });
 
 function goBack() {
+  gameStore.resetGameCode()
   router.push("/main");
 }
 </script>

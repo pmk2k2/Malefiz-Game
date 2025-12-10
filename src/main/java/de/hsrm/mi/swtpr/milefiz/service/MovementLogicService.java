@@ -3,17 +3,27 @@ package de.hsrm.mi.swtpr.milefiz.service;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import de.hsrm.mi.swtpr.milefiz.entities.board.CellType;
 import de.hsrm.mi.swtpr.milefiz.entities.board.Field;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
+import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
+import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
+import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
+import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
 @Service
 public class MovementLogicService {
+    private ApplicationEventPublisher publisher;
+
+    public MovementLogicService(ApplicationEventPublisher publisher) {
+        this.publisher = publisher;
+    }
 
     // alle begehbaren Nachbarfelder
     public Map<String, Field> getWalkableNeighbors(Game game, Figure figure) {
@@ -25,10 +35,10 @@ public class MovementLogicService {
 
         // Maske: links, rechts, oben, unten
         int[][] mask = {
-            {-1, 0}, // links
-            { 1, 0}, // rechts
-            { 0,-1}, // oben (vorne)
-            { 0, 1}  // unten (hinten)
+                { -1, 0 }, // links
+                { 1, 0 }, // rechts
+                { 0, -1 }, // oben (vorne)
+                { 0, 1 } // unten (hinten)
         };
 
         String[] names = { "links", "rechts", "vorne", "hinten" };
@@ -68,20 +78,23 @@ public class MovementLogicService {
         int count = n.size();
 
         // Kreuzung wenn >= 3 Richtungen
-        if (count >= 3) return "Kreuzung";
+        if (count >= 3)
+            return "Kreuzung";
 
         // Gerade Strecke
-        if (forward && back && !left && !right) return "Gerade";
+        if (forward && back && !left && !right)
+            return "Gerade";
 
         // Linkskurve
-        if (left && back && !right && !forward) return "Linkskurve";
+        if (left && back && !right && !forward)
+            return "Linkskurve";
 
         // Rechtskurve
-        if (right && back && !left && !forward) return "Rechtskurve";
+        if (right && back && !left && !forward)
+            return "Rechtskurve";
 
         return "Sackgasse";
     }
-
 
     public FigureMoveResult moveFigure(Game game, FigureMoveRequest request) {
 
@@ -97,7 +110,8 @@ public class MovementLogicService {
             return FigureMoveResult.fail("Du bist nicht dran oder hast nicht gewürfelt.");
         }
 
-        // Die Figur darf nicht außerhalb der Grenzen des Feldes begehen (nur in dem programmierten Feld)
+        // Die Figur darf nicht außerhalb der Grenzen des Feldes begehen (nur in dem
+        // programmierten Feld)
         if (request.toI < 0 || request.toI >= game.getBoard().getWidth()
                 || request.toJ < 0 || request.toJ >= game.getBoard().getHeight()) {
             return FigureMoveResult.fail("Bewegung außerhalb Spielfelds ist nicht erlaubt");
@@ -131,7 +145,6 @@ public class MovementLogicService {
             return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
         }
 
-
         int di = request.toI - figure.getGridI();
         int dj = request.toJ - figure.getGridJ();
 
@@ -143,7 +156,6 @@ public class MovementLogicService {
         if (walkedDistance != allowedDistance) {
             return FigureMoveResult.fail("Du musst genau " + allowedDistance + " " + feldText + " gehen.");
         }
-
 
         // Bewegung nur in einer Achse / Diagonal verboten
         if (Math.abs(di) > 0 && Math.abs(dj) > 0) {
@@ -170,13 +182,21 @@ public class MovementLogicService {
 
         destinationField.addFigure(figure);
 
+        // Wenn Spieler die Krone kriegt
+        destinationField.setType(CellType.GOAL);
+        if (destinationField.getType() == CellType.GOAL) {
+            game.setWinnerId(request.playerId);
+            publisher.publishEvent(new FrontendNachrichtEvent(
+                    Nachrichtentyp.LOBBY,
+                    request.playerId,
+                    Operation.GAME_OVER));
+        }
 
         Map<String, Field> newNeighbours = getWalkableNeighbors(game, figure);
         System.out.println("Begehbare: " + newNeighbours.keySet());
 
         String newType = classifyField(game, figure);
         System.out.println("Feldtyp: " + newType);
-
 
         // #4 Nur zwei Figuren können auf das gleiche Feld
         if (destinationField.getFigures().size() == 2) {

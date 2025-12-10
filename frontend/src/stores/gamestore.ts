@@ -35,7 +35,7 @@ export const useGameStore = defineStore('gamestore', () => {
     isHost: null,
     counterWert: null,
     isBereit: null,
-    gameOver: true,
+    gameOver: null,
     winnerId: null,
   })
 
@@ -48,6 +48,7 @@ export const useGameStore = defineStore('gamestore', () => {
       playerName: gameData.playerName,
       isHost: gameData.isHost,
       isBereit: gameData.isBereit,
+      gameOver: gameData.gameCode
     }),
     saveToLocalStorage,
   )
@@ -120,6 +121,12 @@ export const useGameStore = defineStore('gamestore', () => {
             //  Spielerlimit überschritten
             if (event.operation === 'PLAYER_LIMIT_ERROR') {
               alert('Lobby ist voll! Max 4 Spieler erlaubt.')
+            }
+
+            if (event.operation === 'GAME_OVER') {
+              gameData.gameOver= true
+              gameData.winnerId = event.id
+              disconnect()
             }
           }
         } catch (err) {
@@ -229,6 +236,7 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.isHost = null
     gameData.players = []
     gameData.ok = false
+    gameData.gameOver = null
     stopCountdown()
 
     localStorage.removeItem('gameData')
@@ -239,6 +247,7 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.isHost = null
     gameData.playerId = null
     gameData.isBereit = false
+    gameData.gameOver = null
 
     stopCountdown()
     console.log(JSON.stringify(gameData))

@@ -20,6 +20,7 @@ public class FrontendNachrichtEvent {
         GAME_STARTED_BY_ADMIN,
         GAME_STARTED_BY_COUNTER,
         GAME_RUNNING,
+        GAME_OVER,
         PLAYER_LIMIT_ERROR
     }
 
@@ -33,7 +34,6 @@ public class FrontendNachrichtEvent {
     private long countdownDurationSeconds;
     // Muhannad: warum gameState
 
-
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
         this.typ = typ;
@@ -43,7 +43,6 @@ public class FrontendNachrichtEvent {
         this.playerName = playerName;
     }
 
-
     // Muhannad: Warum 2mal konstruktor?
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
@@ -51,6 +50,12 @@ public class FrontendNachrichtEvent {
         this(typ, id, operation, gameCode, playerName);
         this.countdownStartedAt = countdownStartedAt;
         this.gameState = gameState;
+    }
+
+    public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation) {
+        this.typ = typ;
+        this.id = id;
+        this.operation = operation;
     }
 
     public Nachrichtentyp getTyp() {
@@ -119,7 +124,6 @@ public class FrontendNachrichtEvent {
     public void setGameState(GameState s) {
         this.gameState = s;
     }
-
 
     public long getCountdownDurationSeconds() {
         return countdownDurationSeconds;
