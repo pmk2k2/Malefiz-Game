@@ -48,6 +48,7 @@ export const useGameStore = defineStore('gamestore', () => {
       playerName: gameData.playerName,
       isHost: gameData.isHost,
       isBereit: gameData.isBereit,
+      winnerId: gameData.winnerId,
       gameOver: gameData.gameCode
     }),
     saveToLocalStorage,

@@ -318,6 +318,7 @@ function onRoll(id: string) {
         </template>
         <template v-if="cell.type === 'BARRIER'">
           <Barrier />
+          <TheRock />
         </template>
         <template v-else-if="cell.type === 'BLOCKED'">
           <TheTree />
