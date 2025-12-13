@@ -31,10 +31,48 @@ public class Game {
     private int currentMovementAmount = 0; // Speichert die gewuerfelte Zahl serverseitig
     private String playerWhoRolledId = null; // Speichert, wer gewuerfelt hat
 
+    // Speichert das Würfelergebnis pro Spieler-ID
+    private Map<String, Integer> playerRolls = new HashMap<>();
+
     public Game() {
         playerList = new HashMap<>();
         this.board = new Board(); // Board direkt anlegen
     }
+
+    
+
+    public Map<String, Integer> getplayerRolls() {
+        return playerRolls;
+    }
+
+
+
+    public void setplayerRolls(Map<String, Integer> playerRolls) {
+        this.playerRolls = playerRolls;
+    }
+
+
+    // Prüft, ob ein Spieler schon gewürfelt hat. Wenn ja, wird die Zahl zurückgegeben.
+    // Wenn nicht, wird 0 zurückgegeben
+    // Um zu schauen, ob der Spieler laufen darf und wie viel er laufen darf
+    public int getRollForPlayer(String playerId) {
+        return playerRolls.getOrDefault(playerId, 0);
+    }
+
+    // Setzt das Ergebnis für einen Spieler
+    public void setRollForPlayer(String playerId, int amount){
+        if (amount == 0){
+            playerRolls.remove(playerId); // Wurf schon genutzt, deswegen Spieler entfernen
+        } else{
+            playerRolls.put(playerId, amount);
+        }
+    }
+
+    // Hilfsmethode, um zu schauen, ob der Spieler schon gewürfelt hat
+    public boolean hasPlayerRolled(String playerId) {
+        return playerRolls.containsKey(playerId);
+    }
+
 
     public boolean addPlayer(Player player, String playerId) {
         if (playerList.containsKey(playerId)) {

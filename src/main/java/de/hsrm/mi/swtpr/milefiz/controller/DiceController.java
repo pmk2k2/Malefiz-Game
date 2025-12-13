@@ -49,28 +49,26 @@ public class DiceController {
     // Speichert die gewuerfelte Zahl im backend
     // "gameCode"
     @PostMapping("/game/{gameCode}/roll")
-    public DiceResult roll(@PathVariable String gameCode, HttpSession session) throws CooldownException {
-        // Spieler-ID aus Session holen
-        String playerId = session.getId();
+    public DiceResult roll(@PathVariable String gameCode, @RequestParam("playerId") String playerId) throws CooldownException { // Spieler-ID vom Frontend holen
+        
 
         // Spiel laden
         Game game = gameService.getGame(gameCode);
         if (game == null)
             throw new RuntimeException("Spiel nicht gefunden!");
 
-        // Validierung:Prüfen, ob schon gewuerfelt wurde
+        // Validierung:Prüfen, ob Spieler gewuerfelt hat
         // Blockiert doppelte Wuerfe bevor man sich bewegt hat
-        if (game.getCurrentMovementAmount() > 0) {
+        /* für erste auskommentiert, da man noch nicht laufen kann
+        if (game.hasPlayerRolled(playerId)) {
             throw new RuntimeException("Du hast schon gewürfelt! Beweg dich erst mal.");
         }
-
+            */
         // Wuerfeln
         DiceResult result = diceService.rollDice(playerId);
 
-        // Ergebnis im Backend speichern!
-        game.setCurrentMovementAmount(result.getValue());
-        // Wer aht gewuerfelt?
-        game.setPlayerWhoRolledId(playerId);
+        // Ergebnis für den Spieler speichern
+        game.setRollForPlayer(playerId, result.getValue());
 
         return result;
     }
