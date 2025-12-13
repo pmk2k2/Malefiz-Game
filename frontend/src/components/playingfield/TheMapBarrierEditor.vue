@@ -6,11 +6,12 @@ import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
 import TheGrass from './models/TheGrass.vue'
 import ThePlayerFigureCensored from './ThePlayerFigureCensored.vue'
+import Barrier from './models/Barrier.vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 
 const figures = ref<IPlayerFigure[]>([])
-type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL'
+type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER'
 
 interface Field {
   i: number
@@ -126,6 +127,9 @@ const camHeight = computed(() => (board.value?.rows || 1) * CELL_SIZE)
         <template v-else-if="cell.type === 'GOAL'">
           <TheRock />
           <TheCrown />
+        </template>
+        <template v-else-if="cell.type === 'BARRIER'">
+          <Barrier />
         </template>
       </TresMesh>
 
