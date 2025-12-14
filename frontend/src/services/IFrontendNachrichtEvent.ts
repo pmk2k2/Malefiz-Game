@@ -1,3 +1,5 @@
+import type { IBewegung } from "./IBewegung"
+
 export interface IFrontendNachrichtEvent {
   typ: string // Nachrichtentyp (z.B. LOBBY)
   id: string // Player-ID
@@ -9,4 +11,8 @@ export interface IFrontendNachrichtEvent {
   countdownDurationSeconds: number
   gameState: string
   //Muhanad: warum gameState
+
+  // Felder fuer Movementupdates
+  figureId: string
+  bew: IBewegung
 }

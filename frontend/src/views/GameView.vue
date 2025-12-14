@@ -2,10 +2,17 @@
 import RollButton from '@/components/RollButton.vue'
 import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import TheGrid from '@/components/playingfield/TheGrid.vue'
+import { useGameStore } from '@/stores/gamestore'
+
+const gameStore = useGameStore()
 
 function onRoll(id: string) {
+  const gameCode = gameStore.gameData.gameCode
+  const playerId = gameStore.gameData.playerId
   console.log('Button pressed:', id)
-  rollDice()
+  if(gameCode != null && playerId != null) {
+    rollDice(gameCode, playerId)
+  }
 }
 </script>
 

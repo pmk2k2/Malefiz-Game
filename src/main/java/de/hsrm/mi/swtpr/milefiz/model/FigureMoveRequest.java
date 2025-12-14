@@ -5,4 +5,7 @@ public class FigureMoveRequest {
     public String figureId;
     public int toI;
     public int toJ;
+    /*
+    */
+   public String direction;
 }

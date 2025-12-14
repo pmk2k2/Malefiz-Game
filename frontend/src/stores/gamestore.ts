@@ -7,6 +7,7 @@ import { useInfo } from '@/composable/useInfo'
 import type { ISpielerDTD } from './ISpielerDTD'
 import { mapBackendPlayersToDTD } from '@/stores/mapper'
 import { useRouter } from 'vue-router'
+import type { IIngameRequestEvent } from '@/services/IIngameRequestEvent'
 
 export const useGameStore = defineStore('gamestore', () => {
   const { setzeInfo } = useInfo()
@@ -49,6 +50,7 @@ export const useGameStore = defineStore('gamestore', () => {
   )
 
   let stompClient: Client | null = null
+  let persStompClient: Client | null = null
 
   function startLobbyLiveUpdate(gameCode: string) {
     //Websocket anknüpfung zum backend (FrontendNachrichtenService API) Webbasierte Anwendungen Praktikum-Blatt10
@@ -72,7 +74,12 @@ export const useGameStore = defineStore('gamestore', () => {
           console.log('Empfangenes Event:', JSON.stringify(event))
 
           //  Ausschließlich Lobby updates (Joined, left, Countdown usw...)
-          if (event.typ === 'LOBBY') {
+          if(event.typ === 'INGAME') {
+            if(event.operation === 'MOVE') {
+              console.log("Figur bitta bewegen")
+            }
+          }
+          else if (event.typ === 'LOBBY') {
             updatePlayerList(gameCode)
 
             //  Countdown starten
@@ -126,6 +133,42 @@ export const useGameStore = defineStore('gamestore', () => {
 
     stompClient.activate()
   }
+
+  function startIngameLiveUpdate(gameCode: string, playerId: string) {
+    //Websocket anknüpfung zum backend (FrontendNachrichtenService API) Webbasierte Anwendungen Praktikum-Blatt10
+    if (persStompClient && persStompClient.active) {
+      console.log('STOMP-Client existiert bereits oder ist aktiv.')
+      return
+    }
+
+    persStompClient = new Client({
+      webSocketFactory: () => new SockJS('/persstomp'),
+      reconnectDelay: 5000,
+      debug: (str) => console.log('[STOMP]', str),
+    })
+
+    persStompClient.onConnect = () => {
+      console.log(`STOMP verbunden, abonniere /queue/gameSession/${gameCode}/${playerId}`)
+
+      persStompClient!.subscribe(`/queue/gameSession/${gameCode}/${playerId}`, (message) => {
+        try {
+          // Nur IIngameRequests behandeln
+          const event: IIngameRequestEvent = JSON.parse(message.body)
+          console.log('Empfangenes Event:', JSON.stringify(event))
+
+          if (event.type === 'DIRECTION') {
+            // Frage hier Antwort fuer event.figureId an
+            console.log("DIRECTION Event empfangen, bitte was machen")
+          }
+        } catch (err) {
+          console.error('WS Fehler:', err)
+        }
+      })
+    }
+
+    persStompClient.activate()
+  }
+
   async function triggerGameStart(gameCode: string) {
     const playerId = gameData.playerId
     // use the router instance from the store scope
@@ -261,6 +304,7 @@ export const useGameStore = defineStore('gamestore', () => {
     countdown,
     gameState,
     startLobbyLiveUpdate,
+    startIngameLiveUpdate,
     updatePlayerList,
     disconnect,
     reset,

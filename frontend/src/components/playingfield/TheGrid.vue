@@ -75,6 +75,10 @@ onMounted(async () => {
   // Add keyboard listener
   window.addEventListener('keydown', onKeyDown)
   isLoading.value = false
+  const gameCode = gameStore.gameData.gameCode
+  const playerId = gameStore.gameData.playerId
+  if(gameCode != null && playerId != null)
+    gameStore.startIngameLiveUpdate(gameCode, playerId)
 })
 
 onUnmounted(() => {

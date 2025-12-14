@@ -2,16 +2,20 @@ package de.hsrm.mi.swtpr.milefiz.messaging;
 
 import java.time.Instant;
 
+import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
+import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
 public class FrontendNachrichtEvent {
 
     public enum Nachrichtentyp {
-        LOBBY
+        LOBBY,
         // weitere typen können hier spätre ergänzt werden
+        INGAME
     }
 
     public enum Operation {
+        // Lobby-Operationen
         LEFT,
         JOINED,
         KICKED,
@@ -20,7 +24,10 @@ public class FrontendNachrichtEvent {
         GAME_STARTED_BY_ADMIN,
         GAME_STARTED_BY_COUNTER,
         GAME_RUNNING,
-        PLAYER_LIMIT_ERROR
+        PLAYER_LIMIT_ERROR,
+
+        // Ingame-Operationen
+        MOVE
     }
 
     private Nachrichtentyp typ;
@@ -33,6 +40,10 @@ public class FrontendNachrichtEvent {
     private long countdownDurationSeconds;
     // Muhannad: warum gameState
 
+    // States fuer Movementupdates
+    // private String playerId;     // Unterschied playerId und playerName???
+    private String figureId;
+    private Bewegung bewegung;
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -43,7 +54,6 @@ public class FrontendNachrichtEvent {
         this.playerName = playerName;
     }
 
-
     // Muhannad: Warum 2mal konstruktor?
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
@@ -51,6 +61,16 @@ public class FrontendNachrichtEvent {
         this(typ, id, operation, gameCode, playerName);
         this.countdownStartedAt = countdownStartedAt;
         this.gameState = gameState;
+    }
+
+    // Event speziell fuer Movement Updates
+    public FrontendNachrichtEvent(Nachrichtentyp typ, Operation op, String gC, String fId, String pName, Bewegung bew) {
+        this.typ = typ;
+        this.operation = op;
+        this.gameCode = gC;
+        this.figureId = fId;
+        this.playerName = pName;
+        this.bewegung = bew;
     }
 
     public Nachrichtentyp getTyp() {

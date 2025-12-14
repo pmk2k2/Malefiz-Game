@@ -9,6 +9,7 @@ import de.hsrm.mi.swtpr.milefiz.entities.board.CellType;
 import de.hsrm.mi.swtpr.milefiz.entities.board.Field;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
+import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
 
@@ -84,17 +85,19 @@ public class MovementLogicService {
 
 
     public FigureMoveResult moveFigure(Game game, FigureMoveRequest request) {
+        DiceResult result = game.getDiceResultById(request.playerId);
+        // SpielerId prüfen und vergleichen
+        if (result == null) {
+            return FigureMoveResult.fail("Du hast nicht gewürfelt oder bist kein gueltiger Spieler.");
+        }
 
         // Hole die echte Zahl aus dem Backend-Speicher
-        int allowedDistance = game.getCurrentMovementAmount();
+        int allowedDistance = result.getValue();
+        //int allowedDistance = game.getCurrentMovementAmount();
 
         // Prüfungen ob gewuerfelt wurde
         if (allowedDistance <= 0) {
             return FigureMoveResult.fail("Du musst erst würfeln!");
-        }
-        // SpielerId prüfen und vergleichen
-        if (!request.playerId.equals(game.getPlayerWhoRolledId())) {
-            return FigureMoveResult.fail("Du bist nicht dran oder hast nicht gewürfelt.");
         }
 
         // Die Figur darf nicht außerhalb der Grenzen des Feldes begehen (nur in dem programmierten Feld)
@@ -184,8 +187,8 @@ public class MovementLogicService {
             return FigureMoveResult.ok();
         }
 
-        game.setCurrentMovementAmount(0);
-        game.setPlayerWhoRolledId(null);
+        result.setValue(0);
+        //game.setPlayerWhoRolledId(null);
 
         // Bei allen anderen Fällen
         return FigureMoveResult.ok();

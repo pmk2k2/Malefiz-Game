@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
+import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
 public class Game {
@@ -28,12 +29,16 @@ public class Game {
     // Figuren in Backend
     private List<Figure> figures = new ArrayList<>();
 
+    /*
     private int currentMovementAmount = 0; // Speichert die gewuerfelte Zahl serverseitig
     private String playerWhoRolledId = null; // Speichert, wer gewuerfelt hat
+    */
+    private Map<String, DiceResult> diceResults;
 
     public Game() {
         playerList = new HashMap<>();
         this.board = new Board(); // Board direkt anlegen
+        diceResults = new HashMap<String, DiceResult>();
     }
 
     public boolean addPlayer(Player player, String playerId) {
@@ -127,6 +132,7 @@ public class Game {
         board.get(fig.getGridI(), fig.getGridJ()).addFigure(fig);   // Auf Feld setzen
     }
 
+    /* 
     public int getCurrentMovementAmount() {
         return currentMovementAmount;
     }
@@ -141,5 +147,19 @@ public class Game {
 
     public void setPlayerWhoRolledId(String playerWhoRolledId) {
         this.playerWhoRolledId = playerWhoRolledId;
+    }
+    */
+
+    public void updateDiceResult(String playerName, DiceResult result) {
+        diceResults.put(playerName, result);
+    }
+
+    public DiceResult getDiceResultByName(String playerName) {
+        return diceResults.get(playerName);
+    }
+
+    public DiceResult getDiceResultById(String playerId) {
+        String playerName = getPlayerById(playerId).getName();
+        return diceResults.get(playerName);
     }
 }
