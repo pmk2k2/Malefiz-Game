@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { TresCanvas, type TresObject } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
-import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
@@ -37,7 +37,7 @@ const isLoading = ref(true)
 const gameCode = gameStore.gameData.gameCode
 
 // Player figures
-const figures = ref<IPlayerFigure[]>([])
+const figures = ref(gameStore.figures) //ref<IPlayerFigure[]>([])
 const currentPlayerId = gameStore.gameData.playerId
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -89,6 +89,28 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown)
+})
+
+// Schau, ob Eingriff durch Nutzer erforderlich ist
+watch(() => gameStore.gameData.requireInput, (newVal) => {
+  console.log("Eingriff durch Nutzer erforderlich? {}", newVal)
+})
+
+// moveEvents ueberwachen und ausfuehren
+watch(() => gameStore.ingameMoveEvent, (newEv) => {
+  console.log("Neues Moveevent im Grid verarbeiten")
+  console.log(newEv)
+  // FrontendNachricht mit Bewegung drin behandeln
+  // Anzusteuernde Figur finden
+  const index = figures.value.findIndex((fig) => fig.id === newEv.figureId && fig.playerId === newEv.id)
+
+  // Wenn Steps = 0 -> keine Schritte laufen
+  const bew = newEv.bewegung
+  if(bew.steps === 0) {
+    moveFigure(index, bew.endX, bew.endZ)
+  } else {
+    moveFigureSteps(index, bew.steps, bew.dir)
+  }
 })
 
 async function sendBoard(boardData: Board) {
@@ -334,19 +356,49 @@ function onRoll(id: string) {
 
 
 // Asynchrone Funktion, die eine Figur nach Index um x Schritte nach vorne bewegt
-// !!! Momentane Implementation nur zu Testzwecken, da keine Bewegungslogik existiert
-async function moveFigure(index = 0, wuerfelSchritte = 1) {
+// Schritt fuer Schritt Animation
+async function moveFigureSteps(index = 0, wuerfelSchritte = 1, direction) {
+  // Wenn Schrittanzahl 0 -> ignorieren
+  if(wuerfelSchritte === 0) return;
+
   // Fuer Anzahl der angegeben Schritte
   for(let i = 0; i < wuerfelSchritte; i++){
     // momentane und Zielposition halten
-    let currentPos = figures.value[index].position
+    const currentPos = figures.value[index].position
+
     // ein Feld = 2 Einheiten
-    // momentan nur hardcoded Bewegung auf x-Achse
-    let targetPos = [currentPos[0] + 2, currentPos[1], currentPos[2]]
+    // je nach direction anpassen
+    let moveNS = 0
+    let moveWE = 0
+    switch(direction) {
+      case 'north':
+        moveNS = 2
+        break;
+      case 'south':
+        moveNS = -2
+        break;
+      case 'west':
+        moveWE = 2
+        break;
+      case 'east':
+        moveWE = -2
+        break;
+    }
+    const targetPos = [currentPos[0] + moveWE, currentPos[1], currentPos[2] + moveNS]
 
     // Aufruf der Animationsfunktion
     await animateMovement(currentPos, targetPos, index)
   }
+}
+
+// von einer Pos direkt zur anderen Pos springen (ohne viel huepfen)
+async function moveFigure(index = 0, newX = 0, newZ = 0) {
+  const currentPos = figures.value[index].position
+  const targetField = cellToField({i: newX, j: newZ})
+  console.log(targetField)
+  const targetPos = [targetField[0], 0.2, targetField[2]]
+
+  await animateMovement(currentPos, targetPos, index)
 }
 
 // Funktion zur Animation der Bewegung der Spielfiguren
@@ -429,6 +481,21 @@ function rotateCurrentFigure(rot: number) {
 
 // Methode, damit die Bewegungsrichtung an den Server geschickt wird
 async function sendMoveDirection() {
+  // Wenn move nicht erlaubt ist -> Abbruch
+  if(!gameStore.gameData.moveChoiceAllowed) return;
+
+  // Wenn der versuchte Move nicht der zu bewegenden Figur entspricht -> Abbruch
+  if(!gameStore.gameData.moveDone) {
+    if(gameStore.gameData.movingFigure !== ownFigures.value[figureControlInd]?.id)
+      return
+  }
+  // weitere Moves blockieren
+  gameStore.gameData.requireInput = false
+  gameStore.gameData.moveChoiceAllowed = false
+
+  // wenn Antwort positiv -> wuerfel etc freigeben
+  gameStore.gameData.moveDone = true
+  gameStore.gameData.movingFigure = null
 
   // Orientierung etc von aktueller Figur kriegen
   const moveReq: IFigureMoveRequest = {

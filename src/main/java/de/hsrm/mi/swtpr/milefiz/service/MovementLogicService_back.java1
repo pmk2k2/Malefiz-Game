@@ -1,11 +1,8 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -13,29 +10,12 @@ import de.hsrm.mi.swtpr.milefiz.entities.board.CellType;
 import de.hsrm.mi.swtpr.milefiz.entities.board.Field;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
-import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
-import de.hsrm.mi.swtpr.milefiz.messaging.IngameMoveEvent;
-import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
-import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
-import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
-import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent.Aktion;
-import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
 import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
-import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
 
 @Service
 public class MovementLogicService {
-    private Logger logger = LoggerFactory.getLogger(MovementLogicService.class);
-
-    private enum MoveType {
-        STRAIGHT,
-        CURVE,
-        T_CROSSING,
-        CROSSING,
-        DEADEND
-    };
 
     // Damit man Zwischenstaende an alle aus dem Spiel senden kann
     private ApplicationEventPublisher publisher;
@@ -52,15 +32,15 @@ public class MovementLogicService {
         int i = figure.getGridI();
         int j = figure.getGridJ();
 
-        // Maske: west, ost, norden, sueden
+        // Maske: links, rechts, oben, unten
         int[][] mask = {
-            {-1, 0}, // west
-            { 1, 0}, // ost
-            { 0,-1}, // norden
-            { 0, 1}  // sueden 
+            {-1, 0}, // links
+            { 1, 0}, // rechts
+            { 0,-1}, // oben (vorne)
+            { 0, 1}  // unten (hinten)
         };
 
-        String[] names = { "west", "east", "north", "south" };
+        String[] names = { "links", "rechts", "vorne", "hinten" };
 
         for (int k = 0; k < mask.length; k++) {
             int ni = i + mask[k][0];
@@ -85,38 +65,34 @@ public class MovementLogicService {
     }
 
     // Ermittlung von Richtung, Kreuzung
-    public MoveType classifyField(Game game, Figure figure) {
+    public String classifyField(Game game, Figure figure) {
 
         Map<String, Field> n = getWalkableNeighbors(game, figure);
 
-        boolean west = n.containsKey("west");
-        boolean east = n.containsKey("east");
-        boolean north = n.containsKey("north");
-        boolean south = n.containsKey("south");
+        boolean left = n.containsKey("links");
+        boolean right = n.containsKey("rechts");
+        boolean forward = n.containsKey("vorne");
+        boolean back = n.containsKey("hinten");
 
         int count = n.size();
 
-        // Kreuzung wenn = 4 Richtungen, T-Kreuzung bei 3 Richtungen
-        if (count >= 4) return MoveType.CROSSING;
-        if (count == 3) return MoveType.T_CROSSING;
+        // Kreuzung wenn >= 3 Richtungen
+        if (count >= 3) return "Kreuzung";
 
         // Gerade Strecke
-        boolean geradeNordSued = north && south && !west && !east;
-        boolean geradeWestOst  = !north && !south && west && east;
-        if(geradeNordSued || geradeWestOst) return MoveType.STRAIGHT;
+        if (forward && back && !left && !right) return "Gerade";
 
         // Linkskurve
-        boolean curveWestSouth = !north && south && west && !east;
-        boolean curveWestNorth = north && !south && west && !east;
-        boolean curveEastNorth = north && !south && !west && east;
-        boolean curveEastSouth = !north && south && !west && east;
-        if (curveWestSouth || curveWestNorth || curveEastNorth || curveEastSouth) return MoveType.CURVE;
+        if (left && back && !right && !forward) return "Linkskurve";
 
-        return MoveType.DEADEND;
+        // Rechtskurve
+        if (right && back && !left && !forward) return "Rechtskurve";
+
+        return "Sackgasse";
     }
 
 
-    public FigureMoveResult moveFigure(Game game, String gameCode, FigureMoveRequest request) {
+    public FigureMoveResult moveFigure(Game game, FigureMoveRequest request) {
         DiceResult result = game.getDiceResultById(request.playerId);
         // SpielerId prüfen und vergleichen
         if (result == null) {
@@ -133,11 +109,10 @@ public class MovementLogicService {
         }
 
         // Die Figur darf nicht außerhalb der Grenzen des Feldes begehen (nur in dem programmierten Feld)
-        /*
         if (request.toI < 0 || request.toI >= game.getBoard().getWidth()
                 || request.toJ < 0 || request.toJ >= game.getBoard().getHeight()) {
             return FigureMoveResult.fail("Bewegung außerhalb Spielfelds ist nicht erlaubt");
-        } */
+        }
 
         // Finden von Figur
         Figure figure = game.getFigures().stream()
@@ -154,51 +129,9 @@ public class MovementLogicService {
             return FigureMoveResult.fail("Die Figur gehört einem anderen Spieler");
         }
 
-        // Wenn Figur nicht AUF dem Feld steht
-        if(!figure.isOnField()) {
-            Field startFeld = null, startFeldState = null;            
-            List<String> playerNumber = game.getPlayerNumber();
-            int playerIndex;
-            // zunaechst Figur auf Startfeld setzen    
-            for(int i = 0; i < playerNumber.size(); i++) {
-                if(playerNumber.get(i).equals(request.playerId)) {
-                    startFeld = game.getBoard().getStartFieldByIndex(i);
-                    playerIndex = i;
-                    logger.info("Startfeld fuer Spielerindex {} gefunden an: {} {}", playerIndex, startFeld.getI(), startFeld.getJ());
-                    break;
-                }
-            }
+        // Zielfeld
+        Field destinationField = game.getBoard().get(request.toI, request.toJ);
 
-            if(startFeld == null) {
-                return FigureMoveResult.fail("Startfeld existiert nicht fuer Spieler!");
-            }
-
-            startFeldState = game.getBoard().get(startFeld.getI(), startFeld.getJ());
-            // alle noetigen checks setzen
-            if(startFeld.getType() == CellType.BLOCKED) {   // sollte eigentlich nicht passieren
-                return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
-            }
-            if(startFeld.getFigures().size() >= 2) {
-                return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
-            }
-
-            // wenn alles ok -> Figur auf Startfeld setzen, und erneut nach Richtung fragen
-            // Zug nicht beenden und kein Wuerfelzahl abziehen !!!
-            figure.setOnField(true);
-            Bewegung bew = new Bewegung(startFeld.getI(), startFeld.getJ(), Direction.NORTH, 0);
-            var moveEvent = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
-            publisher.publishEvent(moveEvent);
-            var moveReqEvent = new IngameRequestEvent(Aktion.DIRECTION, request.playerId, gameCode);
-            publisher.publishEvent(moveReqEvent);
-
-            return FigureMoveResult.ok();
-        }
-
-        while(allowedDistance > 0) {
-            // Todo
-        }
-
-        /* 
         // #1 und 2 Figur kann auf kein gesperrtes Feld (nur auf freie Felder)
         if (destinationField.getType() == CellType.BLOCKED) {
             return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
@@ -264,7 +197,7 @@ public class MovementLogicService {
 
         result.setValue(0);
         //game.setPlayerWhoRolledId(null);
-        */
+
         // Bei allen anderen Fällen
         return FigureMoveResult.ok();
     }

@@ -64,12 +64,12 @@ public class FrontendNachrichtEvent {
     }
 
     // Event speziell fuer Movement Updates
-    public FrontendNachrichtEvent(Nachrichtentyp typ, Operation op, String gC, String fId, String pName, Bewegung bew) {
+    public FrontendNachrichtEvent(Nachrichtentyp typ, Operation op, String gC, String fId, String pId, Bewegung bew) {
         this.typ = typ;
         this.operation = op;
         this.gameCode = gC;
         this.figureId = fId;
-        this.playerName = pName;
+        this.id= pId;
         this.bewegung = bew;
     }
 
@@ -149,7 +149,16 @@ public class FrontendNachrichtEvent {
         this.countdownDurationSeconds = seconds;
     }
 
+    public String getFigureId() {
+        return figureId;
+    }
+
+    public Bewegung getBewegung() {
+        return bewegung;
+    }
+
     // Muhannad: Was ist Gamestate?
     // TODO: Gamestate anpassen
+
 
 }

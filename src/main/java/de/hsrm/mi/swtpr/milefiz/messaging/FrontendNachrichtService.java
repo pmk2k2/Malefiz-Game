@@ -20,6 +20,7 @@ public class FrontendNachrichtService {
     public void sendEvent(FrontendNachrichtEvent ev) {
         String destination = "/topic/gameSession/" + ev.getGameCode();
         logger.info("Player-ID: {}, Player-Name: {}", ev.getId(), ev.getPlayerName());
+        logger.info("Bewegung: {}", ev.getBewegung());
         logger.info("Sende STOMP-Event an {}: {} ", destination, ev);
         messagingTemplate.convertAndSend(destination, ev);
         // daten aus FrontEndNachrichtEvent werden übertragen, wenn event (JOINED,LEFT,

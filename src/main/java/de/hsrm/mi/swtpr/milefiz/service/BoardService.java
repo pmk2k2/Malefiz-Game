@@ -33,15 +33,21 @@ public class BoardService {
     }
 
     // unschoene Loesung, aber keine Ahnung wie ich das bei
-    // dem bisherigen Parser anders machen soll
+    // dem vorhandenen Parser anders machen soll
     private void addStartFieldsToBoard(Board board) {
         for(int j = 0; j < board.getHeight(); j++) {
             for(int i = 0; i < board.getWidth(); i++) {
                 Field field = board.get(i, j);
-                if(field.getType().equals(CellType.START)); {
+                if(field.getType().equals(CellType.START)) {
                     board.addStartField(field);
+                    //logger.info("Startfeld {} gefunden an Pos {} | {}", board.getStartFields().size(), i, j);
                 }
             }
+        }
+
+        for(int i = 0; i < board.getStartFields().size(); i++) {
+            Field f = board.getStartFieldByIndex(i);
+            logger.info("Gefundenes Startfeld {} : {} {}", i, f.getI(), f.getJ());
         }
     }
 }

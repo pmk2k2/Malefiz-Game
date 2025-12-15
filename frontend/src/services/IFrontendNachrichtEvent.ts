@@ -14,5 +14,5 @@ export interface IFrontendNachrichtEvent {
 
   // Felder fuer Movementupdates
   figureId: string
-  bew: IBewegung
+  bewegung: IBewegung
 }

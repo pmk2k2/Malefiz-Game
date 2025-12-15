@@ -8,6 +8,8 @@ import type { ISpielerDTD } from './ISpielerDTD'
 import { mapBackendPlayersToDTD } from '@/stores/mapper'
 import { useRouter } from 'vue-router'
 import type { IIngameRequestEvent } from '@/services/IIngameRequestEvent'
+import type { IBewegung } from '@/services/IBewegung'
+import type { IPlayerFigure } from './IPlayerFigure'
 
 export const useGameStore = defineStore('gamestore', () => {
   const { setzeInfo } = useInfo()
@@ -26,6 +28,9 @@ export const useGameStore = defineStore('gamestore', () => {
     counterWert: number | null
     isBereit: boolean | null
     moveDone: boolean | null
+    moveChoiceAllowed: boolean
+    movingFigure: string | null
+    requireInput: boolean
   }>({
     ok: false,
     players: [],
@@ -35,8 +40,13 @@ export const useGameStore = defineStore('gamestore', () => {
     isHost: null,
     counterWert: null,
     isBereit: null,
-    moveDone: true
+    moveDone: true,
+    moveChoiceAllowed: false,
+    movingFigure: null,
+    requireInput: false
   })
+  const figures = ref<IPlayerFigure[]>([])
+  const ingameMoveEvent = ref<IFrontendNachrichtEvent>()
 
   loadFromLocalStorage()
   watch(
@@ -79,6 +89,8 @@ export const useGameStore = defineStore('gamestore', () => {
           if(event.typ === 'INGAME') {
             if(event.operation === 'MOVE') {
               console.log("Figur bitta bewegen")
+              console.log(event)
+              ingameMoveEvent.value = event
             }
           }
           else if (event.typ === 'LOBBY') {
@@ -159,8 +171,16 @@ export const useGameStore = defineStore('gamestore', () => {
           console.log('Empfangenes Event:', JSON.stringify(event))
 
           if (event.type === 'DIRECTION') {
-            // Frage hier Antwort fuer event.figureId an
-            console.log("DIRECTION Event empfangen, bitte was machen")
+            console.log("DIRECTION Event empfangen")
+            gameData.requireInput = true
+            gameData.moveChoiceAllowed = true
+            if(event.figureId) {
+              console.log(`Figur ${event.figureId} soll was machen`)
+              gameData.movingFigure = event.figureId
+            } else {
+              console.log("Irgendeine Figur soll was machen")
+              gameData.movingFigure = null
+            }
           }
         } catch (err) {
           console.error('WS Fehler:', err)
@@ -303,6 +323,8 @@ export const useGameStore = defineStore('gamestore', () => {
 
   return {
     gameData,
+    figures,
+    ingameMoveEvent,
     countdown,
     gameState,
     startLobbyLiveUpdate,

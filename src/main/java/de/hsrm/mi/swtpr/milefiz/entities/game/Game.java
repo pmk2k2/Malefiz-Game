@@ -17,10 +17,12 @@ import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
 public class Game {
+    private final int numberOfPlayers = 4;
 
     private static final Logger logger = LoggerFactory.getLogger(Game.class);
     // @Size(min = 1, max = )
     private Map<String, Player> playerList;
+    private List<String> playerNumber; // Spieler1, Spieler2, 3, 4
     private GameState state = GameState.WAITING;
     private Instant countdownStartedAt;
 
@@ -39,6 +41,7 @@ public class Game {
         playerList = new HashMap<>();
         this.board = new Board(); // Board direkt anlegen
         diceResults = new HashMap<String, DiceResult>();
+        playerNumber = Arrays.asList(new String[numberOfPlayers]);  
     }
 
     public boolean addPlayer(Player player, String playerId) {
@@ -47,6 +50,20 @@ public class Game {
             return false;
         }
         playerList.put(playerId, player);
+
+        // Spieler an ersten freien Slot setzen
+        for(int i = 0; i < playerNumber.size(); i++) {
+            logger.info("Spielerslot {} : {}", i, playerNumber.get(i));
+            if(playerNumber.get(i) == null) {
+                playerNumber.set(i, playerId);
+                break;
+            }
+        }
+        logger.info("Spielerslot {} : {}", 1, playerNumber.get(0));
+        logger.info("Spielerslot {} : {}", 2, playerNumber.get(1));
+        logger.info("Spielerslot {} : {}", 3, playerNumber.get(2));
+        logger.info("Spielerslot {} : {}", 4, playerNumber.get(3));
+
         logger.info("The game now has players: "
                 + Arrays.toString(playerList.values().stream().map(Player::getName).toArray(String[]::new)));
         return true;
@@ -68,6 +85,14 @@ public class Game {
         Player removed = playerList.remove(playerId);
         logger.info("The game now has players: "
                 + Arrays.toString(playerList.values().stream().map(Player::getName).toArray(String[]::new)));
+
+        // Spieler aus playerNumber rausnehmen
+        for(int i = 0; i < playerNumber.size(); i++) {
+            if(playerNumber.get(i).equals(playerId)) {
+                playerNumber.set(i, null);
+            }
+        }
+
         return removed != null;
     }
 
@@ -161,5 +186,9 @@ public class Game {
     public DiceResult getDiceResultById(String playerId) {
         String playerName = getPlayerById(playerId).getName();
         return diceResults.get(playerName);
+    }
+
+    public List<String> getPlayerNumber() {
+        return playerNumber;
     }
 }
