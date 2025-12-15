@@ -11,6 +11,8 @@ import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.context.ApplicationEventPublisher;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,7 +39,8 @@ class MovementLogicServiceTest {
 
     @BeforeEach
     void setup() {
-        movement = new MovementLogicService();
+        ApplicationEventPublisher publisher = Mockito.mock(ApplicationEventPublisher.class);
+        movement = new MovementLogicService(publisher);
         game = new Game();
 
         Field[][] grid = new Field[][] {
@@ -317,4 +320,24 @@ class MovementLogicServiceTest {
         // Springen
         assertEquals(5, game.getCurrentMovementAmount());
     }
+
+    @Test
+    void testMoveToGoal_PlayerWins() {
+
+        // (0,0) -> (2,0)
+        simulateDiceRoll(2);
+        FigureMoveResult r1 = movement.moveFigure(game, request(2, 0));
+        assertTrue(r1.success);
+
+        // (2,0) -> (2,3) (GOAL)
+        simulateDiceRoll(3);
+        FigureMoveResult r2 = movement.moveFigure(game, request(2, 3));
+        assertTrue(r2.success);
+
+        assertEquals(2, figure.getGridI());
+        assertEquals(3, figure.getGridJ());
+
+        assertEquals(PLAYER_ID, game.getWinnerId());
+    }
+
 }

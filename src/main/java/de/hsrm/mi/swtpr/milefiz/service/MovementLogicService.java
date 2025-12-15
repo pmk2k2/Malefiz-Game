@@ -15,7 +15,6 @@ import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
-import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
 @Service
 public class MovementLogicService {
@@ -215,7 +214,7 @@ public class MovementLogicService {
         actualDestField.addFigure(figure);
 
         // Wenn Spieler die Krone kriegt
-        if (currentField.getType() == CellType.GOAL) {
+        if (actualDestField.getType() == CellType.GOAL) {
             game.setWinnerId(request.playerId);
             publisher.publishEvent(new FrontendNachrichtEvent(
                     Nachrichtentyp.LOBBY,
