@@ -182,6 +182,11 @@ export const useGameStore = defineStore('gamestore', () => {
               gameData.movingFigure = null
             }
           }
+          if (event.type === 'DICE_ROLL') {
+            gameData.requireInput = true
+            gameData.moveChoiceAllowed = true
+            // Wuerfel freigeben
+          }
         } catch (err) {
           console.error('WS Fehler:', err)
         }

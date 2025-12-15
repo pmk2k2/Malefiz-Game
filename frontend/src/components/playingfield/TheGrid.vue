@@ -109,7 +109,7 @@ watch(() => gameStore.ingameMoveEvent, (newEv) => {
   if(bew.steps === 0) {
     moveFigure(index, bew.endX, bew.endZ)
   } else {
-    moveFigureSteps(index, bew.steps, bew.dir)
+    moveFigureSteps(index, bew.steps, bew.dir.toLowerCase)
   }
 })
 
