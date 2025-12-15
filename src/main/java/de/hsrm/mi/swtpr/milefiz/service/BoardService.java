@@ -7,6 +7,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
+import de.hsrm.mi.swtpr.milefiz.entities.board.CellType;
+import de.hsrm.mi.swtpr.milefiz.entities.board.Field;
 
 @Service
 public class BoardService {
@@ -26,6 +28,20 @@ public class BoardService {
             logger.info("Import from json file didnt work, getting the dummy");
             return dummyBoardService.createDummyBoard();
         }
+        addStartFieldsToBoard(board);
         return board;
+    }
+
+    // unschoene Loesung, aber keine Ahnung wie ich das bei
+    // dem bisherigen Parser anders machen soll
+    private void addStartFieldsToBoard(Board board) {
+        for(int j = 0; j < board.getHeight(); j++) {
+            for(int i = 0; i < board.getWidth(); i++) {
+                Field field = board.get(i, j);
+                if(field.getType().equals(CellType.START)); {
+                    board.addStartField(field);
+                }
+            }
+        }
     }
 }
