@@ -11,6 +11,7 @@ import RollButton from '@/components/RollButton.vue'
 import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
+import type { IFigureMoveRequest } from '@/services/IFigureMoveRequest'
 
 // Zellentypen
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL'
@@ -46,6 +47,7 @@ const default_cam_pos: [number, number, number] = [0, 15, 18]
 const camHeight = 1.2
 let figureControlInd = 0
 const egoPersp = ref(false)
+const figureViewDir = ref(-1)
 
 const ownFigures = computed(() => {
   if (!currentPlayerId) return []
@@ -77,8 +79,12 @@ onMounted(async () => {
   isLoading.value = false
   const gameCode = gameStore.gameData.gameCode
   const playerId = gameStore.gameData.playerId
-  if(gameCode != null && playerId != null)
+  if(gameCode != null && playerId != null) {
+    // Websockets fuer Gameupdates und persoenliche Requests
     gameStore.startIngameLiveUpdate(gameCode, playerId)
+    gameStore.startLobbyLiveUpdate(gameCode)
+  }
+
 })
 
 onUnmounted(() => {
@@ -212,6 +218,7 @@ function calculateHomeCenter(playerId: string) {
   return _calculateHomeBaseOffset(playerIndex, playersCount)
 }
 
+// evtll lieber in ein watch(...) packen?
 function updateCam() {
   const cam = camRef.value as any
   if (!cam) return
@@ -227,15 +234,19 @@ function updateCam() {
     switch (fig.orientation) {
       case 'north':
         lookDir = 0
+        figureViewDir.value = 0
         break
       case 'east':
         lookDir = -0.5
+        figureViewDir.value = 1
         break
       case 'south':
         lookDir = 1
+        figureViewDir.value = 2
         break
       case 'west':
         lookDir = 0.5
+        figureViewDir.value = 3
         break
     }
 
@@ -261,10 +272,33 @@ function onKeyDown(event: KeyboardEvent) {
       figureControlInd = (figureControlInd - 1 + numOwnFigures) % numOwnFigures
     }
 
+
+
     if (egoPersp.value) {
       updateCam()
     }
   }
+
+  // Figur drehen
+  if (key === 'a' || key === 'A') {
+    rotateCurrentFigure(-1)
+
+    if (egoPersp.value) {
+      updateCam()
+    }
+  }
+  if (key === 'd' || key === 'D') {
+    rotateCurrentFigure(1)
+
+    if (egoPersp.value) {
+      updateCam()
+    }
+  }
+
+  if (key === 'w' || key === 'W') {
+    sendMoveDirection()
+  }
+
 
   if (key === 'e' || key === 'E') {
     egoPersp.value = !egoPersp.value
@@ -291,10 +325,12 @@ function cellToField(cell: Field): [number, number, number] {
   return [x, 0.05, z]
 }
 
+/*
 function onRoll(id: string) {
   console.log('Button pressed:', id)
   rollDice()
 }
+*/
 
 
 // Asynchrone Funktion, die eine Figur nach Index um x Schritte nach vorne bewegt
@@ -350,6 +386,75 @@ function animateMovement(currentPos, targetPos, index) {
 
     requestAnimationFrame(step)
   })
+}
+
+function getCurrentFigureRot() {
+  switch(ownFigures.value[currentPlayerId].orientation) {
+    case 'north':
+      figureViewDir.value = 0
+      break;
+    case 'east':
+      figureViewDir.value = 1
+      break;
+    case 'south':
+      figureViewDir.value = 2
+      break;
+    case 'west':
+      figureViewDir.value = 3
+      break;
+  }
+}
+
+function rotateCurrentFigure(rot: number) {
+  if(rot <= 0) {
+    figureViewDir.value = (figureViewDir.value - 1 + 4) % 4
+  } else {
+    figureViewDir.value = (figureViewDir.value + 1) % 4
+  }
+  switch(figureViewDir.value) {
+    case 0:
+      ownFigures.value[figureControlInd].orientation = 'north'
+      break;
+    case 1:
+      ownFigures.value[figureControlInd].orientation = 'east'
+      break;
+    case 2:
+      ownFigures.value[figureControlInd].orientation = 'south'
+      break;
+    case 3:
+      ownFigures.value[figureControlInd].orientation = 'west'
+      break;
+  }
+}
+
+// Methode, damit die Bewegungsrichtung an den Server geschickt wird
+async function sendMoveDirection() {
+
+  // Orientierung etc von aktueller Figur kriegen
+  const moveReq: IFigureMoveRequest = {
+    playerId: currentPlayerId,
+    figureId:  ownFigures.value[figureControlInd].id,
+    direction: ownFigures.value[figureControlInd].orientation
+  }
+
+  // Datenobjekt schicken
+  try {
+    const response = await fetch(`/api/move/${gameCode}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(moveReq),
+    })
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+
+    const data = await response.json()
+    console.log('Move-Request sent successfully:', data)
+
+    // wenn Antwort positiv -> wuerfel etc freigeben
+
+  } catch (err) {
+    console.error('Error sending move request:', err)
+  }
 }
 
 </script>
