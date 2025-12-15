@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { ref, onMounted } from 'vue'
 import RollButton from '@/components/RollButton.vue'
 import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import TheGrid from '@/components/playingfield/TheGrid.vue'
@@ -7,30 +7,61 @@ import { useGameStore } from '@/stores/gamestore'
 
 
 const gameStore = useGameStore()
-const isRolling = ref(false)
+
+// Steuert alles: Button-Animation, Disabled-State und Logik
+const isBusy = ref(false) 
+const cooldownSeconds = ref(3) // Default 3s, wird überschrieben
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+
+// Cooldown-Zeit beim Start laden
+onMounted(async () => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/daten/cooldown`)
+    if (res.ok) {
+      cooldownSeconds.value = await res.json()
+    }
+  } catch (e) {
+    console.error("Cooldown konnte nicht geladen werden", e)
+  }
+})
 
 async function onRoll(id: string) {
   const { gameCode, playerId } = gameStore.gameData
 
   // Sicherheitscheck
-  if (!gameCode || !playerId) {
-    console.error("GameCode oder PlayerId fehlen!")
-    return
-  }
+  if (!gameCode || !playerId) return
+  if(isBusy.value) return // Kein Doppelklick möglich
 
-  // Button sperren während des Wurfs
-  if (isRolling.value) return
-  isRolling.value = true
+
+  isBusy.value = true
 
   try {
-    console.log('Würfeln angefordert von:', playerId)
+    // Würfelwurf (Backend & 3D Animation)
+    // Warten auf die Animation, aber der Button bleibt gesperrt
     await rollDice(gameCode, playerId)
+
+    // Der Timer startet für den restlichen Cooldown
+    // Die Animation im Button läuft weiter, weil isBusy true bleibt
+    startCooldownTimer()
+
   } catch (e) {
-    console.error(e)
-  } finally {
-    isRolling.value = false
+    console.error("Fehler beim Würfeln", e)
+    // Bei Fehler: Button sofort wieder freigeben oder Fehlermeldung zeigen
+    isBusy.value = false 
   }
 }
+
+
+function startCooldownTimer() {
+  // Zeit vom Backend
+  setTimeout(() => {
+    // Erst hier hört die Animation auf und der Button wird wieder klickbar
+    isBusy.value = false
+  }, cooldownSeconds.value * 1000) 
+}
+
 </script>
 
 <template>
@@ -48,7 +79,7 @@ async function onRoll(id: string) {
           </div>
           
           <RollButton 
-            :disabled="isRolling" 
+            :is-loading="isBusy" 
             @trigger="onRoll" 
           />
         </div>
