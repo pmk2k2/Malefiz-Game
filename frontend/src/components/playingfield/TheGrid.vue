@@ -109,7 +109,7 @@ watch(() => gameStore.ingameMoveEvent, (newEv) => {
   if(bew.steps === 0) {
     moveFigure(index, bew.endX, bew.endZ)
   } else {
-    moveFigureSteps(index, bew.steps, bew.dir.toLowerCase)
+    moveFigureSteps(index, bew.steps, bew.dir.toLowerCase())
   }
 })
 
@@ -249,8 +249,8 @@ function updateCam() {
     const fig = ownFigures.value[figureControlInd]
     if (!fig) return
 
-    const [x, , z] = fig.position
-    cam.position.set(x, camHeight, z)
+    const [x, y, z] = fig.position
+    cam.position.set(x, camHeight + (y - 0.2), z)
 
     let lookDir = 0
     switch (fig.orientation) {
@@ -358,6 +358,8 @@ function onRoll(id: string) {
 // Asynchrone Funktion, die eine Figur nach Index um x Schritte nach vorne bewegt
 // Schritt fuer Schritt Animation
 async function moveFigureSteps(index = 0, wuerfelSchritte = 1, direction) {
+  console.log("Bewegung in Richtung: ", direction)  
+
   // Wenn Schrittanzahl 0 -> ignorieren
   if(wuerfelSchritte === 0) return;
 
@@ -372,19 +374,19 @@ async function moveFigureSteps(index = 0, wuerfelSchritte = 1, direction) {
     let moveWE = 0
     switch(direction) {
       case 'north':
-        moveNS = 2
-        break;
-      case 'south':
         moveNS = -2
         break;
-      case 'west':
-        moveWE = 2
+      case 'south':
+        moveNS = 2
         break;
-      case 'east':
+      case 'west':
         moveWE = -2
         break;
+      case 'east':
+        moveWE = 2
+        break;
     }
-    const targetPos = [currentPos[0] + moveWE, currentPos[1], currentPos[2] + moveNS]
+    const targetPos = [currentPos[0] + moveWE, 0.2, currentPos[2] + moveNS]
 
     // Aufruf der Animationsfunktion
     await animateMovement(currentPos, targetPos, index)

@@ -32,7 +32,10 @@ public class MovementLogicService {
     private enum MoveType {
         STRAIGHT_NS,
         STRAIGHT_WE,
-        CURVE,
+        CURVE_WS,
+        CURVE_ES,
+        CURVE_WN,
+        CURVE_EN,
         T_CROSSING,
         CROSSING,
         DEADEND
@@ -106,14 +109,17 @@ public class MovementLogicService {
         if(geradeNordSued) return MoveType.STRAIGHT_NS;
 
         boolean geradeWestOst  = !north && !south && west && east;
-        if(geradeNordSued) return MoveType.STRAIGHT_WE;
+        if(geradeWestOst) return MoveType.STRAIGHT_WE;
 
         // Kurven
         boolean curveWestSouth = !north && south && west && !east;
+        if(curveWestSouth)  return MoveType.CURVE_WS;
         boolean curveWestNorth = north && !south && west && !east;
+        if(curveWestNorth)  return MoveType.CURVE_WN;
         boolean curveEastNorth = north && !south && !west && east;
+        if(curveEastNorth)  return MoveType.CURVE_EN;
         boolean curveEastSouth = !north && south && !west && east;
-        if (curveWestSouth || curveWestNorth || curveEastNorth || curveEastSouth) return MoveType.CURVE;
+        if(curveEastSouth)  return MoveType.CURVE_ES;
 
         // Ansonsten -> Sackgasse
         return MoveType.DEADEND;
@@ -124,6 +130,30 @@ public class MovementLogicService {
         Direction dir = null;
 
         return dir;
+    }
+
+    // Bei Kurven die richtige Richtung erhalten
+    public Direction getNewDirection(MoveType mT, Direction dir) {
+        Direction newDir;
+        
+        // Erst gucken nach Typ von Kurve, dann aus welcher Richtung man kommt
+        switch(mT) {
+            case MoveType.CURVE_WS:
+                newDir = (dir == Direction.WEST) ? Direction.SOUTH : Direction.WEST;
+                break;
+            case MoveType.CURVE_ES:
+                newDir = (dir == Direction.EAST) ? Direction.SOUTH : Direction.EAST;
+                break;
+            case MoveType.CURVE_WN:
+                newDir = (dir == Direction.WEST) ? Direction.NORTH : Direction.WEST;
+                break;
+            default:
+            case MoveType.CURVE_EN:
+                newDir = (dir == Direction.EAST ) ? Direction.NORTH : Direction.EAST;
+                break;
+        }
+
+        return newDir;
     }
 
 
@@ -190,7 +220,11 @@ public class MovementLogicService {
                 return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
             }
             if(startFeld.getFigures().size() >= 2) {
-                return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
+                List<Figure>figuresOnField = startFeld.getFigures();
+                // Check ob eigener Spieler
+                if(!figuresOnField.get(0).getOwnerPlayerId().equals(figuresOnField.get(1).getOwnerPlayerId())) {
+                    return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
+                }
             }
 
             // wenn alles ok -> Figur auf Startfeld setzen, und erneut nach Richtung fragen
@@ -221,6 +255,7 @@ public class MovementLogicService {
             FrontendNachrichtEvent moveEv = new FrontendNachrichtEvent(gameCode, figure.getOwnerPlayerId(), figure.getId(), 0, null);
             IngameRequestEvent requestEv = new IngameRequestEvent(gameCode, figure.getOwnerPlayerId(), figure.getId(), 0, null);
             */
+            logger.info("Loopanfang mit stepsCount {}, lastDir {}, allowedDistance {}", stepsCount, lastDir, allowedDistance);
             int deltaI = 0, deltaJ = 0;
 
             // Gucken, ob Schritt moeglich ist
@@ -232,10 +267,10 @@ public class MovementLogicService {
                     deltaJ = -1;
                     break;
                 case Direction.WEST:
-                    deltaI = 1;
+                    deltaI = -1;
                     break;
                 case Direction.EAST:
-                    deltaI = -1;
+                    deltaI = 1;
                     break;
             }
             int destI = figure.getGridI() + deltaI;
@@ -243,6 +278,7 @@ public class MovementLogicService {
             Field destField = game.getBoard().get(destI, destJ);
             // Faelle wo Bewegung nicht moeglich ist
             if(destField.getType() == CellType.BLOCKED) {
+                logger.info("Feld {} {} ist blockiert", destI, destJ);
                 return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
             }
             if (destField.getFigures().size() >= 2) {
@@ -251,6 +287,7 @@ public class MovementLogicService {
 
             // Alles ok
             // setzen der Figur auf neues Feld
+            logger.info("Setze Spielfigur auf neue Position {} {}", destI, destJ);
             Field currentField = game.getBoard().get(figure.getGridI(), figure.getGridJ());
             currentField.removeFigure(figure);
             figure.setPosition(destI, destJ);
@@ -266,11 +303,13 @@ public class MovementLogicService {
             // Nur zwei Figuren können auf das gleiche Feld -> Kampf einleiten (in Zukunft)
             if (destField.getFigures().size() == 2) {
                 // hier muss ein Duell gestartet werden
+                logger.info("Zwei Spieler auf {} {}, starte Duell...", destI, destJ);
                 return FigureMoveResult.ok();
             }
 
             // Gucken, ob Anfrage noetig
             MoveType moveType = classifyField(game, figure);
+            logger.info("Neues Feld ist {}", moveType);
             switch(moveType) {
                 case MoveType.DEADEND:
                     // restliche Energie speichern eigentlich
@@ -282,93 +321,42 @@ public class MovementLogicService {
                 case MoveType.CROSSING:
                     var event = new IngameRequestEvent(Aktion.DIRECTION, request.playerId, request.figureId, gameCode, lastDir);
                     publisher.publishEvent(event);
-                    return FigureMoveResult.ok();
-
-                // TODO: bei Kurven und so anderes Verhalten noch
-                case MoveType.CURVE:
                     Bewegung bew = new Bewegung(figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
                     var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
                     publisher.publishEvent(moveEv);
+                    return FigureMoveResult.ok();
 
+                // TODO: bei Kurven und so anderes Verhalten noch
+                case MoveType.CURVE_WS:
+                case MoveType.CURVE_ES:
+                case MoveType.CURVE_WN:
+                case MoveType.CURVE_EN:
+                    Bewegung bew2 = new Bewegung(figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
+                    var moveEv2 = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew2);
+                    publisher.publishEvent(moveEv2);
+                    // Drehen in richtige Richtung
+                    lastDir = getNewDirection(moveType, lastDir);
+                    logger.info("Neue Richtung: {}", lastDir);
+                    break;
+
+                case MoveType.STRAIGHT_NS:
+                case MoveType.STRAIGHT_WE:
+                    logger.info("Laufe gerade");
                 default:
                     break;
             }
-
-            // Kurvengang ermoeglichen
-            //if(lastDir)
             
             result.setValue(--allowedDistance);
             game.getDiceResultById(request.playerId).setValue(allowedDistance);
-        } while(allowedDistance > 0);
+        } while(result.getValue() > 0);
+
+        logger.info("Alle Zuege verbraucht");
+
+        // wenn alle Zuege verbraucht sind
+        Bewegung bew = new Bewegung(figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
+        var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
+        publisher.publishEvent(moveEv);
+
         return FigureMoveResult.ok();
-
-        /* 
-        // #1 und 2 Figur kann auf kein gesperrtes Feld (nur auf freie Felder)
-        if (destinationField.getType() == CellType.BLOCKED) {
-            return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
-        }
-
-        // #4 Maximal 2 Figuren pro Feld
-        if (destinationField.getFigures().size() >= 2) {
-            return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
-        }
-
-
-        int di = request.toI - figure.getGridI();
-        int dj = request.toJ - figure.getGridJ();
-
-        // Diatanz prüfen #48 Bewegung durch Würfel
-        int walkedDistance = Math.abs(di) + Math.abs(dj);
-
-        // Validierung der erlaubten Distanz
-        String feldText = "Felder";
-        if (walkedDistance != allowedDistance) {
-            return FigureMoveResult.fail("Du musst genau " + allowedDistance + " " + feldText + " gehen.");
-        }
-
-
-        // Bewegung nur in einer Achse / Diagonal verboten
-        if (Math.abs(di) > 0 && Math.abs(dj) > 0) {
-            return FigureMoveResult.fail("Diagonal verboten");
-        }
-
-        // #3 Figur kann kein gesperrtes Feld überspringen
-        if (Math.abs(di) > 1 || Math.abs(dj) > 1) {
-            int midI = figure.getGridI() + Integer.signum(di);
-            int midJ = figure.getGridJ() + Integer.signum(dj);
-
-            Field midfField = game.getBoard().get(midI, midJ);
-
-            if (midfField.getType() == CellType.BLOCKED) {
-                return FigureMoveResult.fail("Überspringen von blockierten Felder ist verboten");
-            }
-        }
-
-        // Ausführung der Bewegung
-        Field currentField = game.getBoard().get(figure.getGridI(), figure.getGridJ());
-        currentField.removeFigure(figure);
-
-        figure.setPosition(request.toI, request.toJ);
-
-        destinationField.addFigure(figure);
-
-
-        Map<String, Field> newNeighbours = getWalkableNeighbors(game, figure);
-        System.out.println("Begehbare: " + newNeighbours.keySet());
-
-        String newType = classifyField(game, figure);
-        System.out.println("Feldtyp: " + newType);
-
-
-        // #4 Nur zwei Figuren können auf das gleiche Feld
-        if (destinationField.getFigures().size() == 2) {
-            // hier muss ein Duell gestartet werden
-            return FigureMoveResult.ok();
-        }
-
-        result.setValue(0);
-        //game.setPlayerWhoRolledId(null);
-        */
-        // Bei allen anderen Fällen
     }
 }
