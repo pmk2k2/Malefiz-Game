@@ -29,7 +29,7 @@ public class GameService {
 
     private Map<String, Game> games = new HashMap<>();
     private CodeGeneratorService codeService;
-    private final int MAX_PLAYERS = 2;
+    private final int MAX_PLAYERS = 4;
     private final long COUNTDOWN_DURATION_SECONDS = 10; // Countdown Dauer in Sekunden
     private ApplicationEventPublisher publisher;
 
@@ -267,7 +267,7 @@ public class GameService {
         if (game == null || game.getState() != GameState.COUNTDOWN)
             return false;
 
-        if (game.getPlayers().size() > MAX_PLAYERS) {
+        if (game.getPlayers().size() == MAX_PLAYERS) {
             publisher.publishEvent(limitEvent(gameCode));
             return false;
         }
