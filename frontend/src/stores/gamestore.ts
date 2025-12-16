@@ -88,7 +88,7 @@ export const useGameStore = defineStore('gamestore', () => {
           //  Ausschließlich Lobby updates (Joined, left, Countdown usw...)
           if(event.typ === 'INGAME') {
             if(event.operation === 'MOVE') {
-              console.log("Figur bitta bewegen")
+              console.log("DING DONG Figur bewegen")
               console.log(event)
               ingameMoveEvent.value = event
             }

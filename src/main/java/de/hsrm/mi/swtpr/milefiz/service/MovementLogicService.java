@@ -60,8 +60,8 @@ public class MovementLogicService {
         int[][] mask = {
             {-1, 0}, // west
             { 1, 0}, // ost
-            { 0,-1}, // norden
-            { 0, 1}  // sueden 
+            { 0, 1}, // norden
+            { 0,-1}  // sueden 
         };
 
         String[] names = { "west", "east", "north", "south" };
@@ -139,17 +139,17 @@ public class MovementLogicService {
         // Erst gucken nach Typ von Kurve, dann aus welcher Richtung man kommt
         switch(mT) {
             case MoveType.CURVE_WS:
-                newDir = (dir == Direction.WEST) ? Direction.SOUTH : Direction.WEST;
+                newDir = (dir == Direction.EAST) ? Direction.SOUTH : Direction.WEST;
                 break;
             case MoveType.CURVE_ES:
-                newDir = (dir == Direction.EAST) ? Direction.SOUTH : Direction.EAST;
+                newDir = (dir == Direction.WEST) ? Direction.SOUTH : Direction.EAST;
                 break;
             case MoveType.CURVE_WN:
-                newDir = (dir == Direction.WEST) ? Direction.NORTH : Direction.WEST;
+                newDir = (dir == Direction.EAST) ? Direction.NORTH : Direction.WEST;
                 break;
             default:
             case MoveType.CURVE_EN:
-                newDir = (dir == Direction.EAST ) ? Direction.NORTH : Direction.EAST;
+                newDir = (dir == Direction.WEST) ? Direction.NORTH : Direction.EAST;
                 break;
         }
 
@@ -293,12 +293,12 @@ public class MovementLogicService {
             figure.setPosition(destI, destJ);
             destField.addFigure(figure);
 
+            // gelaufenen Schritt abziehen
+            result.setValue(--allowedDistance);
+            game.getDiceResultById(request.playerId).setValue(allowedDistance);
+
             // Anzahl Schritte und Richtung fuer Event anpassen
             stepsCount++;
-            /*
-            moveEv.setSteps(stepsCount);
-            moveEv.setDir(lastDir);
-            */
 
             // Nur zwei Figuren können auf das gleiche Feld -> Kampf einleiten (in Zukunft)
             if (destField.getFigures().size() == 2) {
@@ -310,6 +310,7 @@ public class MovementLogicService {
             // Gucken, ob Anfrage noetig
             MoveType moveType = classifyField(game, figure);
             logger.info("Neues Feld ist {}", moveType);
+            if(result.getValue() <= 0) break;
             switch(moveType) {
                 case MoveType.DEADEND:
                     // restliche Energie speichern eigentlich
@@ -324,6 +325,7 @@ public class MovementLogicService {
                     Bewegung bew = new Bewegung(figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
                     var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
                     publisher.publishEvent(moveEv);
+                    stepsCount = 0;
                     return FigureMoveResult.ok();
 
                 // TODO: bei Kurven und so anderes Verhalten noch
@@ -335,6 +337,7 @@ public class MovementLogicService {
                     var moveEv2 = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew2);
                     publisher.publishEvent(moveEv2);
                     // Drehen in richtige Richtung
+                    stepsCount = 0;
                     lastDir = getNewDirection(moveType, lastDir);
                     logger.info("Neue Richtung: {}", lastDir);
                     break;
@@ -346,8 +349,12 @@ public class MovementLogicService {
                     break;
             }
             
-            result.setValue(--allowedDistance);
-            game.getDiceResultById(request.playerId).setValue(allowedDistance);
+            /* Testweise eingebaut
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } */
         } while(result.getValue() > 0);
 
         logger.info("Alle Zuege verbraucht");
@@ -356,6 +363,7 @@ public class MovementLogicService {
         Bewegung bew = new Bewegung(figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
         var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
         publisher.publishEvent(moveEv);
+        stepsCount = 0;
 
         return FigureMoveResult.ok();
     }

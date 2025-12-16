@@ -106,6 +106,7 @@ watch(() => gameStore.ingameMoveEvent, (newEv) => {
 
   // Wenn Steps = 0 -> keine Schritte laufen
   const bew = newEv.bewegung
+  figures.value[index].orientation = bew.dir.toLowerCase()
   if(bew.steps === 0) {
     moveFigure(index, bew.endX, bew.endZ)
   } else {
