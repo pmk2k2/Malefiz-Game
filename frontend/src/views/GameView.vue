@@ -127,9 +127,4 @@ function startCooldownTimer() {
           </div>      
         </div>
       </div>
-
-      </div>
-    </div>
-    
-  </div>
 </template>
