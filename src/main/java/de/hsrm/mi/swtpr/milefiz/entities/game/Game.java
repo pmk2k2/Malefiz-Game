@@ -23,6 +23,7 @@ public class Game {
     private GameState state = GameState.WAITING;
     private Instant countdownStartedAt;
 
+
     // temporäres Feld
     private Board board;
     // Figuren in Backend
@@ -112,11 +113,6 @@ public class Game {
         return countdownStartedAt;
     }
 
-    public void startCountdown() {
-        this.state = GameState.COUNTDOWN;
-        this.countdownStartedAt = Instant.now();
-    }
-
     public void setState(GameState state) {
         this.state = state;
     }
@@ -125,27 +121,27 @@ public class Game {
         this.countdownStartedAt = countdownStartedAt;
     }
 
+
+
     public boolean adminStart() {
         if (playerList.size() > 4)
             return false;
         this.state = GameState.RUNNING;
         return true;
     }
-    public boolean counterStart(long requiredCountdownSeconds){
-    if (this.state != GameState.COUNTDOWN || this.countdownStartedAt == null) {
+
+    public boolean counterStart(long requiredCountdownSeconds) {
+        if (this.state != GameState.COUNTDOWN || this.countdownStartedAt == null) {
+            return false;
+        }
+        Duration elapsed = Duration.between(this.countdownStartedAt, Instant.now());
+        if (elapsed.getSeconds() >= requiredCountdownSeconds) {
+            this.state = GameState.RUNNING;
+            logger.info("Game started after countdown.");
+            return true;
+        }
+
         return false;
-    }
-
-    Instant now = Instant.now();
-    Duration elapsed = Duration.between(this.countdownStartedAt, now);
-
-    if (elapsed.getSeconds() >= requiredCountdownSeconds) {
-        this.state = GameState.RUNNING;
-        logger.info("Game started after countdown.");
-        return true;
-    }
-    
-    return false;
     }
 
     public void setBoard(Board board) {
@@ -162,7 +158,7 @@ public class Game {
 
     public void addFigure(Figure fig) {
         figures.add(fig);
-        board.get(fig.getGridI(), fig.getGridJ()).addFigure(fig);   // Auf Feld setzen
+        board.get(fig.getGridI(), fig.getGridJ()).addFigure(fig); // Auf Feld setzen
     }
 
     public int getCurrentMovementAmount() {

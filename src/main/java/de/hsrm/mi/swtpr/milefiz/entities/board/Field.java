@@ -10,6 +10,7 @@ public class Field {
     private int j;
     private CellType type;
     private List<Figure> figures = new ArrayList<>();
+    private Barrier barrier;
 
     public Field() {
 
@@ -19,6 +20,18 @@ public class Field {
         this.i = i;
         this.j = j;
         this.type = type;
+    }
+
+    public boolean hasBarrier() {
+        return this.barrier != null;
+    }
+
+    public Barrier getBarrier() {
+        return barrier;
+    }
+
+    public void setBarrier(Barrier barrier) {
+        this.barrier = barrier;
     }
 
     public void addFigure(Figure fig) {
@@ -43,6 +56,10 @@ public class Field {
 
     public boolean isBlocked() {
         return type == CellType.BLOCKED;
+    }
+
+    public boolean isBarrier() {
+        return type == CellType.BARRIER;
     }
 
     public int getI() {

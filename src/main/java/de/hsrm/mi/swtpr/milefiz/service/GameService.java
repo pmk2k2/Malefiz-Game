@@ -29,8 +29,8 @@ public class GameService {
 
     private Map<String, Game> games = new HashMap<>();
     private CodeGeneratorService codeService;
-    private final int MAX_PLAYERS = 2;
-    private final long COUNTDOWN_DURATION_SECONDS = 10;
+    private final int MAX_PLAYERS = 4;
+    private final long COUNTDOWN_DURATION_SECONDS = 10; // Countdown Dauer in Sekunden
     private ApplicationEventPublisher publisher;
 
     @Autowired
@@ -105,6 +105,12 @@ public class GameService {
             return false;
         }
 
+        // Stop countdown, wenn ein Spieler gekickt wurde während des Countdowns
+        if (game.getState() == GameState.COUNTDOWN) {
+            stopCountdown(gameCode);
+            publishCountdownAbortEvent(gameCode);
+        }
+
         // LOBBY EVENT
         publisher.publishEvent(new FrontendNachrichtEvent(
                 Nachrichtentyp.LOBBY,
@@ -131,31 +137,35 @@ public class GameService {
         return true;
     }
     // Redundant ?
-/*     public synchronized boolean setPlayerReady(String gameCode, String playerId, boolean isReady) {
-        Game game = games.get(gameCode);
-        if (game == null)
-            return false;
-
-        Player player = game.getPlayerById(playerId);
-        if (player == null)
-            return false;
-
-        player.setReady(isReady);
-
-        // Prüfen, ob alle Ready sind
-        boolean allReady = game.getPlayers().size() > 0 &&
-                game.getPlayers().stream().allMatch(Player::isReady);
-
-        if (allReady) {
-            // Countdown starten + WS Event an alle Spieler senden
-            startCountdown(gameCode);
-        }
-        return true;
-    } */
+    /*
+     * public synchronized boolean setPlayerReady(String gameCode, String playerId,
+     * boolean isReady) {
+     * Game game = games.get(gameCode);
+     * if (game == null)
+     * return false;
+     * 
+     * Player player = game.getPlayerById(playerId);
+     * if (player == null)
+     * return false;
+     * 
+     * player.setReady(isReady);
+     * 
+     * // Prüfen, ob alle Ready sind
+     * boolean allReady = game.getPlayers().size() > 0 &&
+     * game.getPlayers().stream().allMatch(Player::isReady);
+     * 
+     * if (allReady) {
+     * // Countdown starten + WS Event an alle Spieler senden
+     * startCountdown(gameCode);
+     * }
+     * return true;
+     * }
+     */
 
     public synchronized boolean setPlayerReadyAndCheckStart(String gameCode, String playerId, boolean isReady) {
         Game game = games.get(gameCode);
-        if (game == null) return false;
+        if (game == null)
+            return false;
 
         if (game.getPlayers().size() > MAX_PLAYERS) {
             publisher.publishEvent(limitEvent(gameCode));
@@ -163,9 +173,16 @@ public class GameService {
         }
 
         Player player = game.getPlayerById(playerId);
-        if (player == null) return false;
+        if (player == null)
+            return false;
 
         player.setReady(isReady);
+
+        if (!isReady) {
+            stopCountdown(gameCode);
+            // Informiere Frontend, dass der Countdown abgebrochen wurde
+            publishCountdownAbortEvent(gameCode);
+        }
 
         publishReadyUpdateEvent(gameCode, playerId, isReady, player.getName());
 
@@ -176,7 +193,8 @@ public class GameService {
         return true;
     }
 
-    public void startOrTriggerGame(String gameCode, String playerId) throws GameNotFoundException, NotHostException, GameStartException {
+    public void startOrTriggerGame(String gameCode, String playerId)
+            throws GameNotFoundException, NotHostException, GameStartException {
         Game game = games.get(gameCode);
 
         if (game == null) {
@@ -193,15 +211,16 @@ public class GameService {
 
         if (!success) {
             String issue = (game.getState() != GameState.COUNTDOWN)
-                ? "Spiel ist nicht im Zustand -Countdown-; " + game.getState()
-                : "Unbekannter Fehler beim Starten.";
+                    ? "Spiel ist nicht im Zustand -Countdown-; " + game.getState()
+                    : "Unbekannter Fehler beim Starten.";
             throw new GameStartException("Spiel konnte nicht gestartet werden: " + issue);
         }
     }
 
     public void startCountdown(String gameCode) {
         Game game = games.get(gameCode);
-        if (game == null || game.getState() != GameState.WAITING) return;
+        if (game == null || game.getState() != GameState.WAITING)
+            return;
 
         game.setState(GameState.COUNTDOWN);
         Instant now = Instant.now();
@@ -210,9 +229,21 @@ public class GameService {
         publishCountdownStartEvent(gameCode, now);
     }
 
+    public void stopCountdown(String gameCode) {
+        Game game = games.get(gameCode);
+        if (game == null || game.getState() != GameState.COUNTDOWN)
+            return;
+
+        game.setState(GameState.WAITING);
+        game.setCountdownStartedAt(null);
+
+        publishCountdownAbortEvent(gameCode);
+    }
+
     public synchronized boolean triggerAdminStart(String gameCode, String adminId) {
         Game game = games.get(gameCode);
-        if (game == null || game.getState() != GameState.COUNTDOWN) return false;
+        if (game == null || game.getState() != GameState.COUNTDOWN)
+            return false;
 
         if (game.getPlayers().size() > MAX_PLAYERS) {
             publisher.publishEvent(limitEvent(gameCode));
@@ -220,10 +251,12 @@ public class GameService {
         }
 
         boolean start = game.adminStart();
-        if (!start) return false;
+        if (!start)
+            return false;
 
-        if (!initialiatizeFigures(game)) return false;
-        
+        if (!initialiatizeFigures(game))
+            return false;
+
         game.setState(GameState.RUNNING);
         publishGameRunningEvent(gameCode);
         return true;
@@ -231,17 +264,20 @@ public class GameService {
 
     public synchronized boolean triggerCounterStart(String gameCode, String adminId) {
         Game game = games.get(gameCode);
-        if (game == null || game.getState() != GameState.COUNTDOWN) return false;
+        if (game == null || game.getState() != GameState.COUNTDOWN)
+            return false;
 
-        if (game.getPlayers().size() > MAX_PLAYERS) {
+        if (game.getPlayers().size() == MAX_PLAYERS) {
             publisher.publishEvent(limitEvent(gameCode));
             return false;
         }
 
-        boolean start = game.counterStart(COUNTDOWN_DURATION_SECONDS);;
-        if (!start) return false;
+        boolean start = game.counterStart(COUNTDOWN_DURATION_SECONDS);
+        if (!start)
+            return false;
 
-        if (!initialiatizeFigures(game)) return false;
+        if (!initialiatizeFigures(game))
+            return false;
 
         game.setState(GameState.RUNNING);
         publishGameRunningEvent(gameCode);
@@ -249,7 +285,8 @@ public class GameService {
     }
 
     private boolean initialiatizeFigures(Game game) {
-        if (game.getFigures().isEmpty() == false) return false;
+        if (game.getFigures().isEmpty() == false)
+            return false;
 
         final int FIGURES_PER_PLAYER = 5;
         final int START_I = 0;
@@ -275,20 +312,20 @@ public class GameService {
 
     private static FrontendNachrichtEvent limitEvent(String gameCode) {
         return new FrontendNachrichtEvent(
-            Nachrichtentyp.LOBBY,
-            "server",
-            Operation.PLAYER_LIMIT_ERROR,
-            gameCode,
-            null);
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.PLAYER_LIMIT_ERROR,
+                gameCode,
+                null);
     }
 
     private void publishGameRunningEvent(String gameCode) {
         publisher.publishEvent(new FrontendNachrichtEvent(
-            Nachrichtentyp.LOBBY, 
-            "server", 
-            Operation.GAME_RUNNING, 
-            gameCode, 
-            null));
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.GAME_RUNNING,
+                gameCode,
+                null));
     }
 
     public void publishPlayerLimitEvent(String gameCode) {
@@ -297,28 +334,15 @@ public class GameService {
 
     public void publishReadyUpdateEvent(String gameCode, String playerId, boolean ready, String name) {
         FrontendNachrichtEvent e = new FrontendNachrichtEvent(
-            Nachrichtentyp.LOBBY,
-            playerId,
-            Operation.READY_UPDATED,
-            gameCode,
-            name);
+                Nachrichtentyp.LOBBY,
+                playerId,
+                Operation.READY_UPDATED,
+                gameCode,
+                name);
         publisher.publishEvent(e);
     }
 
     public void publishCountdownStartEvent(String gameCode, Instant startedAt) {
-        FrontendNachrichtEvent e = new FrontendNachrichtEvent(
-            Nachrichtentyp.LOBBY,
-            "server",
-            Operation.COUNTDOWN_STARTED,
-            gameCode,
-            null);
-        e.setCountdownStartedAt(startedAt);
-        e.setGameState(GameState.COUNTDOWN);
-        e.setCountdownDurationSeconds(COUNTDOWN_DURATION_SECONDS);
-        publisher.publishEvent(e);
-    }
-
-    private FrontendNachrichtEvent countdownEvent(String gameCode, Instant startedAt) {
         FrontendNachrichtEvent e = new FrontendNachrichtEvent(
                 Nachrichtentyp.LOBBY,
                 "server",
@@ -326,7 +350,19 @@ public class GameService {
                 gameCode,
                 null);
         e.setCountdownStartedAt(startedAt);
-        return e;
+        e.setGameState(GameState.COUNTDOWN);
+        e.setCountdownDurationSeconds(COUNTDOWN_DURATION_SECONDS);
+        publisher.publishEvent(e);
+    }
+
+    public void publishCountdownAbortEvent(String gameCode) {
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.COUNTDOWN_ABORTED,
+                gameCode,
+                null);
+        publisher.publishEvent(e);
     }
 
     public Game getGame(String code) {
@@ -340,7 +376,8 @@ public class GameService {
         }
 
         return game.getFigures().stream()
-            .map(f -> new FigureDto(f.getId(), f.getColor(), f.getOwnerPlayerId(), f.getOrientation(), f.getGridI(), f.getGridJ()))
-            .collect(Collectors.toList());
+                .map(f -> new FigureDto(f.getId(), f.getColor(), f.getOwnerPlayerId(), f.getOrientation(), f.getGridI(),
+                        f.getGridJ()))
+                .collect(Collectors.toList());
     }
 }

@@ -50,6 +50,18 @@ export const useGameStore = defineStore('gamestore', () => {
 
   let stompClient: Client | null = null
 
+  const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
+  const stompEnv = (import.meta.env.VITE_STOMP_URL as string) || ''
+
+  
+
+  function computeSockJsUrl() {
+    if (stompEnv && stompEnv.length) {
+      return stompEnv
+    }
+    return `${location.protocol}//${location.host}/stompbroker`
+  }
+
   function startLobbyLiveUpdate(gameCode: string) {
     //Websocket anknüpfung zum backend (FrontendNachrichtenService API) Webbasierte Anwendungen Praktikum-Blatt10
     if (stompClient && stompClient.active) {
@@ -57,8 +69,10 @@ export const useGameStore = defineStore('gamestore', () => {
       return
     }
 
+    const sockJsUrl = computeSockJsUrl()
+
     stompClient = new Client({
-      webSocketFactory: () => new SockJS('/stompbroker'),
+      webSocketFactory: () => new SockJS(sockJsUrl),
       reconnectDelay: 5000,
       debug: (str) => console.log('[STOMP]', str),
     })
@@ -83,12 +97,16 @@ export const useGameStore = defineStore('gamestore', () => {
 
             if (event.operation === 'LEFT' && event.playerName) {
               setzeInfo(`${event.playerName} hat die Lobby verlassen.`) //InfoBox setzen wenn Player die Lobby verlässt
+              
+            }
+            if(event.operation==='KICKED'){
+              stopCountdown();
             }
 
             if (event.operation === 'COUNTDOWN_STARTED') {
               gameState.value = 'COUNTDOWN'
 
-              const duration = event.countdownDurationSeconds || 10 // 30 als Fallback
+              const duration = event.countdownDurationSeconds || 10 // 10 als Fallback
               //countdown.value = duration
               const startTimeMs = new Date(event.countdownStartedAt!).getTime()
 
@@ -105,6 +123,10 @@ export const useGameStore = defineStore('gamestore', () => {
                 }
               }, 500)
             }
+            if (event.operation ==='COUNTDOWN_ABORTED') {
+              stopCountdown();
+            }
+
 
             // Admin oder Server startet Spiel → kein Countdown, direkt rein
             if (event.operation === 'GAME_RUNNING') {
@@ -128,15 +150,14 @@ export const useGameStore = defineStore('gamestore', () => {
   }
   async function triggerGameStart(gameCode: string) {
     const playerId = gameData.playerId
-    // use the router instance from the store scope
+
     if (!gameCode || !playerId) {
       console.warn('Fehlende Daten für den Spielstart.')
       return
     }
 
     try {
-      const res = await fetch('/api/game/start', {
-        method: 'POST',
+      const res = await fetch(`${apiBase}/game/start`, {        method: 'POST',
         body: JSON.stringify({
           code: gameCode,
           playerId: playerId,
@@ -158,7 +179,7 @@ export const useGameStore = defineStore('gamestore', () => {
     try {
       //setzeInfo("Lobby-Daten wurden aktualisiert");
       console.log('updatePlayerList aufgerufen für Code:', gameCode)
-      const response = await fetch(`/api/game/get?code=${gameCode}`, {
+      const response = await fetch(`${apiBase}/game/get?code=${gameCode}`, {
         headers: {
           // 'Authorization': `Bearer ${loginStore.jwt}`, // Falls JWT benötigt
         },

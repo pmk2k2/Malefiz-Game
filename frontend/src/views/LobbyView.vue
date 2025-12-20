@@ -1,7 +1,7 @@
 <template>
   <div class="background">
     <h1>Malefiz</h1>
-    <h2>{{ gameStore.gameData.gameCode ?? 'kein LoppyID vorhanden' }}</h2>
+    <h2>{{ gameStore.gameData.gameCode ?? 'kein LobbyID vorhanden' }}</h2>
 
     <div class="info-box" v-if="info.inhalt">
       <button @click="loescheInfo" class="cancel-button">✕</button>
@@ -24,7 +24,7 @@
     <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
 
     <div class="buttons">
-      <button @click="isBereit" :disabled="gameStore.countdown !== null">Bereit</button>
+      <button @click="isReady"> {{ gameStore.gameData.isBereit ? "Bereitschaft zurücknehmen" : "Bereit" }}</button>
       <button v-if="isHost" @click="gameStartenByAdmin">Starten</button>
       <button @click="goBack">Verlassen</button>
     </div>
@@ -48,6 +48,7 @@ import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import Counter from '@/components/playingfield/models/Counter.vue'
 import { useInfo } from '@/composable/useInfo'
 
+
 const { info, loescheInfo } = useInfo()
 const gameStore = useGameStore()
 const isHost = computed(() => gameStore.gameData.isHost)
@@ -59,6 +60,9 @@ const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
 const showCounter = computed(
   () => gameStore.gameData.players.length > 0 && gameStore.gameData.players.every((p) => p.isReady),
 )
+
+const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
+
 
 onMounted(() => {
   const code = gameStore.gameData.gameCode
@@ -79,6 +83,9 @@ function onDeleteZeile(playerId: string) {
     spielerListeRef.value.spielerListe = spielerListeRef.value.spielerListe.filter(
       (spieler) => spieler.id !== playerId,
     )
+    
+    if(gameStore.countdown!== null){
+      gameStore.stopCountdown}
   }
 }
 
@@ -91,7 +98,7 @@ async function goBack() {
   const { playerId, gameCode } = gameStore.gameData
 
   if (playerId && gameCode) {
-    await fetch('/api/game/leave', {
+    await fetch(`${apiBase}/game/leave`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -117,7 +124,7 @@ async function gameStartenByAdmin() {
     return
   }
   try {
-    const res = await fetch(`/api/game/start`, {
+    const res = await fetch(`${apiBase}/game/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: gameCode, playerId }),
@@ -136,9 +143,12 @@ const emit = defineEmits<{
   (e: 'isReady', value: boolean): void
 }>()
 
-async function isBereit() {
+
+async function isReady() {
   const playerId = gameStore.gameData.playerId
   const gameCode = gameStore.gameData.gameCode
+   const isCurrentlyReady = !gameStore.gameData.isBereit
+
   if (!playerId || !gameCode) {
     console.warn('Keine playerId oder gameCode vorhanden')
     return
@@ -146,25 +156,24 @@ async function isBereit() {
 
   try {
     // Backend-Call
-    const res = await fetch('/api/game/setReady', {
+    const res = await fetch(`${apiBase}/game/setReady`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ playerId, code: gameCode, isReady: true }),
+      body: JSON.stringify({ playerId, code: gameCode, isReady: isCurrentlyReady }),
     })
 
-    if (!res.ok) throw new Error('Failed to set ready')
-
-    const data = await res.json()
-
-    // Update lokal, falls die Spieler-Liste verfügbar ist
-    if (spielerListeRef.value?.spielerListe) {
-      const player = spielerListeRef.value.spielerListe.find((s: any) => s.id === playerId)
-      if (player) {
-        player.isReady = data.isReady
-      }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      const errorMessage = err.error || res.statusText || 'Fehler beim Setzen des Ready-Status.'
+      info.inhalt = errorMessage
+      throw new Error(errorMessage)
     }
-    // Event an Parent senden
-    emit('isReady', true)
+    // Start or stop countdown basierend auf dem aktuellen Ready-Status
+    gameStore.gameData.isBereit= isCurrentlyReady 
+    if( isCurrentlyReady == true) {
+      gameStore.countdown
+    }else {gameStore.stopCountdown}
+
   } catch (err) {
     console.error(err)
   }

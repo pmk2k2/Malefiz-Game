@@ -49,6 +49,11 @@ public class MovementLogicService {
                 continue;
             }
 
+            // Feld mit laufendem Duell (2 Figuren)
+            if (f.getFigures().size() >= 2) {
+                continue;
+            }
+
             result.put(names[k], f);
         }
 
@@ -118,19 +123,13 @@ public class MovementLogicService {
             return FigureMoveResult.fail("Die Figur gehört einem anderen Spieler");
         }
 
-        // Zielfeld
-        Field destinationField = game.getBoard().get(request.toI, request.toJ);
-
+        // Validierung wurde hier entfernt weil mit der neuen Logik bis vor die Barriere laufen dürfen
+        /*
         // #1 und 2 Figur kann auf kein gesperrtes Feld (nur auf freie Felder)
         if (destinationField.getType() == CellType.BLOCKED) {
             return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
         }
-
-        // #4 Maximal 2 Figuren pro Feld
-        if (destinationField.getFigures().size() >= 2) {
-            return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
-        }
-
+         */
 
         int di = request.toI - figure.getGridI();
         int dj = request.toJ - figure.getGridJ();
@@ -140,7 +139,7 @@ public class MovementLogicService {
 
         // Validierung der erlaubten Distanz
         String feldText = "Felder";
-        if (walkedDistance != allowedDistance) {
+        if (walkedDistance > allowedDistance) {
             return FigureMoveResult.fail("Du musst genau " + allowedDistance + " " + feldText + " gehen.");
         }
 
@@ -150,25 +149,55 @@ public class MovementLogicService {
             return FigureMoveResult.fail("Diagonal verboten");
         }
 
-        // #3 Figur kann kein gesperrtes Feld überspringen
-        if (Math.abs(di) > 1 || Math.abs(dj) > 1) {
-            int midI = figure.getGridI() + Integer.signum(di);
-            int midJ = figure.getGridJ() + Integer.signum(dj);
+        int stepI = Integer.signum(di);
+        int stepJ = Integer.signum(dj);
+        int finalI = figure.getGridI();
+        int finalJ = figure.getGridJ();
+        int actualSteps = 0;
 
-            Field midfField = game.getBoard().get(midI, midJ);
+        //Schleife die über die verfügbare Schritte iteriert
+        //und prüft ob eine barriere auf dem Pfad ist 
+        for (int step = 1; step <= walkedDistance; step++) {
+            int currentI = figure.getGridI() + step * stepI;
+            int currentJ = figure.getGridJ() + step * stepJ;
+            Field currentField = game.getBoard().get(currentI, currentJ);
 
-            if (midfField.getType() == CellType.BLOCKED) {
-                return FigureMoveResult.fail("Überspringen von blockierten Felder ist verboten");
+            //Ist das Feld auf dem Path BLOCKED wird die Suche abgebrochen
+            if (currentField.getType() == CellType.BLOCKED) {
+                break; 
             }
+
+            //Ist die Barriere das Ziel und ist die ganze Energie aufgebracuht
+            //wird die Figur auf die Barriere gesetzt
+            if (currentField.hasBarrier()) {
+                boolean exactEnergyLanding = (step == walkedDistance && walkedDistance == allowedDistance);
+                if (exactEnergyLanding) {
+                    finalI = currentI;
+                    finalJ = currentJ;
+                    actualSteps = step;
+                    break; 
+                } else {
+                    break;
+                }
+            }
+            finalI = currentI;
+            finalJ = currentJ;
+            actualSteps = step;
+        }
+        //Bewegung ausführen
+        Field actualDestField = game.getBoard().get(finalI, finalJ);
+
+        //Validiert ob das Zielfeld voll ist
+        if (actualDestField != game.getBoard().get(figure.getGridI(), figure.getGridJ()) && actualDestField.getFigures().size() >= 2) {
+             return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
         }
 
-        // Ausführung der Bewegung
         Field currentField = game.getBoard().get(figure.getGridI(), figure.getGridJ());
         currentField.removeFigure(figure);
 
-        figure.setPosition(request.toI, request.toJ);
-
-        destinationField.addFigure(figure);
+        //Neue Logik für das Bewegen mit Barrierren
+        figure.setPosition(finalI, finalJ);
+        actualDestField.addFigure(figure);
 
 
         Map<String, Field> newNeighbours = getWalkableNeighbors(game, figure);
@@ -179,13 +208,18 @@ public class MovementLogicService {
 
 
         // #4 Nur zwei Figuren können auf das gleiche Feld
-        if (destinationField.getFigures().size() == 2) {
+        if (actualDestField.getFigures().size() == 2) {
             // hier muss ein Duell gestartet werden
             return FigureMoveResult.ok();
         }
 
-        game.setCurrentMovementAmount(0);
-        game.setPlayerWhoRolledId(null);
+        // Speichert den überigen Wert des Würfels für die Sprung Energie in Zukunft 
+        //Update: ActualSteps wurde angepasst um Barrieren zu berücksichtigen
+        int remainingEnergy = allowedDistance - actualSteps;
+        game.setCurrentMovementAmount(remainingEnergy);
+        if (remainingEnergy == 0) {
+            game.setPlayerWhoRolledId(null);
+        }
 
         // Bei allen anderen Fällen
         return FigureMoveResult.ok();
