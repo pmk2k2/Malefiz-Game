@@ -57,6 +57,10 @@ async function getBoardFromBackend(): Promise<Board | null> {
 }
 
 onMounted(async () => {
+  if (board.value) {
+    console.log('Spielfeld ist bereits gefetcht worden (Wenn das in Konsole steht wird mehrmals das Spielfeld gefetcht statt einmalig zu beginn also problem)')
+    return
+  }
   isLoading.value = true
   const fetched = await getBoardFromBackend()
   if (fetched) {

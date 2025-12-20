@@ -55,7 +55,7 @@ function closeCensoredMap() {
       <button class="open p-2 bg-green-600 text-white rounded-lg" @click="openCensoredMap">open map</button>
     </div>
 
-    <div v-if="sichtbar" class="absolute inset-0 bg-black/80 z-20 flex items-center justify-center">
+    <div v-show="sichtbar" class="absolute inset-0 bg-black/80 z-20 flex items-center justify-center">
       <div class="h-[80vh] w-[80vw] bg-[#222] rounded-xl relative">
         <TheMapBarrierEditor 
             :grid="liveGrid" 
