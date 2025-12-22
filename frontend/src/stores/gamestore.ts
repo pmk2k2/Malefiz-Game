@@ -12,6 +12,8 @@ import type { IBewegung } from '@/services/IBewegung'
 import type { IPlayerFigure } from './IPlayerFigure'
 
 export const useGameStore = defineStore('gamestore', () => {
+
+  console.log("Erstelle Gamestore")
   const { setzeInfo } = useInfo()
   const router = useRouter()
   const countdown = ref<number | null>(null)

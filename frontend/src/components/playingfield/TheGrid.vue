@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TresCanvas, type TresObject } from '@tresjs/core'
+import { TresCanvas, useLoop, type TresObject } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import TheRock from './models/TheRock.vue'
@@ -12,6 +12,9 @@ import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 import type { IFigureMoveRequest } from '@/services/IFigureMoveRequest'
+import { isIndexedAccessTypeNode } from 'typescript'
+import { useAnimationQueue } from '@/composable/useAnimationQueue'
+import { storeToRefs } from 'pinia'
 
 // Zellentypen
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL'
@@ -29,6 +32,7 @@ interface Board {
   rows: number
   grid: Field[][]
 }
+console.log("Erstelle Grid")
 
 const gameStore = useGameStore()
 const CELL_SIZE = 2
@@ -37,9 +41,13 @@ const isLoading = ref(true)
 const gameCode = gameStore.gameData.gameCode
 
 // Player figures
-const figures = ref(gameStore.figures) //ref<IPlayerFigure[]>([])
+const { figures } = storeToRefs(gameStore)
 const currentPlayerId = gameStore.gameData.playerId
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+// Animationqueue
+const ANIMATION_DURATION = 300   // laenge der Animation in ms
+const { queueMove } = useAnimationQueue()
 
 // Camera controls
 const camRef = shallowRef<TresObject | null>(null)
@@ -48,6 +56,9 @@ const camHeight = 1.2
 let figureControlInd = 0
 const egoPersp = ref(false)
 const figureViewDir = ref(-1)
+
+// Abspielen von Animation etc
+const { onBeforeRender } = useLoop()
 
 const ownFigures = computed(() => {
   if (!currentPlayerId) return []
@@ -103,15 +114,12 @@ watch(() => gameStore.ingameMoveEvent, (newEv) => {
   // FrontendNachricht mit Bewegung drin behandeln
   // Anzusteuernde Figur finden
   const index = figures.value.findIndex((fig) => fig.id === newEv.figureId && fig.playerId === newEv.id)
-
-  // Wenn Steps = 0 -> keine Schritte laufen
-  const bew = newEv.bewegung
-  figures.value[index].orientation = bew.dir.toLowerCase()
-  if(bew.steps === 0) {
-    moveFigure(index, bew.endX, bew.endZ)
-  } else {
-    moveFigureSteps(index, bew.steps, bew.dir.toLowerCase())
-  }
+  // Logikkoordinaten in Spielkoordinaten umwandeln
+  const endPosField = cellToField( {i: newEv?.bewegung.endX, j: newEv?.bewegung.endZ })
+  newEv.bewegung.endX = endPosField[0]
+  newEv.bewegung.endZ = endPosField[2]
+  // Bewegung in Queue anhaengen
+  queueMove(index, newEv.bewegung, ANIMATION_DURATION)
 })
 
 async function sendBoard(boardData: Board) {
@@ -173,6 +181,8 @@ async function fetchGameState() {
 
       return {
         ...fig,
+        currentAnim: null,
+        animQueue: [],
         position: [x, y, z],
       } as IPlayerFigure
     })
@@ -241,8 +251,10 @@ function calculateHomeCenter(playerId: string) {
   return _calculateHomeBaseOffset(playerIndex, playersCount)
 }
 
-// evtll lieber in ein watch(...) packen?
-function updateCam() {
+
+// war: updateCam()
+// so ists besser, da nicht jedes mal updateCam() aufgerufen werden muss
+onBeforeRender(({ delta }) => {
   const cam = camRef.value as any
   if (!cam) return
 
@@ -254,6 +266,7 @@ function updateCam() {
     cam.position.set(x, camHeight + (y - 0.2), z)
 
     let lookDir = 0
+    console.log("Blickrichtung Kamera/Figur: ", fig.orientation)
     switch (fig.orientation) {
       case 'north':
         lookDir = 0
@@ -278,7 +291,8 @@ function updateCam() {
     cam.position.set(default_cam_pos[0], default_cam_pos[1], default_cam_pos[2])
     cam.lookAt(0, 0, 0)
   }
-}
+//}
+})
 
 function onKeyDown(event: KeyboardEvent) {
   const key = event.key
@@ -298,7 +312,7 @@ function onKeyDown(event: KeyboardEvent) {
 
 
     if (egoPersp.value) {
-      updateCam()
+      //updateCam()
     }
   }
 
@@ -307,14 +321,14 @@ function onKeyDown(event: KeyboardEvent) {
     rotateCurrentFigure(-1)
 
     if (egoPersp.value) {
-      updateCam()
+      //updateCam()
     }
   }
   if (key === 'd' || key === 'D') {
     rotateCurrentFigure(1)
 
     if (egoPersp.value) {
-      updateCam()
+      //updateCam()
     }
   }
 
@@ -328,7 +342,7 @@ function onKeyDown(event: KeyboardEvent) {
     if (egoPersp.value && numOwnFigures > 0) {
       figureControlInd = 0
     }
-    updateCam()
+    //updateCam()
   }
 }
 
@@ -354,94 +368,6 @@ function onRoll(id: string) {
   rollDice()
 }
 */
-
-
-// Asynchrone Funktion, die eine Figur nach Index um x Schritte nach vorne bewegt
-// Schritt fuer Schritt Animation
-async function moveFigureSteps(index = 0, wuerfelSchritte = 1, direction) {
-  console.log("Bewegung in Richtung: ", direction)  
-
-  // Wenn Schrittanzahl 0 -> ignorieren
-  if(wuerfelSchritte === 0) return;
-
-  // Fuer Anzahl der angegeben Schritte
-  for(let i = 0; i < wuerfelSchritte; i++){
-    // momentane und Zielposition halten
-    const currentPos = figures.value[index].position
-
-    // ein Feld = 2 Einheiten
-    // je nach direction anpassen
-    let moveNS = 0
-    let moveWE = 0
-    switch(direction) {
-      case 'north':
-        moveNS = -2
-        break;
-      case 'south':
-        moveNS = 2
-        break;
-      case 'west':
-        moveWE = -2
-        break;
-      case 'east':
-        moveWE = 2
-        break;
-    }
-    const targetPos = [currentPos[0] + moveWE, 0.2, currentPos[2] + moveNS]
-
-    // Aufruf der Animationsfunktion
-    await animateMovement(currentPos, targetPos, index)
-  }
-}
-
-// von einer Pos direkt zur anderen Pos springen (ohne viel huepfen)
-async function moveFigure(index = 0, newX = 0, newZ = 0) {
-  const currentPos = figures.value[index].position
-  const targetField = cellToField({i: newX, j: newZ})
-  console.log(targetField)
-  const targetPos = [targetField[0], 0.2, targetField[2]]
-
-  await animateMovement(currentPos, targetPos, index)
-}
-
-// Funktion zur Animation der Bewegung der Spielfiguren
-function animateMovement(currentPos, targetPos, index) {
-  let duration = 450  // Dauer der Animation in ms
-  let startPos = currentPos
-  const startTime = performance.now();  // Startzeit zum Berechnen der Differenz benoetigt
-
-  // Promise, damit ein jeweils ein Animationszyklus zunaechst beendet wird
-  return new Promise<void>(resolve => {
-    function step(now){
-
-      // Animation laeuft im Grunde von 0-100% durch
-      // Dabei ist "(now-startTime) / duration" der Anteil, wie viel von der Animation abgeschlossen wurde
-      // Da es zeitbasiert ist, sollte es kein Problem mit verschiedenen Framerates geben
-      // Wenn mehr Zeit vergangen ist, als ein Zyklus eigentlich geht, so wird time auf 1
-      // und somit die Animation als fertig gesehen
-      const time = Math.min((now - startTime) / duration, 1);
-
-      let newPos = [0,0,0]
-      newPos[0] = startPos[0] + (targetPos[0] - startPos[0]) * time;  // lineare Bewegung auf x-Koordinate
-      newPos[1] = startPos[1] + Math.sin(Math.PI * time);             // "Huepfen" bei Bewegung auf y-Achse nach halber Sinuskurve
-      newPos[2] = startPos[2] + (targetPos[2] - startPos[2]) * time;  // lineare Bewegung auf z-Koordinate
-
-      figures.value[index].position = newPos  // Figur auf Position bewegen
-      if(time < 1){
-        // bis Animation fertig abgespielt ist, Animation aufrufen
-        requestAnimationFrame(step)
-      } else {
-        // Wenn time > 1 (also Animation 100% durch ist) -> Promise resolven
-        resolve()
-      }
-
-      // Kamera stetig updaten
-      updateCam()
-    }
-
-    requestAnimationFrame(step)
-  })
-}
 
 function getCurrentFigureRot() {
   switch(ownFigures.value[currentPlayerId].orientation) {
@@ -530,7 +456,7 @@ async function sendMoveDirection() {
 </script>
 
 <template>
-  <TresCanvas clear-color="#87CEEB" class="w-full h-full">
+  <!-- TresCanvas clear-color="#87CEEB" class="w-full h-full" -->
     <TresPerspectiveCamera ref="camRef" :position="default_cam_pos" :look-at="[0, 0, 0]" />
     <OrbitControls v-if="!egoPersp" />
 
@@ -581,5 +507,5 @@ async function sendMoveDirection() {
         :orientation="fig.orientation"
       />
     </template>
-  </TresCanvas>
+  <!-- /TresCanvas -->
 </template>
