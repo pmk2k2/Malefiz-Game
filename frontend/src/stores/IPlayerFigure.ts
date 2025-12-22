@@ -8,6 +8,7 @@ export interface IPlayerFigure {
   color: string
   playerId: string
   orientation: Orientation
+  viewDirRot: number
   // Felder fuer Animation
   animQueue: Array<AnimationJob>   // Queue fuer die Animationen in den einzelnen Figuren halten
   currentAnim: AnimationJob | null

@@ -12,7 +12,6 @@ import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 import type { IFigureMoveRequest } from '@/services/IFigureMoveRequest'
-import { isIndexedAccessTypeNode } from 'typescript'
 import { useAnimationQueue } from '@/composable/useAnimationQueue'
 import { storeToRefs } from 'pinia'
 
@@ -47,7 +46,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 // Animationqueue
 const ANIMATION_DURATION = 300   // laenge der Animation in ms
-const { queueMove } = useAnimationQueue()
+const { queueMove, queueRotation } = useAnimationQueue()
 
 // Camera controls
 const camRef = shallowRef<TresObject | null>(null)
@@ -130,6 +129,8 @@ watch(() => gameStore.ingameMoveEvent, (newEv) => {
   console.log("endpos aus Ev neu: ", newEv?.bewegung.endX, newEv?.bewegung.endZ)
   // Bewegung in Queue anhaengen
   queueMove(index, newEv.bewegung, ANIMATION_DURATION)
+  // Orientierung richtig setzen
+  figures.value[index].orientation = newEv.bewegung.dir.toLowerCase()
 })
 
 async function sendBoard(boardData: Board) {
@@ -194,6 +195,7 @@ async function fetchGameState() {
         currentAnim: null,
         animQueue: [],
         position: [x, y, z],
+        viewDirRot: 0
       } as IPlayerFigure
     })
     console.log('Figure geladen und positioniert:', figures.value.length)
@@ -275,6 +277,7 @@ onBeforeRender(({ delta }) => {
     const [x, y, z] = fig.position
     cam.position.set(x, camHeight + (y - 0.2), z)
 
+    /*
     let lookDir = 0
     console.log("Blickrichtung Kamera/Figur: ", fig.orientation)
     switch (fig.orientation) {
@@ -295,8 +298,9 @@ onBeforeRender(({ delta }) => {
         figureViewDir.value = 3
         break
     }
-
-    cam.rotation.set(0, Math.PI * lookDir, 0)
+    */
+    //console.log("Figur Rotation fuer Kamera: ", ownFigures.value[figureControlInd].viewDirRot)
+    cam.rotation.set(0, Math.PI * fig.viewDirRot, 0)
   } else {
     cam.position.set(default_cam_pos[0], default_cam_pos[1], default_cam_pos[2])
     cam.lookAt(0, 0, 0)
@@ -380,7 +384,7 @@ function onRoll(id: string) {
 */
 
 function getCurrentFigureRot() {
-  switch(ownFigures.value[currentPlayerId].orientation) {
+  switch(ownFigures.value[figureControlInd].orientation) {
     case 'north':
       figureViewDir.value = 0
       break;
@@ -397,25 +401,42 @@ function getCurrentFigureRot() {
 }
 
 function rotateCurrentFigure(rot: number) {
+  const fig = ownFigures.value[figureControlInd]
+  getCurrentFigureRot()
   if(rot <= 0) {
     figureViewDir.value = (figureViewDir.value - 1 + 4) % 4
   } else {
     figureViewDir.value = (figureViewDir.value + 1) % 4
   }
+  //const startRot = ownFigures.value[figureControllInd].viewDirRot
+  const startRot = fig.viewDirRot
+  let targetRot
   switch(figureViewDir.value) {
     case 0:
-      ownFigures.value[figureControlInd].orientation = 'north'
+      //ownFigures.value[figureControlInd].orientation = 'north'
+      fig.orientation = 'north'
+      targetRot = 0
       break;
     case 1:
-      ownFigures.value[figureControlInd].orientation = 'east'
+      //ownFigures.value[figureControlInd].orientation = 'east'
+      fig.orientation = 'east'
+      targetRot = -0.5
       break;
     case 2:
-      ownFigures.value[figureControlInd].orientation = 'south'
+      //ownFigures.value[figureControlInd].orientation = 'south'
+      fig.orientation = 'south'
+      targetRot = 1
       break;
     case 3:
-      ownFigures.value[figureControlInd].orientation = 'west'
+      //ownFigures.value[figureControlInd].orientation = 'west'
+      fig.orientation = 'west'
+      targetRot = 0.5
       break;
   }
+  console.log("Rotation von Figur: ", startRot, targetRot)
+  const index = figures.value.findIndex((figInd) => figInd.id === fig.id && figInd.playerId === fig.playerId)
+  queueRotation(index, startRot, targetRot, ANIMATION_DURATION / 2)
+
 }
 
 // Methode, damit die Bewegungsrichtung an den Server geschickt wird

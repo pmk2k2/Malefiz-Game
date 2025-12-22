@@ -8,10 +8,15 @@ import { ref } from "vue"
 
 // notwendige Parameter der Bewegungsanimation
 export type AnimationJob = {
-  bewegung: IBewegung
+  // Allgemein Animation
   duration: number
   progressTime: number
-  startPos: number[]
+  // Bei Bewegung von Figuren
+  bewegung?: IBewegung | undefined
+  startPos?: number[] | undefined
+  // Bei drehen von Figuren
+  startRot?: number | undefined
+  targetRot?: number | undefined
 }
 
 export function useAnimationQueue() {
@@ -24,6 +29,14 @@ export function useAnimationQueue() {
   // Der Figur eine Animation in die Queue einschleusen
   function queueMove(index: number, bewegung: IBewegung, duration = 400) {
     console.log("!!! Neues Event fuer Queue")
+
+    // Falls Drehung stattfindet (zb bei einer Kurve), diese Animation davor queuen
+    if(figures.value[index].orientation !== bewegung.dir.toLowerCase()) {
+      console.log("RICHTUNGSWECHSEL, BITTE DREHEN")
+      const currRot = getRotFromDir(figures.value[index].orientation)
+      const targetRot = getRotFromDir(bewegung.dir.toLowerCase())
+      queueRotation(index, currRot, targetRot, duration)
+    }
 
     // Startpos aus Figur nehmen, falls vorhanden
     let startPos
@@ -72,6 +85,17 @@ export function useAnimationQueue() {
     }
   }
 
+  function queueRotation(index: number, startRot: number, targetRot: number, duration = 400) {
+    const newRot: AnimationJob = {
+      duration: duration,
+      progressTime: -1,
+      startRot: startRot,
+      targetRot: targetRot
+    }
+
+    figures.value[index].animQueue.push(newRot)
+  }
+
   // Loop zur Verarbeitung der Animationen
   console.log("Starte Animationloop")
   onBeforeRender(({ delta }) => {
@@ -95,24 +119,40 @@ export function useAnimationQueue() {
       // Da es zeitbasiert ist, sollte es kein Problem mit verschiedenen Framerates geben
       // Wenn mehr Zeit vergangen ist, als ein Zyklus eigentlich geht, so wird time auf 1
       // und somit die Animation als fertig gesehen
-      const time = Math.min(state.currentAnim.progressTime / state.currentAnim.duration, 1)
+      const rawtime = Math.min(state.currentAnim.progressTime / state.currentAnim.duration, 1)
+      
+      // wenn es eine Rotationsanimation ist, diese ausfuehren
+      if(state.currentAnim.startRot != undefined && state.currentAnim.targetRot != undefined) {
+        const time = rawtime * rawtime * (3 - 2 * rawtime)  // Animation smoothen
+        let startRot = state.currentAnim.startRot
+        let targetRot = state.currentAnim.targetRot
 
-      let newPos = [0,0,0]
-      const startPos = [state.currentAnim.startPos[0], state.currentAnim.startPos[1], state.currentAnim.startPos[2]]
-      const targetPos = [state.currentAnim.bewegung.endX, startPos[1], state.currentAnim.bewegung.endZ]
-      //console.log("Startpos: ", startPos)
-      //console.log("targetPos: ", targetPos)
-      newPos[0] = startPos[0] + (targetPos[0] - startPos[0]) * time
-      newPos[1] = startPos[1] + Math.sin(Math.PI * time)
-      newPos[2] = startPos[2] + (targetPos[2] - startPos[2]) * time
-      state.position = newPos
+        // wenn animation ost <--> sueden geht
+        if(startRot === -0.5 && targetRot === 1)
+          targetRot = -1
+        if(startRot === 1 && targetRot === -0.5)
+          startRot = -1
+
+        const result = startRot + (targetRot - startRot) * time
+        state.viewDirRot = (result === -1) ? 1 : result
+      } 
+      if(state.currentAnim.bewegung && state.currentAnim.startPos) {
+        const time = rawtime
+        let newPos = [0,0,0]
+        const startPos = [state.currentAnim.startPos[0], state.currentAnim.startPos[1], state.currentAnim.startPos[2]]
+        const targetPos = [state.currentAnim.bewegung.endX, startPos[1], state.currentAnim.bewegung.endZ]
+        newPos[0] = startPos[0] + (targetPos[0] - startPos[0]) * time
+        newPos[1] = startPos[1] + Math.sin(Math.PI * time)
+        newPos[2] = startPos[2] + (targetPos[2] - startPos[2]) * time
+        state.position = newPos
+      }
 
 
       // absichern, dass Figur tatsaechlich auf richtigem Feld steht bevor naechste Animation startet
       // ...
 
       // Job beenden
-      if(time >= 1) {
+      if(rawtime >= 1) {
         console.log("Animation fertig, entferne aus currentAnim")
         state.currentAnim = null
       }
@@ -121,34 +161,47 @@ export function useAnimationQueue() {
 
   // Schritt fuer Schritt Targetposition erhalten anhand der zu laufenden Richtung
   function getTargetPosByDir(position, direction) {
-    console.log("Bewegung in Richtung: ", direction)  
 
     // momentane und Zielposition halten
     let currentPos = [position[0], position[1], position[2]]
     // ein Feld = 2 Einheiten
     // je nach direction anpassen
-      let moveNS = 0
-      let moveWE = 0
-      switch(direction) {
-        case 'north':
-          moveNS = -2
-          break;
-        case 'south':
-          moveNS = 2
-          break;
-        case 'west':
-          moveWE = -2
-          break;
-        case 'east':
-          moveWE = 2
-          break;
-      }
-      return [currentPos[0] + moveWE, 0.2, currentPos[2] + moveNS]
+    let moveNS = 0
+    let moveWE = 0
+    switch(direction) {
+      case 'north':
+        moveNS = -2
+        break;
+      case 'south':
+        moveNS = 2
+        break;
+      case 'west':
+        moveWE = -2
+        break;
+      case 'east':
+        moveWE = 2
+        break;
+    }
+    return [currentPos[0] + moveWE, 0.2, currentPos[2] + moveNS]
+  }
+
+  function getRotFromDir(direction) {
+    switch(direction) {
+      case 'north':
+        return 0
+      case 'east':
+        return -0.5
+      case 'south':
+        return 1
+      case 'west':
+        return 0.5
+    }
   }
 
   return {
     //mountFigures,
-    queueMove
+    queueMove,
+    queueRotation
   }
 
 }
