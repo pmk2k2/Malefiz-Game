@@ -75,8 +75,10 @@ export function useAnimationQueue() {
         endX: targetPos[0],
         endZ: targetPos[2]
       }
+      /*
       console.log("queue, newBew: ", newBew)
       console.log("queue, startPos: ", startPos)
+      */
       const newMove: AnimationJob = {
         bewegung: newBew,
         duration: duration,

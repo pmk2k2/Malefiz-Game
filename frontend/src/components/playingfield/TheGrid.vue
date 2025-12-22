@@ -103,7 +103,8 @@ onUnmounted(() => {
 
 // Schau, ob Eingriff durch Nutzer erforderlich ist
 watch(() => gameStore.gameData.requireInput, (newVal) => {
-  console.log("Eingriff durch Nutzer erforderlich? {}", newVal)
+  // Irgendwas in der UI anzeigen lassen ig
+  console.log("Eingriff durch Nutzer erforderlich? ", newVal)
 })
 
 // moveEvents ueberwachen und ausfuehren
@@ -113,7 +114,7 @@ watch(() => gameStore.ingameMoveEvent, (newEv) => {
   // Anzusteuernde Figur finden
   const index = figures.value.findIndex((fig) => fig.id === newEv.figureId && fig.playerId === newEv.id)
   // Logikkoordinaten in Spielkoordinaten umwandeln
-  console.log("Startpos aus Ev: ", newEv?.bewegung.startX, newEv?.bewegung.startZ)
+  //console.log("Startpos aus Ev: ", newEv?.bewegung.startX, newEv?.bewegung.startZ)
   if(!(newEv.bewegung.startX < 0 || newEv.bewegung.startZ < 0)) {
     const startPosField = cellToField( {i: newEv.bewegung.startX, j: newEv.bewegung.startZ} )
     newEv.bewegung.startX = startPosField[0]
@@ -125,8 +126,10 @@ watch(() => gameStore.ingameMoveEvent, (newEv) => {
   const endPosField = cellToField( {i: newEv.bewegung.endX, j: newEv.bewegung.endZ} )
   newEv.bewegung.endX = endPosField[0]
   newEv.bewegung.endZ = endPosField[2]
+  /*
   console.log("Startpos aus Ev neu: ", newEv?.bewegung.startX, newEv?.bewegung.startZ)
   console.log("endpos aus Ev neu: ", newEv?.bewegung.endX, newEv?.bewegung.endZ)
+  */
   // Bewegung in Queue anhaengen
   queueMove(index, newEv.bewegung, ANIMATION_DURATION)
   // Orientierung richtig setzen
@@ -441,21 +444,39 @@ function rotateCurrentFigure(rot: number) {
 
 // Methode, damit die Bewegungsrichtung an den Server geschickt wird
 async function sendMoveDirection() {
+  console.log("--- Xalo")
   // Wenn move nicht erlaubt ist -> Abbruch
-  if(!gameStore.gameData.moveChoiceAllowed) return;
+  if(!gameStore.gameData.moveChoiceAllowed) {
+    console.log("---> Bewegung gerade nicht erlaubt")
+    return;
+  }
 
   // Wenn der versuchte Move nicht der zu bewegenden Figur entspricht -> Abbruch
-  if(!gameStore.gameData.moveDone) {
-    if(gameStore.gameData.movingFigure !== ownFigures.value[figureControlInd]?.id)
+  console.log(gameStore.gameData.moveDone, gameStore.gameData.movingFigure, ownFigures.value[figureControlInd].id)
+  if(gameStore.gameData.movingFigure) {
+    if(gameStore.gameData.movingFigure !== ownFigures.value[figureControlInd]?.id) {
+      alert("Du musst deinen Zug mit der Figur beenden!")
       return
+    }
   }
-  // weitere Moves blockieren
+
+  // Wenn versucht wird in "verbotene" Richtung zu gehen
+  console.log(`--- ${gameStore.gameData.forbiddenDir} ${ownFigures.value[figureControlInd].orientation}`)
+  if(gameStore.gameData.forbiddenDir) {
+    if(gameStore.gameData.forbiddenDir.toLowerCase() === ownFigures.value[figureControlInd]?.orientation) {
+      alert("Du darfst nicht zurueck gehen!")
+      return
+    }
+  }
+
+  // weitere Moves zunaechst blockieren
   gameStore.gameData.requireInput = false
   gameStore.gameData.moveChoiceAllowed = false
 
-  // wenn Antwort positiv -> wuerfel etc freigeben
+  /*
   gameStore.gameData.moveDone = true
   gameStore.gameData.movingFigure = null
+  */
 
   // Orientierung etc von aktueller Figur kriegen
   const moveReq: IFigureMoveRequest = {
@@ -472,12 +493,19 @@ async function sendMoveDirection() {
       body: JSON.stringify(moveReq),
     })
 
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
 
     const data = await response.json()
     console.log('Move-Request sent successfully:', data)
 
-    // wenn Antwort positiv -> wuerfel etc freigeben
+    // wenn Antwort negativ -> nochmal input geben
+    if(data.success === false) {
+      gameStore.gameData.requireInput = true
+      gameStore.gameData.moveChoiceAllowed = true
+      alert("Ueberprufe deine Richtungseingabe!")
+    }
 
   } catch (err) {
     console.error('Error sending move request:', err)

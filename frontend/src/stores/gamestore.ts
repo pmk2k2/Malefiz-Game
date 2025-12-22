@@ -33,6 +33,7 @@ export const useGameStore = defineStore('gamestore', () => {
     moveChoiceAllowed: boolean
     movingFigure: string | null
     requireInput: boolean
+    forbiddenDir: string | null
   }>({
     ok: false,
     players: [],
@@ -45,7 +46,8 @@ export const useGameStore = defineStore('gamestore', () => {
     moveDone: true,
     moveChoiceAllowed: false,
     movingFigure: null,
-    requireInput: false
+    requireInput: false,
+    forbiddenDir: null
   })
   const figures = ref<IPlayerFigure[]>([])
   const ingameMoveEvent = ref<IFrontendNachrichtEvent>()
@@ -178,10 +180,13 @@ export const useGameStore = defineStore('gamestore', () => {
             gameData.moveChoiceAllowed = true
             if(event.figureId) {
               console.log(`Figur ${event.figureId} soll was machen`)
+              console.log(`Aber nicht in Richtung ${event.forbiddenDir}`)
               gameData.movingFigure = event.figureId
+              gameData.forbiddenDir = event.forbiddenDir
             } else {
               console.log("Irgendeine Figur soll was machen")
               gameData.movingFigure = null
+              gameData.forbiddenDir = null
             }
           }
           if (event.type === 'DICE_ROLL') {

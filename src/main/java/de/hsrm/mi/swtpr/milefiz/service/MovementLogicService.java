@@ -126,8 +126,24 @@ public class MovementLogicService {
     }
 
     // Statt zu gucken, welche Richtungen man darf, einfach schauen aus welcher man kommt (also nicht darf)
-    public Direction getForbiddenDirection(MoveType mT) {
+    // in dem Fall ist lastDir die gelaufene Richtung, also darf man nicht in die entgegengesetzte
+    public Direction getForbiddenDirection(Direction lastDir) {
         Direction dir = null;
+
+        switch(lastDir) {
+            case Direction.NORTH:
+                dir = Direction.SOUTH;
+                break;
+            case Direction.SOUTH:
+                dir = Direction.NORTH;
+                break;
+            case Direction.EAST:
+                dir = Direction.WEST;
+                break;
+            case Direction.WEST:
+                dir = Direction.EAST;
+                break;
+        }
 
         return dir;
     }
@@ -243,7 +259,7 @@ public class MovementLogicService {
             Bewegung bew = new Bewegung(-1, -1, startFeld.getI(), startFeld.getJ(), Direction.NORTH, 0);
             var moveEvent = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
             publisher.publishEvent(moveEvent);
-            var moveReqEvent = new IngameRequestEvent(Aktion.DIRECTION, request.playerId, gameCode);
+            var moveReqEvent = new IngameRequestEvent(Aktion.DIRECTION, request.playerId, request.figureId, gameCode);
             publisher.publishEvent(moveReqEvent);
 
 
@@ -309,7 +325,8 @@ public class MovementLogicService {
             if (destField.getFigures().size() == 2) {
                 // hier muss ein Duell gestartet werden
                 logger.info("Zwei Spieler auf {} {}, starte Duell...", destI, destJ);
-                return FigureMoveResult.ok();
+                //return FigureMoveResult.ok();
+                break;
             }
 
             // Gucken, ob Anfrage noetig
@@ -321,19 +338,19 @@ public class MovementLogicService {
                     // restliche Energie speichern eigentlich
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
-                    return FigureMoveResult.ok();
+                    //return FigureMoveResult.ok();
 
                 case MoveType.T_CROSSING:
                 case MoveType.CROSSING:
-                    var event = new IngameRequestEvent(Aktion.DIRECTION, request.playerId, request.figureId, gameCode, lastDir);
-                    publisher.publishEvent(event);
+                    Direction forbiddenDir = getForbiddenDirection(lastDir);
                     Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
                     var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
                     publisher.publishEvent(moveEv);
+                    var event = new IngameRequestEvent(Aktion.DIRECTION, request.playerId, request.figureId, gameCode, forbiddenDir);
+                    publisher.publishEvent(event);
                     stepsCount = 0;
                     return FigureMoveResult.ok();
 
-                // TODO: bei Kurven und so anderes Verhalten noch
                 case MoveType.CURVE_WS:
                 case MoveType.CURVE_ES:
                 case MoveType.CURVE_WN:
@@ -358,12 +375,6 @@ public class MovementLogicService {
                     break;
             }
             
-            /* Testweise eingebaut
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } */
         } while(result.getValue() > 0);
 
         logger.info("Alle Zuege verbraucht");

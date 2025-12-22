@@ -58,4 +58,8 @@ public class IngameRequestEvent {
     public void setType(Aktion type) {
         this.type = type;
     }
+
+    public Direction getForbiddenDir() {
+        return forbiddenDir;
+    }
 }
