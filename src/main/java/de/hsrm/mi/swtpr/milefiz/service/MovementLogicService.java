@@ -238,7 +238,9 @@ public class MovementLogicService {
             startFeldState.addFigure(figure);
 
             // Bewegung und Request an Frontend senden
-            Bewegung bew = new Bewegung(startFeld.getI(), startFeld.getJ(), Direction.NORTH, 0);
+            // -1 als "startPos" der Bewegung, um startPosition ausserhalb des Feldes zu vermitteln,
+            // da Felder im Model nicht < 0 werden koennen
+            Bewegung bew = new Bewegung(-1, -1, startFeld.getI(), startFeld.getJ(), Direction.NORTH, 0);
             var moveEvent = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
             publisher.publishEvent(moveEvent);
             var moveReqEvent = new IngameRequestEvent(Aktion.DIRECTION, request.playerId, gameCode);
@@ -250,6 +252,9 @@ public class MovementLogicService {
 
         Direction lastDir = Direction.valueOf(request.direction.toUpperCase());
         int stepsCount = 0;
+        // Festhalten der Startpositionen (wichtig fuer Frontend-Animation)
+        int startI = figure.getGridI();
+        int startJ = figure.getGridJ();
         do {
             /*
             FrontendNachrichtEvent moveEv = new FrontendNachrichtEvent(gameCode, figure.getOwnerPlayerId(), figure.getId(), 0, null);
@@ -322,7 +327,7 @@ public class MovementLogicService {
                 case MoveType.CROSSING:
                     var event = new IngameRequestEvent(Aktion.DIRECTION, request.playerId, request.figureId, gameCode, lastDir);
                     publisher.publishEvent(event);
-                    Bewegung bew = new Bewegung(figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
+                    Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
                     var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
                     publisher.publishEvent(moveEv);
                     stepsCount = 0;
@@ -333,12 +338,16 @@ public class MovementLogicService {
                 case MoveType.CURVE_ES:
                 case MoveType.CURVE_WN:
                 case MoveType.CURVE_EN:
-                    Bewegung bew2 = new Bewegung(figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
+                    // Figur im Frontend bis zur Kurve bewegen
+                    Bewegung bew2 = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
                     var moveEv2 = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew2);
                     publisher.publishEvent(moveEv2);
-                    // Drehen in richtige Richtung
+
+                    // Drehen in richtige Richtung, startPos anpassen fuer naechste Animation
                     stepsCount = 0;
                     lastDir = getNewDirection(moveType, lastDir);
+                    startI = figure.getGridI();
+                    startJ = figure.getGridJ();
                     logger.info("Neue Richtung: {}", lastDir);
                     break;
 
@@ -360,7 +369,7 @@ public class MovementLogicService {
         logger.info("Alle Zuege verbraucht");
 
         // wenn alle Zuege verbraucht sind
-        Bewegung bew = new Bewegung(figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
+        Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
         var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
         publisher.publishEvent(moveEv);
         stepsCount = 0;

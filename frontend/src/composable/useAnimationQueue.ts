@@ -24,17 +24,14 @@ export function useAnimationQueue() {
   // Der Figur eine Animation in die Queue einschleusen
   function queueMove(index: number, bewegung: IBewegung, duration = 400) {
     console.log("!!! Neues Event fuer Queue")
-    // startpos aus dem letzten queue element nehmen
-    let lastArrStartPos
+
+    // Startpos aus Figur nehmen, falls vorhanden
     let startPos
-    if(figures.value[index].animQueue.length > 0) {
-      // dirty fix aber ehrlich kb mehr
-      // bevor letzte startpos genommen wird, erst kurz warten um inkonsistenz zu vermeiden
-      setTimeout(() => { console.log("countdown vorbei, lastArrStartPos zugreifbar") }, 2000)
-      const lastArrStartPos = figures.value[index].animQueue[figures.value[index].animQueue.length-1].startPos
-      startPos = [lastArrStartPos[0], lastArrStartPos[1], lastArrStartPos[2]]
-    } else {
+    // Falls Figur ausserhalb des Spielfelds startet
+    if(bewegung.startX === null || bewegung.startZ === null) {
       startPos = [figures.value[index].position[0],figures.value[index].position[1],figures.value[index].position[2]]
+    } else {
+      startPos = [bewegung.startX, figures.value[index].position[1],bewegung.startZ]
     }
     
     // Wenn keine "Schritte" gelaufen werden
@@ -127,26 +124,26 @@ export function useAnimationQueue() {
     console.log("Bewegung in Richtung: ", direction)  
 
     // momentane und Zielposition halten
-    const currentPos = [position[0], position[1], position[2]]
+    let currentPos = [position[0], position[1], position[2]]
     // ein Feld = 2 Einheiten
     // je nach direction anpassen
-    let moveNS = 0
-    let moveWE = 0
-    switch(direction) {
-      case 'north':
-        moveNS = -2
-        break;
-      case 'south':
-        moveNS = 2
-        break;
-      case 'west':
-        moveWE = -2
-        break;
-      case 'east':
-        moveWE = 2
-        break;
-    }
-    return [currentPos[0] + moveWE, 0.2, currentPos[2] + moveNS]
+      let moveNS = 0
+      let moveWE = 0
+      switch(direction) {
+        case 'north':
+          moveNS = -2
+          break;
+        case 'south':
+          moveNS = 2
+          break;
+        case 'west':
+          moveWE = -2
+          break;
+        case 'east':
+          moveWE = 2
+          break;
+      }
+      return [currentPos[0] + moveWE, 0.2, currentPos[2] + moveNS]
   }
 
   return {

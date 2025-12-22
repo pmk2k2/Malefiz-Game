@@ -109,15 +109,25 @@ watch(() => gameStore.gameData.requireInput, (newVal) => {
 
 // moveEvents ueberwachen und ausfuehren
 watch(() => gameStore.ingameMoveEvent, (newEv) => {
-  console.log("Neues Moveevent im Grid verarbeiten")
-  console.log(newEv)
+  console.log("Neues Move-Event eingetroffen: ", newEv)
   // FrontendNachricht mit Bewegung drin behandeln
   // Anzusteuernde Figur finden
   const index = figures.value.findIndex((fig) => fig.id === newEv.figureId && fig.playerId === newEv.id)
   // Logikkoordinaten in Spielkoordinaten umwandeln
-  const endPosField = cellToField( {i: newEv?.bewegung.endX, j: newEv?.bewegung.endZ })
+  console.log("Startpos aus Ev: ", newEv?.bewegung.startX, newEv?.bewegung.startZ)
+  if(!(newEv.bewegung.startX < 0 || newEv.bewegung.startZ < 0)) {
+    const startPosField = cellToField( {i: newEv.bewegung.startX, j: newEv.bewegung.startZ} )
+    newEv.bewegung.startX = startPosField[0]
+    newEv.bewegung.startZ = startPosField[2]
+  } else {
+    newEv.bewegung.startX = null
+    newEv.bewegung.startZ = null
+  }
+  const endPosField = cellToField( {i: newEv.bewegung.endX, j: newEv.bewegung.endZ} )
   newEv.bewegung.endX = endPosField[0]
   newEv.bewegung.endZ = endPosField[2]
+  console.log("Startpos aus Ev neu: ", newEv?.bewegung.startX, newEv?.bewegung.startZ)
+  console.log("endpos aus Ev neu: ", newEv?.bewegung.endX, newEv?.bewegung.endZ)
   // Bewegung in Queue anhaengen
   queueMove(index, newEv.bewegung, ANIMATION_DURATION)
 })
