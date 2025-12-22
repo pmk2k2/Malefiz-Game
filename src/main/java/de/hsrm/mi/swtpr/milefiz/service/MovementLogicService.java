@@ -82,6 +82,11 @@ public class MovementLogicService {
                 continue;
             }
 
+            // Feld mit laufendem Duell (2 Figuren)
+            if (f.getFigures().size() >= 2) {
+                continue;
+            }
+
             result.put(names[k], f);
         }
 
@@ -306,6 +311,22 @@ public class MovementLogicService {
                 return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
             }
 
+            // Wenn Feld eine Barriere hat, schauen ob man AUF dieser landen kann
+            if(destField.hasBarrier()) {
+                if(allowedDistance > 1) {
+                    // Figur stoppen
+                    // Energie speichern (und spaeter weiterleiten)
+                    int remainingEnergy = allowedDistance;
+                    allowedDistance = 0;
+                    game.getDiceResultById(request.playerId).setValue(0);
+                    return FigureMoveResult.ok();
+                } else if(allowedDistance == 1) {
+                    // Wenn man genau auf Barriere landet
+                    // Event einleiten
+                    logger.info("Landung genau auf Barriere, tu etwas...");
+                }
+            }
+
             // Alles ok
             // setzen der Figur auf neues Feld
             logger.info("Setze Spielfigur auf neue Position {} {}", destI, destJ);
@@ -336,6 +357,7 @@ public class MovementLogicService {
             switch(moveType) {
                 case MoveType.DEADEND:
                     // restliche Energie speichern eigentlich
+                    int remainingEnergy = allowedDistance;
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
                     //return FigureMoveResult.ok();

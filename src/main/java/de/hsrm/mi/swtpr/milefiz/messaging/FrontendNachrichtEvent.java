@@ -25,6 +25,7 @@ public class FrontendNachrichtEvent {
         GAME_STARTED_BY_COUNTER,
         GAME_RUNNING,
         PLAYER_LIMIT_ERROR,
+        COUNTDOWN_ABORTED,
 
         // Ingame-Operationen
         MOVE
@@ -38,7 +39,6 @@ public class FrontendNachrichtEvent {
     private Instant countdownStartedAt;
     private GameState gameState;
     private long countdownDurationSeconds;
-    // Muhannad: warum gameState
 
     // States fuer Movementupdates
     // private String playerId;     // Unterschied playerId und playerName???
@@ -54,7 +54,8 @@ public class FrontendNachrichtEvent {
         this.playerName = playerName;
     }
 
-    // Muhannad: Warum 2mal konstruktor?
+
+
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName, Instant countdownStartedAt, GameState gameState) {
@@ -149,6 +150,8 @@ public class FrontendNachrichtEvent {
         this.countdownDurationSeconds = seconds;
     }
 
+    // Muhannad: Was ist Gamestate?
+
     public String getFigureId() {
         return figureId;
     }
@@ -156,9 +159,4 @@ public class FrontendNachrichtEvent {
     public Bewegung getBewegung() {
         return bewegung;
     }
-
-    // Muhannad: Was ist Gamestate?
-    // TODO: Gamestate anpassen
-
-
 }

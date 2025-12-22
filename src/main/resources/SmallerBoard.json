@@ -18,7 +18,7 @@
       { "i": 1, "j": 1, "type": "BLOCKED" },
       { "i": 2, "j": 1, "type": "PATH" },
       { "i": 3, "j": 1, "type": "BLOCKED" },
-      { "i": 4, "j": 1, "type": "PATH" },
+      { "i": 4, "j": 1, "type": "BARRIER" },
       { "i": 5, "j": 1, "type": "BLOCKED" },
       { "i": 6, "j": 1, "type": "PATH" },
       { "i": 7, "j": 1, "type": "BLOCKED" },

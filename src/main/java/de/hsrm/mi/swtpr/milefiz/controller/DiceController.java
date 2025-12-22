@@ -79,12 +79,8 @@ public class DiceController {
         // Ergebnis im Backend festhalten
         game.updateDiceResult(playerName, result);
 
-        /*
-        // Ergebnis im Backend speichern!
-        game.setCurrentMovementAmount(result.getValue());
-        // Wer aht gewuerfelt?
-        game.setPlayerWhoRolledId(playerId);
-        */
+        // Ergebnis für den Spieler speichern
+        //game.setRollForPlayer(playerId, result.getValue()); noetig??
 
         return result;
     }

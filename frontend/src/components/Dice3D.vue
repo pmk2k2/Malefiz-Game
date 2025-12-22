@@ -24,22 +24,22 @@ const faceRotations: Record<number, { x: number; y: number }> = {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 async function getDiceRollFromServer(gameCode: string, playerId: string): Promise<number> {
-  //const res = await fetch(`${API_BASE_URL}/daten/roll`)
   const url = `${API_BASE_URL}/daten/game/${gameCode}/roll?playerId=${encodeURIComponent(playerId)}`
   const res = await fetch(url, {
-    method: 'POST',
+    method: 'POST', 
   })
-  if(!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Fehler beim Wuerfeln')
+  if (!res.ok) {
+    const errorText = await res.text(); // Fehlernachricht vom Backend lesen
+    throw new Error(errorText || 'Fehler beim Würfeln');
   }
+
   const data = await res.json()
-  return data.value // Wert aus dem JSON vom Backend
+  return data.value 
 }
 
 export async function rollDice(gameCode: string, playerId: string) {
   try {
-    const result = await getDiceRollFromServer(gameCode, playerId)
+  const result = await getDiceRollFromServer(gameCode, playerId)
 
     const duration = 1300
     const start = performance.now()
