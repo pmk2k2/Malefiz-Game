@@ -29,13 +29,15 @@ export function useAnimationQueue() {
   // Der Figur eine Animation in die Queue einschleusen
   function queueMove(index: number, bewegung: IBewegung, duration = 400) {
     console.log("!!! Neues Event fuer Queue")
+    let currRot = undefined
+    let targetRot = undefined
 
     // Falls Drehung stattfindet (zb bei einer Kurve), diese Animation davor queuen
     if(figures.value[index].orientation !== bewegung.dir.toLowerCase()) {
       console.log("RICHTUNGSWECHSEL, BITTE DREHEN")
-      const currRot = getRotFromDir(figures.value[index].orientation)
-      const targetRot = getRotFromDir(bewegung.dir.toLowerCase())
-      queueRotation(index, currRot, targetRot, duration)
+      currRot = getRotFromDir(figures.value[index].orientation)
+      targetRot = getRotFromDir(bewegung.dir.toLowerCase())
+      //queueRotation(index, currRot, targetRot, duration)
     }
 
     // Startpos aus Figur nehmen, falls vorhanden
@@ -53,7 +55,9 @@ export function useAnimationQueue() {
         bewegung: bewegung,
         duration: duration,
         progressTime: -1,
-        startPos: startPos
+        startPos: startPos,
+        startRot: currRot,
+        targetRot: targetRot
       }
       console.log("Neuer Move in Queue: ", newMove)
       figures.value[index]?.animQueue.push(newMove)
@@ -77,11 +81,14 @@ export function useAnimationQueue() {
         bewegung: newBew,
         duration: duration,
         progressTime: -1,
-        startPos: [startPos[0], startPos[1], startPos[2]]
+        startPos: [startPos[0], startPos[1], startPos[2]],
+        startRot: currRot,
+        targetRot: targetRot
       }
       figures.value[index].animQueue.push(newMove)
       startPos[0] = targetPos[0]
       startPos[2] = targetPos[2]
+      currRot = targetRot
     }
   }
 
