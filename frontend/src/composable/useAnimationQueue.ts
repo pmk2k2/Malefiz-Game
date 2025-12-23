@@ -1,9 +1,7 @@
 import type { IBewegung } from "@/services/IBewegung"
 import { useGameStore } from "@/stores/gamestore"
-import type { IPlayerFigure, Orientation } from "@/stores/IPlayerFigure"
 import { useLoop } from "@tresjs/core"
 import { storeToRefs } from "pinia"
-import { ref } from "vue"
 
 
 // notwendige Parameter der Bewegungsanimation
@@ -32,6 +30,8 @@ export function useAnimationQueue() {
     let currRot = undefined
     let targetRot = undefined
 
+    if(!figures.value[index]) return
+
     // Falls Drehung stattfindet (zb bei einer Kurve), diese Animation davor queuen
     if(figures.value[index].orientation !== bewegung.dir.toLowerCase()) {
       console.log("RICHTUNGSWECHSEL, BITTE DREHEN")
@@ -41,14 +41,15 @@ export function useAnimationQueue() {
     }
 
     // Startpos aus Figur nehmen, falls vorhanden
-    let startPos
+    let startPos: Array<number>
     // Falls Figur ausserhalb des Spielfelds startet
+    if(figures.value[index].position[0] == undefined || figures.value[index].position[1] == undefined || figures.value[index].position[2] == undefined) return
     if(bewegung.startX === null || bewegung.startZ === null) {
       startPos = [figures.value[index].position[0],figures.value[index].position[1],figures.value[index].position[2]]
     } else {
-      startPos = [bewegung.startX, figures.value[index].position[1],bewegung.startZ]
+      startPos = [bewegung.startX, figures.value[index].position[1], bewegung.startZ]
     }
-    
+
     // Wenn keine "Schritte" gelaufen werden
     if(bewegung.steps <= 0) {
       const newMove: AnimationJob = {
@@ -68,8 +69,11 @@ export function useAnimationQueue() {
     // mehrschrittige Bewegungen aufteilen in einzelne Schritte
     // damit ists einfacher die Animation "richtig" umzusetzen
     // und als erledigt abzuhaken
+    console.log("Ihc komme hier an")
     for(let i = bewegung.steps; i > 0; i--) {
       const targetPos = getTargetPosByDir(startPos, bewegung.dir.toLowerCase())
+
+      if(targetPos[0] == undefined || targetPos[2] == undefined) return
       const newBew: IBewegung = {
         ...bewegung,
         endX: targetPos[0],
@@ -79,6 +83,7 @@ export function useAnimationQueue() {
       console.log("queue, newBew: ", newBew)
       console.log("queue, startPos: ", startPos)
       */
+      if(startPos[0] == undefined || startPos[1] == undefined || startPos[2] == undefined) return
       const newMove: AnimationJob = {
         bewegung: newBew,
         duration: duration,
@@ -95,6 +100,8 @@ export function useAnimationQueue() {
   }
 
   function queueRotation(index: number, startRot: number, targetRot: number, duration = 400) {
+    if(!figures.value[index]) return
+
     const newRot: AnimationJob = {
       duration: duration,
       progressTime: -1,
@@ -129,7 +136,7 @@ export function useAnimationQueue() {
       // Wenn mehr Zeit vergangen ist, als ein Zyklus eigentlich geht, so wird time auf 1
       // und somit die Animation als fertig gesehen
       const rawtime = Math.min(state.currentAnim.progressTime / state.currentAnim.duration, 1)
-      
+
       // wenn es eine Rotationsanimation ist, diese ausfuehren
       if(state.currentAnim.startRot != undefined && state.currentAnim.targetRot != undefined) {
         const time = rawtime * rawtime * (3 - 2 * rawtime)  // Animation smoothen
@@ -144,12 +151,16 @@ export function useAnimationQueue() {
 
         const result = startRot + (targetRot - startRot) * time
         state.viewDirRot = (result === -1) ? 1 : result
-      } 
+      }
       if(state.currentAnim.bewegung && state.currentAnim.startPos) {
         const time = rawtime
-        let newPos = [0,0,0]
+        const newPos = [0,0,0]
         const startPos = [state.currentAnim.startPos[0], state.currentAnim.startPos[1], state.currentAnim.startPos[2]]
         const targetPos = [state.currentAnim.bewegung.endX, startPos[1], state.currentAnim.bewegung.endZ]
+
+        if(startPos[0] == undefined || startPos[1] == undefined || startPos[2] == undefined)  return
+        if(targetPos[0] == undefined || targetPos[2] == undefined)  return
+
         newPos[0] = startPos[0] + (targetPos[0] - startPos[0]) * time
         newPos[1] = startPos[1] + Math.sin(Math.PI * time)
         newPos[2] = startPos[2] + (targetPos[2] - startPos[2]) * time
@@ -169,10 +180,11 @@ export function useAnimationQueue() {
   })
 
   // Schritt fuer Schritt Targetposition erhalten anhand der zu laufenden Richtung
-  function getTargetPosByDir(position, direction) {
+  function getTargetPosByDir(position: Array<number>, direction: string) {
 
     // momentane und Zielposition halten
-    let currentPos = [position[0], position[1], position[2]]
+    const currentPos = [position[0], position[1], position[2]]
+    if(currentPos[0] == undefined || currentPos[2] == undefined) return [position[0], position[1], position[2]]
     // ein Feld = 2 Einheiten
     // je nach direction anpassen
     let moveNS = 0
@@ -191,10 +203,13 @@ export function useAnimationQueue() {
         moveWE = 2
         break;
     }
+
+
     return [currentPos[0] + moveWE, 0.2, currentPos[2] + moveNS]
   }
 
-  function getRotFromDir(direction) {
+  function getRotFromDir(direction: string) {
+
     switch(direction) {
       case 'north':
         return 0

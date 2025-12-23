@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TresCanvas, useLoop, type TresObject } from '@tresjs/core'
+import { useLoop, type TresObject } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import TheRock from './models/TheRock.vue'
@@ -8,8 +8,6 @@ import TheCrown from './models/TheCrown.vue'
 import TheGrass from './models/TheGrass.vue'
 import Barrier from './models/Barrier.vue'
 import ThePlayerFigure from '@/components/playingfield/ThePlayerFigure.vue'
-import RollButton from '@/components/RollButton.vue'
-import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 import type { IFigureMoveRequest } from '@/services/IFigureMoveRequest'
@@ -23,7 +21,7 @@ type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER'
 interface Field {
   i: number
   j: number
-  type: CellType
+  type?: CellType
 }
 
 // Das Spielfeld, grid für aktiven Spielfelder
@@ -111,11 +109,13 @@ watch(() => gameStore.gameData.requireInput, (newVal) => {
 // moveEvents ueberwachen und ausfuehren
 watch(() => gameStore.ingameMoveEvent, (newEv) => {
   console.log("Neues Move-Event eingetroffen: ", newEv)
+  if(!newEv)  return
   // FrontendNachricht mit Bewegung drin behandeln
   // Anzusteuernde Figur finden
   const index = figures.value.findIndex((fig) => fig.id === newEv.figureId && fig.playerId === newEv.id)
   // Logikkoordinaten in Spielkoordinaten umwandeln
   //console.log("Startpos aus Ev: ", newEv?.bewegung.startX, newEv?.bewegung.startZ)
+  if(newEv.bewegung.startX == null || newEv.bewegung.startZ == null)  return
   if(!(newEv.bewegung.startX < 0 || newEv.bewegung.startZ < 0)) {
     const startPosField = cellToField( {i: newEv.bewegung.startX, j: newEv.bewegung.startZ} )
     newEv.bewegung.startX = startPosField[0]
@@ -134,6 +134,7 @@ watch(() => gameStore.ingameMoveEvent, (newEv) => {
   // Bewegung in Queue anhaengen
   queueMove(index, newEv.bewegung, ANIMATION_DURATION)
   // Orientierung richtig setzen
+  if(!figures.value[index]) return
   figures.value[index].orientation = newEv.bewegung.dir.toLowerCase()
 })
 
@@ -222,7 +223,7 @@ function _calculateHomeBaseOffset(playerIndex: number, playersCount: number) {
   // Position des gesamten Häuschens
   let x_offset = 0
   // Häuschen unterhalb des Spielfelds (+ 2 Einheiten Abstand)
-  let z_offset = (b.rows / 2) * CELL_SIZE + 2
+  const z_offset = (b.rows / 2) * CELL_SIZE + 2
 
   if (playersCount === 2) {
     // Spieler 1 kommt Links und Spieler 2 rechts
@@ -279,6 +280,7 @@ onBeforeRender(({ delta }) => {
     if (!fig) return
 
     const [x, y, z] = fig.position
+    if(y == undefined) return
     cam.position.set(x, camHeight + (y - 0.2), z)
 
     /*
@@ -388,7 +390,9 @@ function onRoll(id: string) {
 */
 
 function getCurrentFigureRot() {
-  switch(ownFigures.value[figureControlInd].orientation) {
+  if(!ownFigures.value[figureControlInd]) return
+
+  switch(ownFigures.value[figureControlInd]?.orientation) {
     case 'north':
       figureViewDir.value = 0
       break;
@@ -406,6 +410,7 @@ function getCurrentFigureRot() {
 
 function rotateCurrentFigure(rot: number) {
   const fig = ownFigures.value[figureControlInd]
+  if(!fig)  return
   getCurrentFigureRot()
   if(rot <= 0) {
     figureViewDir.value = (figureViewDir.value - 1 + 4) % 4
@@ -439,13 +444,13 @@ function rotateCurrentFigure(rot: number) {
   }
   console.log("Rotation von Figur: ", startRot, targetRot)
   const index = figures.value.findIndex((figInd) => figInd.id === fig.id && figInd.playerId === fig.playerId)
+  if(targetRot === undefined) return
   queueRotation(index, startRot, targetRot, ANIMATION_DURATION / 2)
 
 }
 
 // Methode, damit die Bewegungsrichtung an den Server geschickt wird
 async function sendMoveDirection() {
-  console.log("--- Xalo")
   // Wenn move nicht erlaubt ist -> Abbruch
   if(!gameStore.gameData.moveChoiceAllowed) {
     console.log("---> Bewegung gerade nicht erlaubt")
@@ -453,7 +458,7 @@ async function sendMoveDirection() {
   }
 
   // Wenn der versuchte Move nicht der zu bewegenden Figur entspricht -> Abbruch
-  console.log(gameStore.gameData.moveDone, gameStore.gameData.movingFigure, ownFigures.value[figureControlInd].id)
+  console.log(gameStore.gameData.moveDone, gameStore.gameData.movingFigure, ownFigures.value[figureControlInd]?.id)
   if(gameStore.gameData.movingFigure) {
     if(gameStore.gameData.movingFigure !== ownFigures.value[figureControlInd]?.id) {
       alert("Du musst deinen Zug mit der Figur beenden!")
@@ -462,7 +467,7 @@ async function sendMoveDirection() {
   }
 
   // Wenn versucht wird in "verbotene" Richtung zu gehen
-  console.log(`--- ${gameStore.gameData.forbiddenDir} ${ownFigures.value[figureControlInd].orientation}`)
+  console.log(`--- ${gameStore.gameData.forbiddenDir} ${ownFigures.value[figureControlInd]?.orientation}`)
   if(gameStore.gameData.forbiddenDir) {
     if(gameStore.gameData.forbiddenDir.toLowerCase() === ownFigures.value[figureControlInd]?.orientation) {
       alert("Du darfst nicht zurueck gehen!")
@@ -480,10 +485,15 @@ async function sendMoveDirection() {
   */
 
   // Orientierung etc von aktueller Figur kriegen
+  if(currentPlayerId === null) return
+  const figureIdReq = ownFigures.value[figureControlInd]?.id
+  const directionReq = ownFigures.value[figureControlInd]?.orientation
+
+  if(!figureIdReq || !directionReq) return
   const moveReq: IFigureMoveRequest = {
     playerId: currentPlayerId,
-    figureId:  ownFigures.value[figureControlInd].id,
-    direction: ownFigures.value[figureControlInd].orientation
+    figureId:  figureIdReq,
+    direction: directionReq
   }
 
   // Datenobjekt schicken

@@ -4,10 +4,11 @@ export type Orientation = 'north' | 'east' | 'south' | 'west'
 
 export interface IPlayerFigure {
   id: string
-  position: [number, number, number] // Weltkoordinaten x,y,z
+  position: Array<number> // Weltkoordinaten x,y,z
   color: string
   playerId: string
-  orientation: Orientation
+  //orientation: Orientation
+  orientation: string
   viewDirRot: number
   // Felder fuer Animation
   animQueue: Array<AnimationJob>   // Queue fuer die Animationen in den einzelnen Figuren halten
