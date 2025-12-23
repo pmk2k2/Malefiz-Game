@@ -14,12 +14,8 @@
         <button class="btn settings" @mouseover="playHover">Einstellungen</button>
       </div>
 
-      <div class="player-list">
-        <h2 style="text-align: center">Aktive Spieler</h2>
-        <ul>
-          <li v-for="p in players" :key="p.id">{{ p.name }}</li>
-        </ul>
-      </div>
+     
+      
     </main>
 
     <footer class="footer">
@@ -91,21 +87,41 @@ async function logout() {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-image: url('../assets/MainMenu_Background.jpeg');
+  background-image: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.4)), url('../assets/backg.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-}
-
-.header {
-  padding: 20px;
-  text-align: center;
+  font-family: 'Kanit', sans-serif;
 }
 
 .header h1 {
-  font-size: 3rem;
-  margin: 0;
-  color: #ff0000;
+  font-size: 4rem;
+  font-weight: 900;
+  background: linear-gradient(to bottom, #cefba0 20%, #4caf50 80%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  
+  
+  filter: drop-shadow(2px 4px 2px rgba(0, 0, 0, 0.8));
+  
+
+  text-shadow: 0 0 15px rgba(167, 255, 131, 0.5);
+  
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin-top: 50px;
+  text-align: center;
+  
+  transform: perspective(500px) rotateX(10deg);
+}
+
+.header h1 span {
+  display: block;
+  font-size: 1.2rem;
+  color: #ffc107; 
+  letter-spacing: 8px;
+  margin-bottom: -10px;
+  -webkit-text-fill-color: #ffc107; 
 }
 
 .main-content {
@@ -113,66 +129,85 @@ async function logout() {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 50px;
-}
-
-.player-list {
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  padding: 20px;
-  border-radius: 10px;
-  min-width: 250px;
-  min-height: 350px;
-  overflow-y: auto;
 }
 
 .button-group {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
+  align-items: center;
 }
 
-.create,
-.join,
-.info,
-.settings {
-  width: 420px;
-  padding: 12px 0;
-  font-size: 2.1rem;
-  font-weight: bold;
-  border: none;
-  border-radius: 10px;
+.btn {
+  width: 320px;
+  padding: 15px 0; 
+  font-size: 1.5rem; 
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-radius: 12px; 
+  
+  background-color: #4d3319;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, transparent 100%),
+    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,0,0,0.1) 41px, rgba(0,0,0,0.1) 42px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 50px 100%;
+  
+  border: 4px solid #3d2b1f; 
+  border-bottom-width: 8px;   
   cursor: pointer;
-  transition:
-    transform 0.2s,
-    background-color 0.2s;
-  background: linear-gradient(to bottom, #b77a48, #8a5c32);
+  transition: all 0.2s ease;
+  color: #f0e2d0; 
+  text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+
+.btn:not(.create):not(.logout) {
+  background-color: #2d4d19; 
+  border-color: #1e3311;
+  color: #e0f2d8;
+}
+
+.btn:hover {
+  transform: translateY(2px); 
+  border-bottom-width: 4px;   
+  filter: brightness(1.1);
+}
+
+/*
+.info {
+  background-color: #2e5a6e !important; 
+  border-color: #1b3a47 !important;
+  color: #d1ecf1 !important;
+}
+
+.settings {
+  background-color: #2e5a6e !important; 
+  border-color: #1b3a47 !important;
+  color: #d1ecf1 !important;
+}
+*/
+.create {
+  background-color: #634121;
+  border-color: #3d2b1f;
+  color: #ffcc66; 
 }
 
 .logout {
-  background: #f44336;
-  color: black;
-  margin: 20px;
-  padding: 10px 16px;
-  width: 420px;
-  font-size: 2.1rem;
-  font-weight: bold;
-  border: none;
-  border-radius: 10px;
-  transition:
-    transform 0.2s,
-    background-color 0.2s;
-  cursor: pointer;
-}
-.logout:hover {
-  transform: scale(1.1);
+  background-color: #6d2d2d; 
+  border-color: #421a1a;
+  width: 180px;
+  font-size: 1.1rem;
+  margin: 20px auto;
+  display: block;
 }
 
-.create:hover,
-.join:hover,
-.info:hover,
-.settings:hover {
-  transform: scale(1.2);
-  background: linear-gradient(to bottom, #c88b58, #a86e3c);
+.footer {
+  padding-bottom: 50px;
+  text-align: center;
 }
 </style>
