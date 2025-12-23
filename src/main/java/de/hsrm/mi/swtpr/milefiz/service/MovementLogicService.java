@@ -194,12 +194,6 @@ public class MovementLogicService {
             return FigureMoveResult.fail("Du musst erst würfeln!");
         }
 
-        // Die Figur darf nicht außerhalb der Grenzen des Feldes begehen (nur in dem programmierten Feld)
-        /*
-        if (request.toI < 0 || request.toI >= game.getBoard().getWidth()
-                || request.toJ < 0 || request.toJ >= game.getBoard().getHeight()) {
-            return FigureMoveResult.fail("Bewegung außerhalb Spielfelds ist nicht erlaubt");
-        } */
 
         // Finden von Figur
         Figure figure = game.getFigures().stream()
@@ -277,10 +271,7 @@ public class MovementLogicService {
         int startI = figure.getGridI();
         int startJ = figure.getGridJ();
         do {
-            /*
-            FrontendNachrichtEvent moveEv = new FrontendNachrichtEvent(gameCode, figure.getOwnerPlayerId(), figure.getId(), 0, null);
-            IngameRequestEvent requestEv = new IngameRequestEvent(gameCode, figure.getOwnerPlayerId(), figure.getId(), 0, null);
-            */
+            boolean moveOver = false;       // Zug beendet?
             logger.info("Loopanfang mit stepsCount {}, lastDir {}, allowedDistance {}", stepsCount, lastDir, allowedDistance);
             int deltaI = 0, deltaJ = 0;
 
@@ -301,8 +292,17 @@ public class MovementLogicService {
             }
             int destI = figure.getGridI() + deltaI;
             int destJ = figure.getGridJ() + deltaJ;
+
+            // Die Figur darf nicht außerhalb der Grenzen des Feldes begehen (nur in dem programmierten Feld)
+            if (destI < 0 || destI >= game.getBoard().getWidth()
+                    || destJ < 0 || destJ >= game.getBoard().getHeight()) {
+                return FigureMoveResult.fail("Bewegung ausserhalb Spielfelds ist nicht erlaubt");
+            }
+
             Field destField = game.getBoard().get(destI, destJ);
             // Faelle wo Bewegung nicht moeglich ist
+            // potentiell wird man hier als Spieler softlocked?
+            // Energie speichern oder einfach neue Richtungsanfrage?
             if(destField.getType() == CellType.BLOCKED) {
                 logger.info("Feld {} {} ist blockiert", destI, destJ);
                 return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
@@ -327,6 +327,29 @@ public class MovementLogicService {
                 }
             }
 
+            // Nur zwei Figuren können auf das gleiche Feld -> Kampf einleiten (in Zukunft)
+            if (destField.getFigures().size() == 1) {
+                // nur wenn man exakt auf dem Feld landet
+                if(allowedDistance == 1) {
+                    if( !destField.getFigures().get(0).getOwnerPlayerId().equals(request.playerId) ) {
+                        // hier muss ein Duell gestartet werden
+                        logger.info("Zwei Spieler auf {} {}, starte Duell...", destI, destJ);
+                        //return FigureMoveResult.ok();
+                        moveOver = true;
+                    } else {
+                        // wenn es eigene Figur ist, soll man einfach stehen bleiben
+                        int remainingEnergy = allowedDistance;
+                        allowedDistance = 0;
+                        game.getDiceResultById(request.playerId).setValue(0);
+                        //return FigureMoveResult.ok();
+                        break;
+                    }
+                } else if(allowedDistance > 1) {
+                    // einfach weitergehen
+                    // evtll genaueres verhalten noch implementieren
+                }
+            }
+
             // Alles ok
             // setzen der Figur auf neues Feld
             logger.info("Setze Spielfigur auf neue Position {} {}", destI, destJ);
@@ -342,13 +365,9 @@ public class MovementLogicService {
             // Anzahl Schritte und Richtung fuer Event anpassen
             stepsCount++;
 
-            // Nur zwei Figuren können auf das gleiche Feld -> Kampf einleiten (in Zukunft)
-            if (destField.getFigures().size() == 2) {
-                // hier muss ein Duell gestartet werden
-                logger.info("Zwei Spieler auf {} {}, starte Duell...", destI, destJ);
-                //return FigureMoveResult.ok();
+            // Wenn Zug vorbei, direkt aus der Loop ausbrechen
+            if(moveOver)
                 break;
-            }
 
             // Gucken, ob Anfrage noetig
             MoveType moveType = classifyField(game, figure);
