@@ -164,7 +164,7 @@ export function useAnimationQueue() {
         newPos[0] = startPos[0] + (targetPos[0] - startPos[0]) * time
         newPos[1] = startPos[1] + Math.sin(Math.PI * time)
         newPos[2] = startPos[2] + (targetPos[2] - startPos[2]) * time
-        state.position = newPos
+        state.position = newPos as [number, number, number]
       }
 
 
