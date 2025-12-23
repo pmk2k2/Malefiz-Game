@@ -71,13 +71,13 @@ export const useGameStore = defineStore('gamestore', () => {
   const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
   const stompEnv = (import.meta.env.VITE_STOMP_URL as string) || ''
 
-  
 
-  function computeSockJsUrl() {
+
+  function computeSockJsUrl(target: string) {
     if (stompEnv && stompEnv.length) {
       return stompEnv
     }
-    return `${location.protocol}//${location.host}/stompbroker`
+    return `${location.protocol}//${location.host}/${target}`
   }
 
   function startLobbyLiveUpdate(gameCode: string) {
@@ -87,7 +87,7 @@ export const useGameStore = defineStore('gamestore', () => {
       return
     }
 
-    const sockJsUrl = computeSockJsUrl()
+    const sockJsUrl = computeSockJsUrl("stompbroker")
 
     stompClient = new Client({
       webSocketFactory: () => new SockJS(sockJsUrl),
@@ -122,7 +122,7 @@ export const useGameStore = defineStore('gamestore', () => {
 
             if (event.operation === 'LEFT' && event.playerName) {
               setzeInfo(`${event.playerName} hat die Lobby verlassen.`) //InfoBox setzen wenn Player die Lobby verlässt
-              
+
             }
             if(event.operation==='KICKED'){
               stopCountdown();
@@ -181,8 +181,10 @@ export const useGameStore = defineStore('gamestore', () => {
       return
     }
 
+    const sockJsUrl = computeSockJsUrl("persstomp")
+
     persStompClient = new Client({
-      webSocketFactory: () => new SockJS('/persstomp'),
+      webSocketFactory: () => new SockJS(sockJsUrl),
       reconnectDelay: 5000,
       debug: (str) => console.log('[STOMP]', str),
     })
