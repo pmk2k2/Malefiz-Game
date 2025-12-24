@@ -12,8 +12,8 @@ public class StompWebMessageBrokerConfiguration implements WebSocketMessageBroke
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // SimpleBroker hört auf /topic
-        config.enableSimpleBroker("/topic");
+        // SimpleBroker hört auf /topic und /queue
+        config.enableSimpleBroker("/topic", "/queue");
         // Präfix für Nachrichten vom Client an den Server (z. B. @MessageMapping)
         config.setApplicationDestinationPrefixes("/app");
     }
@@ -22,5 +22,6 @@ public class StompWebMessageBrokerConfiguration implements WebSocketMessageBroke
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // WebSocket-Endpunkt, den Clients verbinden sollen
         registry.addEndpoint("/stompbroker").setAllowedOriginPatterns("*").withSockJS();
+        registry.addEndpoint("/persstomp").setAllowedOriginPatterns("*").withSockJS();
     }
 }

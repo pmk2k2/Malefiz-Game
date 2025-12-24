@@ -19,9 +19,27 @@ public class FrontendNachrichtService {
     @EventListener
     public void sendEvent(FrontendNachrichtEvent ev) {
         String destination = "/topic/gameSession/" + ev.getGameCode();
-        // logger.info("Sende STOMP-Event an {}: {} ", destination, ev);
+        logger.info("Player-ID: {}, Player-Name: {}", ev.getId(), ev.getPlayerName());
+        logger.info("Bewegung: {}", ev.getBewegung());
+        logger.info("Sende STOMP-Event an {}: {} ", destination, ev);
         messagingTemplate.convertAndSend(destination, ev);
         // daten aus FrontEndNachrichtEvent werden übertragen, wenn event (JOINED,LEFT,
         // usw) getriggert werden.
     }
+
+    @EventListener
+    public void sendRequestEventForPlayer(IngameRequestEvent ev) {
+        String destination = String.format("/queue/gameSession/%s/%s", ev.getGameCode(), ev.getPlayerId());
+        logger.info("REQUEST: STOMP-Event an {}: {}", destination, ev);
+        messagingTemplate.convertAndSend(destination, ev);
+    }
+
+    /*
+    @EventListener
+    public void sendMoveEvent(IngameMoveEvent ev) {
+        String destination = String.format("/topic/gameSession/%s", ev.getGameCode());
+        logger.info("MOVE: STOMP-Event an {}: {}", destination, ev);
+        messagingTemplate.convertAndSend(destination, ev);
+    }
+    */
 }

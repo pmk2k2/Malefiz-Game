@@ -2,6 +2,7 @@ package de.hsrm.mi.swtpr.milefiz.entities.board;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 
@@ -43,7 +44,11 @@ public class Field {
     }
 
     public List<Figure> getFigures() {
-        return figures;
+        // Nur Figuren zaehlen, die tatsaechlich auf Feld und nicht "im Aus" stehen
+        return figures
+                .stream()
+                .filter(f -> f.isOnField())
+                .collect(Collectors.toList());
     }
 
     public void setType(CellType type) {
