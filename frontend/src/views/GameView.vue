@@ -6,18 +6,17 @@ import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import TheGrid from '@/components/playingfield/TheGrid.vue'
 import TheMapBarrierEditor from '@/components/playingfield/TheMapBarrierEditor.vue'
 import { NodeFunctionInput } from 'three/webgpu';
+import { storeToRefs } from 'pinia'
+import { useGameStore } from '@/stores/gamestore'
 
+const gameStore = useGameStore()
+const { figures } = storeToRefs(gameStore)
 const gridRef = ref<any>(null)
 const sichtbar = ref(false)
 
-const liveGrid = computed(() => {
-  return gridRef.value?.grid || { cols: 11, rows: 8, cells: [] }
+const liveBoard = computed(() => {
+  return gridRef.value?.board || { cols: 11, rows: 8, cells: [] }
 })
-
-const liveFigures = computed(() => {
-  return gridRef.value?.figures || []
-})
-
 
 function openCensoredMap() {
   sichtbar.value = true;
@@ -28,11 +27,6 @@ function closeCensoredMap() {
   sichtbar.value = false
   console.log("CensoredMap geschlossen")
 }
-
-import { useGameStore } from '@/stores/gamestore'
-
-
-const gameStore = useGameStore()
 
 // Steuert alles: Button-Animation, Disabled-State und Logik
 const isBusy = ref(false) 
@@ -118,11 +112,12 @@ function startCooldownTimer() {
       <button class="open p-2 bg-green-600 text-white rounded-lg" @click="openCensoredMap">open map</button>
     </div>
 
-    <div v-show="sichtbar" class="absolute inset-0 bg-black/80 z-20 flex items-center justify-center">
+    <div v-if="sichtbar" class="absolute inset-0 bg-black/80 z-20 flex items-center justify-center">
       <div class="h-[80vh] w-[80vw] bg-[#222] rounded-xl relative">
         <TheMapBarrierEditor 
-            :grid="liveGrid" 
-            :figures="liveFigures" 
+            v-if="liveBoard"
+            :board="liveBoard" 
+            :figures="figures"
         />
         <button class="absolute top-4 right-4 bg-red-600 text-white p-2 rounded-full z-30" @click="closeCensoredMap">X</button>
           </div>      

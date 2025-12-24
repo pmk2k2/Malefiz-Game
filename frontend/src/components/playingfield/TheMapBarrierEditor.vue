@@ -25,6 +25,11 @@ interface Board {
   grid: Field[][]
 }
 
+const props = defineProps <{
+  board: Board | null
+  figures: IPlayerFigure[]
+}>()
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 const gameStore = useGameStore()
 const gameCode = gameStore.gameData.gameCode
@@ -32,7 +37,7 @@ const isLoading = ref(true)
 const CELL_SIZE = 2
 const board = ref<Board | null>(null)
 
-
+/*
 async function getBoardFromBackend(): Promise<Board | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/board?code=${gameCode}`, {
@@ -70,30 +75,31 @@ onMounted(async () => {
   }
   isLoading.value = false
 })
+*/
 
 const allCells = computed<Field[]>(() => {
-  if (!board.value) return []
-  return board.value.grid.flat()
+  if (!props.board) return []
+  return props.board.grid.flat()
 })
 
 function cellToField(cell: Field): [number, number, number] {
-  if (!board.value) return [0, 0, 0]
+  if (!props.board) return [0, 0, 0]
 
-  const x = (cell.i - board.value.cols / 2 + 0.5) * CELL_SIZE
-  const z = -((cell.j - board.value.rows / 2 + 0.5) * CELL_SIZE)
+  const x = (cell.i - props.board.cols / 2 + 0.5) * CELL_SIZE
+  const z = -((cell.j - props.board.rows / 2 + 0.5) * CELL_SIZE)
 
   return [x, 0.05, z]
 }
 
-const camWidth = computed(() => (board.value?.cols || 1) * CELL_SIZE)
-const camHeight = computed(() => (board.value?.rows || 1) * CELL_SIZE)
+const camWidth = computed(() => (props.board?.cols || 1) * CELL_SIZE)
+const camHeight = computed(() => (props.board?.rows || 1) * CELL_SIZE)
 
 </script>
   
 <template>
   <TresCanvas>
     <TresOrthographicCamera
-      v-if="board"
+      v-if="props.board"
       :args="[
       -camWidth / 1, 
       camWidth / 1, 
@@ -109,9 +115,9 @@ const camHeight = computed(() => (board.value?.rows || 1) * CELL_SIZE)
     <TresAmbientLight :intensity="1" />
     <TresDirectionalLight :position="[10, 20, 10]" :intensity="1" />
 
-    <template v-if="board">
+    <template v-if="props.board">
       <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
-        <TresPlaneGeometry :args="[board.cols * CELL_SIZE * 5, board.rows * CELL_SIZE * 5]" />
+        <TresPlaneGeometry :args="[props.board.cols * CELL_SIZE * 5, props.board.rows * CELL_SIZE * 5]" />
         <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
       </TresMesh>
 
@@ -138,7 +144,7 @@ const camHeight = computed(() => (board.value?.rows || 1) * CELL_SIZE)
       </TresMesh>
 
       <ThePlayerFigureCensored
-        v-for="fig in figures"
+        v-for="fig in props.figures"
         :key="fig.id"
         :playerId="fig.playerId"
         :color="fig.color"

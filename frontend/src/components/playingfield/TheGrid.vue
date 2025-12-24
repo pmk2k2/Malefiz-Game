@@ -523,6 +523,10 @@ async function sendMoveDirection() {
   }
 }
 
+defineExpose ({
+  board
+})
+
 </script>
 
 <template>
