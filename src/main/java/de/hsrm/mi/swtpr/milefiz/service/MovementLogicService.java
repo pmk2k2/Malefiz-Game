@@ -326,44 +326,47 @@ public class MovementLogicService {
             // Nur zwei Figuren können auf das gleiche Feld -> Dritter Spieler kann nicht
             if (destField.isDuelField()) {
 
-                // Wenn es keine Energie gibt
+                // Dritte Figur kann überspringen (wenn Energie da ist und Schritte übrig bleiben)
+                if (hasEnergy && allowedDistance > 1) {
+
+                    int landI = destI + deltaI;
+                    int landJ = destJ + deltaJ;
+
+                    if (landI < 0 || landI >= game.getBoard().getWidth() || landJ < 0 || landJ >= game.getBoard().getHeight()) {
+                        allowedDistance = 0;
+                        break;
+                    }
+
+                    Field landField = game.getBoard().get(landI, landJ);
+
+                    if (landField.getType() == CellType.BLOCKED || landField.getFigures().size() >= 2) {
+                        allowedDistance = 0;
+                        break;
+                    }
+
+                    Field currentField = game.getBoard().get(figure.getGridI(), figure.getGridJ());
+                    currentField.removeFigure(figure);
+
+                    figure.setPosition(landI, landJ);
+                    landField.addFigure(figure);
+
+                    // Schritt ausgeben
+                    allowedDistance--;
+                    result.setValue(allowedDistance);
+                    game.getDiceResultById(request.playerId).setValue(allowedDistance);
+
+                    stepsCount++;
+                    continue;
+                }
+
+                // Wenn es aber keine Energie gibt, dann vor dem Duellfeld stoppen
                 if (!hasEnergy) {
                     allowedDistance = 0;
                     result.setValue(0);
                     game.getDiceResultById(request.playerId).setValue(0);
                     break;
                 }
-
-                // Wenn die Energie da ist
-                int landI = destI + deltaI;
-                int landJ = destJ + deltaJ;
-
-                if (landI < 0 || landI >= game.getBoard().getWidth() || landJ < 0 || landJ >= game.getBoard().getHeight()) {
-                    allowedDistance = 0;
-                    break;
-                }
-
-                Field landField = game.getBoard().get(landI, landJ);
-
-                if (landField.getType() == CellType.BLOCKED || landField.getFigures().size() >= 2) {
-                    allowedDistance = 0;
-                    break;
-                }
-                Field currentField = game.getBoard().get(figure.getGridI(), figure.getGridJ());
-                currentField.removeFigure(figure);
-
-                figure.setPosition(landI, landJ);
-                landField.addFigure(figure);
-
-                // 1 Schritt ausgeben
-                allowedDistance--;
-                result.setValue(allowedDistance);
-                game.getDiceResultById(request.playerId).setValue(allowedDistance);
-
-                stepsCount++;
-                continue;
             }
-
 
             // Alles ok
             // setzen der Figur auf neues Feld
