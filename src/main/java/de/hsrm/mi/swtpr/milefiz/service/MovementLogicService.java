@@ -48,6 +48,8 @@ public class MovementLogicService {
         this.publisher = publisher;
     }
 
+
+
     // alle begehbaren Nachbarfelder
     public Map<String, Field> getWalkableNeighbors(Game game, Figure figure) {
 
@@ -79,11 +81,6 @@ public class MovementLogicService {
 
             // BLOCKED ist nicht begehbar
             if (f.getType() == CellType.BLOCKED) {
-                continue;
-            }
-
-            // Feld mit laufendem Duell (2 Figuren)
-            if (f.getFigures().size() >= 2) {
                 continue;
             }
 
@@ -179,6 +176,7 @@ public class MovementLogicService {
 
 
     public FigureMoveResult moveFigure(Game game, String gameCode, FigureMoveRequest request) {
+        boolean hasEnergy = false; // Zeitlich da, da die Energie noch nicht erstellt wurde
         DiceResult result = game.getDiceResultById(request.playerId);
         // SpielerId prüfen und vergleichen
         if (result == null) {
@@ -307,9 +305,7 @@ public class MovementLogicService {
                 logger.info("Feld {} {} ist blockiert", destI, destJ);
                 return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
             }
-            if (destField.getFigures().size() >= 2) {
-                return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
-            }
+
 
             // Wenn Feld eine Barriere hat, schauen ob man AUF dieser landen kann
             if(destField.hasBarrier()) {
@@ -327,28 +323,47 @@ public class MovementLogicService {
                 }
             }
 
-            // Nur zwei Figuren können auf das gleiche Feld -> Kampf einleiten (in Zukunft)
-            if (destField.getFigures().size() == 1) {
-                // nur wenn man exakt auf dem Feld landet
-                if(allowedDistance == 1) {
-                    if( !destField.getFigures().get(0).getOwnerPlayerId().equals(request.playerId) ) {
-                        // hier muss ein Duell gestartet werden
-                        logger.info("Zwei Spieler auf {} {}, starte Duell...", destI, destJ);
-                        //return FigureMoveResult.ok();
-                        moveOver = true;
-                    } else {
-                        // wenn es eigene Figur ist, soll man einfach stehen bleiben
-                        int remainingEnergy = allowedDistance;
-                        allowedDistance = 0;
-                        game.getDiceResultById(request.playerId).setValue(0);
-                        //return FigureMoveResult.ok();
-                        break;
-                    }
-                } else if(allowedDistance > 1) {
-                    // einfach weitergehen
-                    // evtll genaueres verhalten noch implementieren
+            // Nur zwei Figuren können auf das gleiche Feld -> Dritter Spieler kann nicht
+            if (destField.isDuelField()) {
+
+                // Wenn es keine Energie gibt
+                if (!hasEnergy) {
+                    allowedDistance = 0;
+                    result.setValue(0);
+                    game.getDiceResultById(request.playerId).setValue(0);
+                    break;
                 }
+
+                // Wenn die Energie da ist
+                int landI = destI + deltaI;
+                int landJ = destJ + deltaJ;
+
+                if (landI < 0 || landI >= game.getBoard().getWidth() || landJ < 0 || landJ >= game.getBoard().getHeight()) {
+                    allowedDistance = 0;
+                    break;
+                }
+
+                Field landField = game.getBoard().get(landI, landJ);
+
+                if (landField.getType() == CellType.BLOCKED || landField.getFigures().size() >= 2) {
+                    allowedDistance = 0;
+                    break;
+                }
+                Field currentField = game.getBoard().get(figure.getGridI(), figure.getGridJ());
+                currentField.removeFigure(figure);
+
+                figure.setPosition(landI, landJ);
+                landField.addFigure(figure);
+
+                // 1 Schritt ausgeben
+                allowedDistance--;
+                result.setValue(allowedDistance);
+                game.getDiceResultById(request.playerId).setValue(allowedDistance);
+
+                stepsCount++;
+                continue;
             }
+
 
             // Alles ok
             // setzen der Figur auf neues Feld
@@ -361,6 +376,8 @@ public class MovementLogicService {
             // gelaufenen Schritt abziehen
             result.setValue(--allowedDistance);
             game.getDiceResultById(request.playerId).setValue(allowedDistance);
+
+            
 
             // Anzahl Schritte und Richtung fuer Event anpassen
             stepsCount++;
@@ -379,6 +396,7 @@ public class MovementLogicService {
                     int remainingEnergy = allowedDistance;
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
+                    break;
                     //return FigureMoveResult.ok();
 
                 case MoveType.T_CROSSING:
@@ -425,6 +443,45 @@ public class MovementLogicService {
         var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
         publisher.publishEvent(moveEv);
         stepsCount = 0;
+
+        // Spieler beendet seine Bewegung anhang vom Wuerfel
+        game.finishMovement(request.playerId);
+
+        Field field = game.getBoard().get(figure.getGridI(), figure.getGridJ());
+
+        // Event auslösen
+        if (field.isDuelField()) {
+            List<Figure> figs = field.getFigures();
+            String p1 = figs.get(0).getOwnerPlayerId();
+            String p2 = figs.get(1).getOwnerPlayerId();
+
+            if (game.isMovementFinished(p1) && game.isMovementFinished(p2)) {
+
+                // Bewegung NUR für Übergabe von Koordinaten
+                Bewegung duelBew = new Bewegung(
+                        figure.getGridI(),
+                        figure.getGridJ(),
+                        figure.getGridI(),
+                        figure.getGridJ(),
+                        null,
+                        0
+                );
+
+                FrontendNachrichtEvent duelEvent =
+                    new FrontendNachrichtEvent(
+                        FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+                        FrontendNachrichtEvent.Operation.DUEL_PREPARE,
+                        gameCode,
+                        null,
+                        null,
+                        duelBew
+                    );
+
+                publisher.publishEvent(duelEvent);
+            }
+        }
+
+
 
         return FigureMoveResult.ok();
     }

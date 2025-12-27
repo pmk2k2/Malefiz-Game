@@ -28,7 +28,8 @@ public class FrontendNachrichtEvent {
         COUNTDOWN_ABORTED,
 
         // Ingame-Operationen
-        MOVE
+        MOVE,
+        DUEL_PREPARE
     }
 
     private Nachrichtentyp typ;
