@@ -9,6 +9,7 @@ import ThePlayerFigureCensored from './ThePlayerFigureCensored.vue'
 import Barrier from './models/Barrier.vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
+import ThePlayerFigure from './ThePlayerFigure.vue'
 
 const figures = ref<IPlayerFigure[]>([])
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER'
@@ -36,6 +37,7 @@ const gameCode = gameStore.gameData.gameCode
 const isLoading = ref(true)
 const CELL_SIZE = 2
 const board = ref<Board | null>(null)
+const myId = gameStore.gameData.playerId
 
 /*
 async function getBoardFromBackend(): Promise<Board | null> {
@@ -143,14 +145,22 @@ const camHeight = computed(() => (props.board?.rows || 1) * CELL_SIZE)
         </template>
       </TresMesh>
 
-      <ThePlayerFigureCensored
-        v-for="fig in props.figures"
-        :key="fig.id"
-        :playerId="fig.playerId"
-        :color="fig.color"
-        :position="fig.position"
-      /> 
+      <template v-for="fig in props.figures" :key="fig.id">
+        <ThePlayerFigure
+          v-if="fig.playerId === myId"
+          :position="fig.position"
+          :color="fig.color"
+          :orientation="fig.orientation"
+        />
 
+        <ThePlayerFigureCensored
+          v-else
+          :position="fig.position"
+          :color="fig.color"
+          :playerId="fig.playerId"
+        />
+      </template>
+      
     </template>
   </TresCanvas>
 </template>
