@@ -382,4 +382,16 @@ public class GameService {
                         f.getGridJ()))
                 .collect(Collectors.toList());
     }
+
+    public void publischBarrierWaitEvent(String gameCode, String playerId) {
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, playerId, Operation.BARRIER_WAIT, gameCode, null);
+        e.setGameState(GameState.BARRIER_PLACEMENT);
+        publisher.publishEvent(e);
+    }
+
+    public void publishBarrierPlacedEvent(String gameCode) {
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, "server", Operation.BARRIER_PLACED, gameCode, null);
+        e.setGameState(GameState.RUNNING);
+        publisher.publishEvent(e);
+    }
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { TresCanvas } from '@tresjs/core'
-import { computed, onMounted, ref, } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
@@ -17,6 +17,7 @@ interface Field {
   i: number
   j: number
   type: CellType
+  blocked: boolean
 }
 
 interface Board {
@@ -25,7 +26,7 @@ interface Board {
   grid: Field[][]
 }
 
-const props = defineProps <{
+const props = defineProps<{
   board: Board | null
   figures: IPlayerFigure[]
 }>()
@@ -77,6 +78,31 @@ onMounted(async () => {
 })
 */
 
+// Funktion zum Klicken auf einer Zelle aus Map, um die neue Position der Barriere auszuwählen
+async function onCellClick(cell: Field) {
+  if (cell.type !== 'PATH' || cell.blocked) {
+    // console.log("Feld ist blockiert.")
+    return
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/game/${gameCode}/barrier/place`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        playerId: gameStore.gameData.playerId,
+        toI: cell.i,
+        toJ: cell.j,
+      }),
+    })
+    if (res.ok) {
+      console.log('erfolgreich platziert')
+    }
+  } catch (e) {
+    console.error('Fehler beim Platzieren', e)
+  }
+}
+
 const allCells = computed<Field[]>(() => {
   if (!props.board) return []
   return props.board.grid.flat()
@@ -93,21 +119,13 @@ function cellToField(cell: Field): [number, number, number] {
 
 const camWidth = computed(() => (props.board?.cols || 1) * CELL_SIZE)
 const camHeight = computed(() => (props.board?.rows || 1) * CELL_SIZE)
-
 </script>
-  
+
 <template>
   <TresCanvas>
     <TresOrthographicCamera
       v-if="props.board"
-      :args="[
-      -camWidth / 1, 
-      camWidth / 1, 
-      camHeight / 1.5, 
-      -camHeight / 1.5, 
-      0.1, 
-      1000
-      ]"
+      :args="[-camWidth / 1, camWidth / 1, camHeight / 1.5, -camHeight / 1.5, 0.1, 1000]"
       :position="[0, 50, 0]"
       :look-at="[0, 0, 0]"
     />
@@ -117,7 +135,9 @@ const camHeight = computed(() => (props.board?.rows || 1) * CELL_SIZE)
 
     <template v-if="props.board">
       <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
-        <TresPlaneGeometry :args="[props.board.cols * CELL_SIZE * 5, props.board.rows * CELL_SIZE * 5]" />
+        <TresPlaneGeometry
+          :args="[props.board.cols * CELL_SIZE * 5, props.board.rows * CELL_SIZE * 5]"
+        />
         <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
       </TresMesh>
 
@@ -126,31 +146,32 @@ const camHeight = computed(() => (props.board?.rows || 1) * CELL_SIZE)
         :key="`cell-${cell.i}-${cell.j}`"
         :position="cellToField(cell)"
         :rotation="[-Math.PI / 2, 0, 0]"
+        @click="onCellClick(cell)"
       >
-        <template v-if="cell.type === 'PATH' || cell.type === 'START'">
+        <template v-if="cell.type === 'BARRIER' || cell.blocked">
           <TheRock />
+          <TresMesh :position="[0, 0, 0.2]">
+            <TresPlaneGeometry :args="[1.8, 1.8]" />
+            <TresMeshStandardMaterial color="red" :opacity="0.6" :transparent="true" />
+          </TresMesh>
         </template>
-        <template v-else-if="cell.type === 'BLOCKED'">
-          <TheTree />
-          <TheGrass />
-        </template>
-        <template v-else-if="cell.type === 'GOAL'">
+
+        <template v-else-if="cell.type === 'PATH' || cell.type === 'START'">
           <TheRock />
-          <TheCrown />
-        </template>
-        <template v-else-if="cell.type === 'BARRIER'">
-          <Barrier />
+          <TresMesh :position="[0, 0, 0.1]">
+            <TresPlaneGeometry :args="[1.8, 1.8]" />
+            <TresMeshStandardMaterial color="yellow" :opacity="0.3" :transparent="true" />
+          </TresMesh>
         </template>
       </TresMesh>
 
-      <ThePlayerFigureCensored
+      <!-- <ThePlayerFigureCensored
         v-for="fig in props.figures"
         :key="fig.id"
         :playerId="fig.playerId"
         :color="fig.color"
         :position="fig.position"
-      /> 
-
+      /> -->
     </template>
   </TresCanvas>
 </template>

@@ -14,7 +14,6 @@ import de.hsrm.mi.swtpr.milefiz.entities.board.Field;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
-import de.hsrm.mi.swtpr.milefiz.messaging.IngameMoveEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
@@ -24,6 +23,7 @@ import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
+import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
 @Service
 public class MovementLogicService {
@@ -177,7 +177,6 @@ public class MovementLogicService {
         return newDir;
     }
 
-
     public FigureMoveResult moveFigure(Game game, String gameCode, FigureMoveRequest request) {
         DiceResult result = game.getDiceResultById(request.playerId);
         // SpielerId prüfen und vergleichen
@@ -193,7 +192,6 @@ public class MovementLogicService {
         if (allowedDistance <= 0) {
             return FigureMoveResult.fail("Du musst erst würfeln!");
         }
-
 
         // Finden von Figur
         Figure figure = game.getFigures().stream()
@@ -270,6 +268,8 @@ public class MovementLogicService {
         // Festhalten der Startpositionen (wichtig fuer Frontend-Animation)
         int startI = figure.getGridI();
         int startJ = figure.getGridJ();
+        boolean barrierHit = false;
+
         do {
             boolean moveOver = false;       // Zug beendet?
             logger.info("Loopanfang mit stepsCount {}, lastDir {}, allowedDistance {}", stepsCount, lastDir, allowedDistance);
@@ -313,6 +313,7 @@ public class MovementLogicService {
 
             // Wenn Feld eine Barriere hat, schauen ob man AUF dieser landen kann
             if(destField.hasBarrier()) {
+                
                 if(allowedDistance > 1) {
                     // Figur stoppen
                     // Energie speichern (und spaeter weiterleiten)
@@ -321,9 +322,11 @@ public class MovementLogicService {
                     game.getDiceResultById(request.playerId).setValue(0);
                     return FigureMoveResult.ok();
                 } else if(allowedDistance == 1) {
-                    // Wenn man genau auf Barriere landet
-                    // Event einleiten
-                    logger.info("Landung genau auf Barriere, tu etwas...");
+                    // Auf Barriere gelandet: Spielstatus ändern und variable auf true setzen
+                    destField.setBarrier(null);
+                    destField.setType(CellType.PATH);
+                    game.setState(GameState.BARRIER_PLACEMENT);
+                    barrierHit = true;
                 }
             }
 
@@ -364,6 +367,8 @@ public class MovementLogicService {
 
             // Anzahl Schritte und Richtung fuer Event anpassen
             stepsCount++;
+
+            if(barrierHit) break;
 
             // Wenn Zug vorbei, direkt aus der Loop ausbrechen
             if(moveOver)
@@ -426,6 +431,7 @@ public class MovementLogicService {
         publisher.publishEvent(moveEv);
         stepsCount = 0;
 
-        return FigureMoveResult.ok();
+        // Eine Nachricht schicken, falls eine Barriere getroffen wurde, damit der Controller das automatische Öffnen des Maps triggern kann.
+        return barrierHit ? FigureMoveResult.ok("BARRIER_HIT") : FigureMoveResult.ok();
     }
 }
