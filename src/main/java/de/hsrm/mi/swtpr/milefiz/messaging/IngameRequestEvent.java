@@ -6,13 +6,13 @@ import de.hsrm.mi.swtpr.milefiz.model.Direction;
 public class IngameRequestEvent {
     public enum Aktion {
         DIRECTION,
-        DICE_ROLL
+        DICE_ROLL,
         // BARRIERE,
     }
 
     private Aktion type;
     private String playerId;
-    private String figureId;    // fuer welche Figur request ankam
+    private String figureId; // fuer welche Figur request ankam
     private String gameCode;
     private Direction forbiddenDir; // verbotene Richtung (bei Richtungsanfragen)
 
@@ -30,6 +30,7 @@ public class IngameRequestEvent {
         this.figureId = figureId;
         this.gameCode = gameCode;
     }
+
     // Fuer Richtungsanfragen
     public IngameRequestEvent(Aktion type, String playerId, String figureId, String gameCode, Direction forbiddenDir) {
         this.type = type;

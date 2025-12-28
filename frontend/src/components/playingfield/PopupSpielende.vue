@@ -34,7 +34,7 @@ import { useGameStore } from '@/stores/gamestore'
 const gameStore = useGameStore();
 const router = useRouter();
 
-const visible = computed(() => gameStore.gameData.gameOver);
+const visible = computed(() => gameStore.gameData.gameOver === true);
 
 const isWinner = computed(() => {
   return gameStore.gameData.winnerId === gameStore.gameData.playerId;

@@ -116,6 +116,12 @@ export const useGameStore = defineStore('gamestore', () => {
               console.log(event)
               ingameMoveEvent.value = event
             }
+            if (event.operation === 'GAME_OVER') {
+              setzeInfo(`game over`)
+              gameData.gameOver = true
+              gameData.winnerId = event.id
+              disconnect()
+            }
           }
           else if (event.typ === 'LOBBY') {
             updatePlayerList(gameCode)
@@ -169,12 +175,6 @@ export const useGameStore = defineStore('gamestore', () => {
             //  Spielerlimit überschritten
             if (event.operation === 'PLAYER_LIMIT_ERROR') {
               alert('Lobby ist voll! Max 4 Spieler erlaubt.')
-            }
-
-            if (event.operation === 'GAME_OVER') {
-              gameData.gameOver= true
-              gameData.winnerId = event.id
-              disconnect()
             }
           }
         } catch (err) {

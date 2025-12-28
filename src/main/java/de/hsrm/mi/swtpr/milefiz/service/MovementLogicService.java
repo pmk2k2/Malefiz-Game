@@ -261,6 +261,9 @@ public class MovementLogicService {
             figure.setPosition(startFeld.getI(), startFeld.getJ());
             startFeldState.addFigure(figure);
 
+            logger.info("Figur {} wird auf Startfeld ({}, {}) gesetzt. CellType: {}",
+                    figure.getId(), startFeld.getI(), startFeld.getJ(), startFeld.getType());
+
             // Bewegung und Request an Frontend senden
             // -1 als "startPos" der Bewegung, um startPosition ausserhalb des Feldes zu
             // vermitteln,
@@ -276,9 +279,12 @@ public class MovementLogicService {
             if (currentField.getType() == CellType.GOAL) {
                 game.setWinnerId(request.playerId);
                 publisher.publishEvent(new FrontendNachrichtEvent(
-                        Nachrichtentyp.LOBBY,
+                        Nachrichtentyp.INGAME,
                         request.playerId,
-                        Operation.GAME_OVER));
+                        Operation.GAME_OVER,
+                        gameCode,
+                        null));
+                logger.info("ENDDDDDDDDD");
             }
 
             return FigureMoveResult.ok();
@@ -321,6 +327,10 @@ public class MovementLogicService {
             }
 
             Field destField = game.getBoard().get(destI, destJ);
+
+            logger.info("Figur {} bewegt sich auf Feld ({}, {}) mit CellType: {}",
+                    figure.getId(), destI, destJ, destField.getType());
+
             // Faelle wo Bewegung nicht moeglich ist
             // potentiell wird man hier als Spieler softlocked?
             // Energie speichern oder einfach neue Richtungsanfrage?
@@ -373,11 +383,29 @@ public class MovementLogicService {
 
             // Alles ok
             // setzen der Figur auf neues Feld
-            logger.info("Setze Spielfigur auf neue Position {} {}", destI, destJ);
+            logger.info("Setze Spielfigur auf neue Position {} {} mit CellType: {}", destI, destJ, destField.getType());
             Field currentField = game.getBoard().get(figure.getGridI(), figure.getGridJ());
             currentField.removeFigure(figure);
             figure.setPosition(destI, destJ);
             destField.addFigure(figure);
+
+            // Prüfe ob Ziel erreicht
+            if (destField.getType() == CellType.GOAL) {
+                game.setWinnerId(request.playerId);
+                publisher.publishEvent(new FrontendNachrichtEvent(
+                        Nachrichtentyp.INGAME,
+                        request.playerId,
+                        Operation.GAME_OVER,
+                        gameCode,
+                        null));
+                Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
+                var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
+                        request.figureId,
+                        request.playerId, bew);
+                publisher.publishEvent(moveEv);
+                logger.info("ENDDDDDDDDD");
+                return FigureMoveResult.ok();
+            }
 
             // gelaufenen Schritt abziehen
             result.setValue(--allowedDistance);

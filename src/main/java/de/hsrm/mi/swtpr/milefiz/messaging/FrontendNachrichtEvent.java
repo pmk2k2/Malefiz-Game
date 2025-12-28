@@ -24,11 +24,11 @@ public class FrontendNachrichtEvent {
         GAME_STARTED_BY_ADMIN,
         GAME_STARTED_BY_COUNTER,
         GAME_RUNNING,
-        GAME_OVER,
         PLAYER_LIMIT_ERROR,
         COUNTDOWN_ABORTED,
 
         // Ingame-Operationen
+        GAME_OVER,
         MOVE
     }
 
@@ -62,6 +62,7 @@ public class FrontendNachrichtEvent {
         this.gameState = gameState;
     }
 
+    // Event speziell fuer Spielende
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation) {
         this.typ = typ;
         this.id = id;
