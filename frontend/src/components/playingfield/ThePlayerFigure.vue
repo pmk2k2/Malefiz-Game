@@ -10,7 +10,7 @@ type PlayerFigureProps = Pick<IPlayerFigure, 'position' | 'color' | 'orientation
 
 // Definieren und festlegen der Props und Defaultwerte
 const props = withDefaults(defineProps<PlayerFigureProps>(), {
-  position: () => [0, 0, 0],
+  position: () => [0, 0, 0] as [number, number, number],
   color: '#ffaacc',
   model: 'Pawn',
   player: 'Player',

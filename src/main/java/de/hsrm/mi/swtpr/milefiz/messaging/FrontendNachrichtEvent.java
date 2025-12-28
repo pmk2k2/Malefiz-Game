@@ -2,17 +2,20 @@ package de.hsrm.mi.swtpr.milefiz.messaging;
 
 import java.time.Instant;
 
+import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
+import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
 public class FrontendNachrichtEvent {
 
     public enum Nachrichtentyp {
-        LOBBY
+        LOBBY,
         // weitere typen können hier spätre ergänzt werden
-
+        INGAME
     }
 
     public enum Operation {
+        // Lobby-Operationen
         LEFT,
         JOINED,
         KICKED,
@@ -23,7 +26,10 @@ public class FrontendNachrichtEvent {
         GAME_RUNNING,
         GAME_OVER,
         PLAYER_LIMIT_ERROR,
-        COUNTDOWN_ABORTED
+        COUNTDOWN_ABORTED,
+
+        // Ingame-Operationen
+        MOVE
     }
 
     private Nachrichtentyp typ;
@@ -34,6 +40,11 @@ public class FrontendNachrichtEvent {
     private Instant countdownStartedAt;
     private GameState gameState;
     private long countdownDurationSeconds;
+
+    // States fuer Movementupdates
+    // private String playerId; // Unterschied playerId und playerName???
+    private String figureId;
+    private Bewegung bewegung;
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -55,6 +66,16 @@ public class FrontendNachrichtEvent {
         this.typ = typ;
         this.id = id;
         this.operation = operation;
+    }
+
+    // Event speziell fuer Movement Updates
+    public FrontendNachrichtEvent(Nachrichtentyp typ, Operation op, String gC, String fId, String pId, Bewegung bew) {
+        this.typ = typ;
+        this.operation = op;
+        this.gameCode = gC;
+        this.figureId = fId;
+        this.id = pId;
+        this.bewegung = bew;
     }
 
     public Nachrichtentyp getTyp() {
@@ -132,4 +153,13 @@ public class FrontendNachrichtEvent {
         this.countdownDurationSeconds = seconds;
     }
 
+    // Muhannad: Was ist Gamestate?
+
+    public String getFigureId() {
+        return figureId;
+    }
+
+    public Bewegung getBewegung() {
+        return bewegung;
+    }
 }

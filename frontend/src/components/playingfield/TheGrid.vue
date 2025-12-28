@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { TresCanvas, type TresObject } from '@tresjs/core'
+import { useLoop, type TresObject } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
-import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
 import TheGrass from './models/TheGrass.vue'
 import Barrier from './models/Barrier.vue'
 import ThePlayerFigure from '@/components/playingfield/ThePlayerFigure.vue'
-import RollButton from '@/components/RollButton.vue'
-import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
+import type { IFigureMoveRequest } from '@/services/IFigureMoveRequest'
+import { useAnimationQueue } from '@/composable/useAnimationQueue'
+import { storeToRefs } from 'pinia'
 
 // Zellentypen
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER'
@@ -20,7 +21,7 @@ type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER'
 interface Field {
   i: number
   j: number
-  type: CellType
+  type?: CellType
 }
 
 // Das Spielfeld, grid für aktiven Spielfelder
@@ -29,6 +30,7 @@ interface Board {
   rows: number
   grid: Field[][]
 }
+console.log("Erstelle Grid")
 
 const gameStore = useGameStore()
 const CELL_SIZE = 2
@@ -37,9 +39,13 @@ const isLoading = ref(true)
 const gameCode = gameStore.gameData.gameCode
 
 // Player figures
-const figures = ref<IPlayerFigure[]>([])
+const { figures } = storeToRefs(gameStore)
 const currentPlayerId = gameStore.gameData.playerId
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+// Animationqueue
+const ANIMATION_DURATION = 300   // laenge der Animation in ms
+const { queueMove, queueRotation } = useAnimationQueue()
 
 // Camera controls
 const camRef = shallowRef<TresObject | null>(null)
@@ -47,6 +53,10 @@ const default_cam_pos: [number, number, number] = [0, 15, 18]
 const camHeight = 1.2
 let figureControlInd = 0
 const egoPersp = ref(false)
+const figureViewDir = ref(-1)
+
+// Abspielen von Animation etc
+const { onBeforeRender } = useLoop()
 
 const ownFigures = computed(() => {
   if (!currentPlayerId) return []
@@ -76,10 +86,56 @@ onMounted(async () => {
   // Add keyboard listener
   window.addEventListener('keydown', onKeyDown)
   isLoading.value = false
+  const gameCode = gameStore.gameData.gameCode
+  const playerId = gameStore.gameData.playerId
+  if(gameCode != null && playerId != null) {
+    // Websockets fuer Gameupdates und persoenliche Requests
+    gameStore.startIngameLiveUpdate(gameCode, playerId)
+    gameStore.startLobbyLiveUpdate(gameCode)
+  }
+
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown)
+})
+
+// Schau, ob Eingriff durch Nutzer erforderlich ist
+watch(() => gameStore.gameData.requireInput, (newVal) => {
+  // Irgendwas in der UI anzeigen lassen ig
+  console.log("Eingriff durch Nutzer erforderlich? ", newVal)
+})
+
+// moveEvents ueberwachen und ausfuehren
+watch(() => gameStore.ingameMoveEvent, (newEv) => {
+  console.log("Neues Move-Event eingetroffen: ", newEv)
+  if(!newEv)  return
+  // FrontendNachricht mit Bewegung drin behandeln
+  // Anzusteuernde Figur finden
+  const index = figures.value.findIndex((fig) => fig.id === newEv.figureId && fig.playerId === newEv.id)
+  // Logikkoordinaten in Spielkoordinaten umwandeln
+  //console.log("Startpos aus Ev: ", newEv?.bewegung.startX, newEv?.bewegung.startZ)
+  if(newEv.bewegung.startX == null || newEv.bewegung.startZ == null)  return
+  if(!(newEv.bewegung.startX < 0 || newEv.bewegung.startZ < 0)) {
+    const startPosField = cellToField( {i: newEv.bewegung.startX, j: newEv.bewegung.startZ} )
+    newEv.bewegung.startX = startPosField[0]
+    newEv.bewegung.startZ = startPosField[2]
+  } else {
+    newEv.bewegung.startX = null
+    newEv.bewegung.startZ = null
+  }
+  const endPosField = cellToField( {i: newEv.bewegung.endX, j: newEv.bewegung.endZ} )
+  newEv.bewegung.endX = endPosField[0]
+  newEv.bewegung.endZ = endPosField[2]
+  /*
+  console.log("Startpos aus Ev neu: ", newEv?.bewegung.startX, newEv?.bewegung.startZ)
+  console.log("endpos aus Ev neu: ", newEv?.bewegung.endX, newEv?.bewegung.endZ)
+  */
+  // Bewegung in Queue anhaengen
+  queueMove(index, newEv.bewegung, ANIMATION_DURATION)
+  // Orientierung richtig setzen
+  if(!figures.value[index]) return
+  figures.value[index].orientation = newEv.bewegung.dir.toLowerCase()
 })
 
 async function sendBoard(boardData: Board) {
@@ -141,7 +197,10 @@ async function fetchGameState() {
 
       return {
         ...fig,
+        currentAnim: null,
+        animQueue: [],
         position: [x, y, z],
+        viewDirRot: 0
       } as IPlayerFigure
     })
     console.log('Figure geladen und positioniert:', figures.value.length)
@@ -164,7 +223,7 @@ function _calculateHomeBaseOffset(playerIndex: number, playersCount: number) {
   // Position des gesamten Häuschens
   let x_offset = 0
   // Häuschen unterhalb des Spielfelds (+ 2 Einheiten Abstand)
-  let z_offset = (b.rows / 2) * CELL_SIZE + 2
+  const z_offset = (b.rows / 2) * CELL_SIZE + 2
 
   if (playersCount === 2) {
     // Spieler 1 kommt Links und Spieler 2 rechts
@@ -209,7 +268,10 @@ function calculateHomeCenter(playerId: string) {
   return _calculateHomeBaseOffset(playerIndex, playersCount)
 }
 
-function updateCam() {
+
+// war: updateCam()
+// so ists besser, da nicht jedes mal updateCam() aufgerufen werden muss
+onBeforeRender(({ delta }) => {
   const cam = camRef.value as any
   if (!cam) return
 
@@ -217,31 +279,40 @@ function updateCam() {
     const fig = ownFigures.value[figureControlInd]
     if (!fig) return
 
-    const [x, , z] = fig.position
-    cam.position.set(x, camHeight, z)
+    const [x, y, z] = fig.position
+    if(y == undefined) return
+    cam.position.set(x, camHeight + (y - 0.2), z)
 
+    /*
     let lookDir = 0
+    console.log("Blickrichtung Kamera/Figur: ", fig.orientation)
     switch (fig.orientation) {
       case 'north':
         lookDir = 0
+        figureViewDir.value = 0
         break
       case 'east':
         lookDir = -0.5
+        figureViewDir.value = 1
         break
       case 'south':
         lookDir = 1
+        figureViewDir.value = 2
         break
       case 'west':
         lookDir = 0.5
+        figureViewDir.value = 3
         break
     }
-
-    cam.rotation.set(0, Math.PI * lookDir, 0)
+    */
+    //console.log("Figur Rotation fuer Kamera: ", ownFigures.value[figureControlInd].viewDirRot)
+    cam.rotation.set(0, Math.PI * fig.viewDirRot, 0)
   } else {
     cam.position.set(default_cam_pos[0], default_cam_pos[1], default_cam_pos[2])
     cam.lookAt(0, 0, 0)
   }
-}
+//}
+})
 
 function onKeyDown(event: KeyboardEvent) {
   const key = event.key
@@ -258,17 +329,40 @@ function onKeyDown(event: KeyboardEvent) {
       figureControlInd = (figureControlInd - 1 + numOwnFigures) % numOwnFigures
     }
 
+
+
     if (egoPersp.value) {
-      updateCam()
+      //updateCam()
     }
   }
+
+  // Figur drehen
+  if (key === 'a' || key === 'A') {
+    rotateCurrentFigure(-1)
+
+    if (egoPersp.value) {
+      //updateCam()
+    }
+  }
+  if (key === 'd' || key === 'D') {
+    rotateCurrentFigure(1)
+
+    if (egoPersp.value) {
+      //updateCam()
+    }
+  }
+
+  if (key === 'w' || key === 'W') {
+    sendMoveDirection()
+  }
+
 
   if (key === 'e' || key === 'E') {
     egoPersp.value = !egoPersp.value
     if (egoPersp.value && numOwnFigures > 0) {
       figureControlInd = 0
     }
-    updateCam()
+    //updateCam()
   }
 }
 
@@ -288,14 +382,151 @@ function cellToField(cell: Field): [number, number, number] {
   return [x, 0.05, z]
 }
 
+/*
 function onRoll(id: string) {
   console.log('Button pressed:', id)
   rollDice()
 }
+*/
+
+function getCurrentFigureRot() {
+  if(!ownFigures.value[figureControlInd]) return
+
+  switch(ownFigures.value[figureControlInd]?.orientation) {
+    case 'north':
+      figureViewDir.value = 0
+      break;
+    case 'east':
+      figureViewDir.value = 1
+      break;
+    case 'south':
+      figureViewDir.value = 2
+      break;
+    case 'west':
+      figureViewDir.value = 3
+      break;
+  }
+}
+
+function rotateCurrentFigure(rot: number) {
+  const fig = ownFigures.value[figureControlInd]
+  if(!fig)  return
+  getCurrentFigureRot()
+  if(rot <= 0) {
+    figureViewDir.value = (figureViewDir.value - 1 + 4) % 4
+  } else {
+    figureViewDir.value = (figureViewDir.value + 1) % 4
+  }
+  //const startRot = ownFigures.value[figureControllInd].viewDirRot
+  const startRot = fig.viewDirRot
+  let targetRot
+  switch(figureViewDir.value) {
+    case 0:
+      //ownFigures.value[figureControlInd].orientation = 'north'
+      fig.orientation = 'north'
+      targetRot = 0
+      break;
+    case 1:
+      //ownFigures.value[figureControlInd].orientation = 'east'
+      fig.orientation = 'east'
+      targetRot = -0.5
+      break;
+    case 2:
+      //ownFigures.value[figureControlInd].orientation = 'south'
+      fig.orientation = 'south'
+      targetRot = 1
+      break;
+    case 3:
+      //ownFigures.value[figureControlInd].orientation = 'west'
+      fig.orientation = 'west'
+      targetRot = 0.5
+      break;
+  }
+  console.log("Rotation von Figur: ", startRot, targetRot)
+  const index = figures.value.findIndex((figInd) => figInd.id === fig.id && figInd.playerId === fig.playerId)
+  if(targetRot === undefined) return
+  queueRotation(index, startRot, targetRot, ANIMATION_DURATION / 2)
+
+}
+
+// Methode, damit die Bewegungsrichtung an den Server geschickt wird
+async function sendMoveDirection() {
+  // Wenn move nicht erlaubt ist -> Abbruch
+  if(!gameStore.gameData.moveChoiceAllowed) {
+    console.log("---> Bewegung gerade nicht erlaubt")
+    return;
+  }
+
+  // Wenn der versuchte Move nicht der zu bewegenden Figur entspricht -> Abbruch
+  console.log(gameStore.gameData.moveDone, gameStore.gameData.movingFigure, ownFigures.value[figureControlInd]?.id)
+  if(gameStore.gameData.movingFigure) {
+    if(gameStore.gameData.movingFigure !== ownFigures.value[figureControlInd]?.id) {
+      alert("Du musst deinen Zug mit der Figur beenden!")
+      return
+    }
+  }
+
+  // Wenn versucht wird in "verbotene" Richtung zu gehen
+  console.log(`--- ${gameStore.gameData.forbiddenDir} ${ownFigures.value[figureControlInd]?.orientation}`)
+  if(gameStore.gameData.forbiddenDir) {
+    if(gameStore.gameData.forbiddenDir.toLowerCase() === ownFigures.value[figureControlInd]?.orientation) {
+      alert("Du darfst nicht zurueck gehen!")
+      return
+    }
+  }
+
+  // weitere Moves zunaechst blockieren
+  gameStore.gameData.requireInput = false
+  gameStore.gameData.moveChoiceAllowed = false
+
+  /*
+  gameStore.gameData.moveDone = true
+  gameStore.gameData.movingFigure = null
+  */
+
+  // Orientierung etc von aktueller Figur kriegen
+  if(currentPlayerId === null) return
+  const figureIdReq = ownFigures.value[figureControlInd]?.id
+  const directionReq = ownFigures.value[figureControlInd]?.orientation
+
+  if(!figureIdReq || !directionReq) return
+  const moveReq: IFigureMoveRequest = {
+    playerId: currentPlayerId,
+    figureId:  figureIdReq,
+    direction: directionReq
+  }
+
+  // Datenobjekt schicken
+  try {
+    const response = await fetch(`/api/move/${gameCode}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(moveReq),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log('Move-Request sent successfully:', data)
+
+    // wenn Antwort negativ -> nochmal input geben
+    if(data.success === false) {
+      gameStore.gameData.requireInput = true
+      gameStore.gameData.moveChoiceAllowed = true
+      alert("Ueberprufe deine Richtungseingabe!")
+    }
+
+  } catch (err) {
+    console.error('Error sending move request:', err)
+  }
+}
+
 </script>
 
 <template>
-  <TresCanvas clear-color="#87CEEB" class="w-full h-full">
+  <!-- TresCanvas clear-color="#87CEEB" class="w-full h-full" -->
     <TresPerspectiveCamera ref="camRef" :position="default_cam_pos" :look-at="[0, 0, 0]" />
     <OrbitControls v-if="!egoPersp" />
 
@@ -350,5 +581,5 @@ function onRoll(id: string) {
         :orientation="fig.orientation"
       />
     </template>
-  </TresCanvas>
+  <!-- /TresCanvas -->
 </template>

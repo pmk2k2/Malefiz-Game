@@ -29,7 +29,7 @@ public class GameService {
 
     private Map<String, Game> games = new HashMap<>();
     private CodeGeneratorService codeService;
-    private final int MAX_PLAYERS = 2;
+    private final int MAX_PLAYERS = 4;
     private final long COUNTDOWN_DURATION_SECONDS = 10; // Countdown Dauer in Sekunden
     private ApplicationEventPublisher publisher;
 
@@ -267,7 +267,7 @@ public class GameService {
         if (game == null || game.getState() != GameState.COUNTDOWN)
             return false;
 
-        if (game.getPlayers().size() > MAX_PLAYERS) {
+        if (game.getPlayers().size() == MAX_PLAYERS) {
             publisher.publishEvent(limitEvent(gameCode));
             return false;
         }
@@ -289,6 +289,7 @@ public class GameService {
             return false;
 
         final int FIGURES_PER_PLAYER = 5;
+        // Problem: 0|0 kann gueltiges Feld sein
         final int START_I = 0;
         final int START_J = 0;
 
@@ -299,6 +300,7 @@ public class GameService {
             for (int i = 1; i <= FIGURES_PER_PLAYER; i++) {
                 String figureId = playerId + "-fig-" + i;
                 Figure newFigure = new Figure(figureId, playerId, color, START_J, START_I);
+                newFigure.setOnField(false);
                 game.addFigure(newFigure);
             }
         }
