@@ -62,13 +62,6 @@ public class FrontendNachrichtEvent {
         this.gameState = gameState;
     }
 
-    // Event speziell fuer Spielende
-    public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation) {
-        this.typ = typ;
-        this.id = id;
-        this.operation = operation;
-    }
-
     // Event speziell fuer Movement Updates
     public FrontendNachrichtEvent(Nachrichtentyp typ, Operation op, String gC, String fId, String pId, Bewegung bew) {
         this.typ = typ;
