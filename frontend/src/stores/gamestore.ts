@@ -117,7 +117,6 @@ export const useGameStore = defineStore('gamestore', () => {
               ingameMoveEvent.value = event
             }
             if (event.operation === 'GAME_OVER') {
-              setzeInfo(`game over`)
               gameData.gameOver = true
               gameData.winnerId = event.id
               disconnect()
