@@ -109,7 +109,11 @@ export const useGameStore = defineStore('gamestore', () => {
             }
 
             if (event.operation === 'BARRIER_WAIT') {
-              gameState.value = 'BARRIER_PLACEMENT'
+              if (event.id === gameData.playerId) {
+                gameState.value = 'BARRIER_PLACEMENT'
+              } else {
+                console.log('Aus GameStore: Ein anderer Spieler setzt gerade eine Barriere.')
+              }
             }
 
             if (event.operation === 'BARRIER_PLACED') {

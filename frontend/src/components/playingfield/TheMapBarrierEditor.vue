@@ -9,6 +9,8 @@ import ThePlayerFigureCensored from './ThePlayerFigureCensored.vue'
 import Barrier from './models/Barrier.vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
+import ThePlayerFigure from './ThePlayerFigure.vue'
+import ThePawn from './models/ThePawn.vue'
 
 const figures = ref<IPlayerFigure[]>([])
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER'
@@ -37,6 +39,7 @@ const gameCode = gameStore.gameData.gameCode
 const isLoading = ref(true)
 const CELL_SIZE = 2
 const board = ref<Board | null>(null)
+const myId = gameStore.gameData.playerId
 
 /*
 async function getBoardFromBackend(): Promise<Board | null> {
@@ -122,56 +125,60 @@ const camHeight = computed(() => (props.board?.rows || 1) * CELL_SIZE)
 </script>
 
 <template>
-  <TresCanvas>
+  <TresCanvas v-if="props.board">
     <TresOrthographicCamera
-      v-if="props.board"
       :args="[-camWidth / 1, camWidth / 1, camHeight / 1.5, -camHeight / 1.5, 0.1, 1000]"
       :position="[0, 50, 0]"
       :look-at="[0, 0, 0]"
     />
+    <TresAmbientLight :intensity="1.5" />
+    <TresDirectionalLight :position="[10, 20, 10]" :intensity="1.2" />
 
-    <TresAmbientLight :intensity="1" />
-    <TresDirectionalLight :position="[10, 20, 10]" :intensity="1" />
+    <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
+      <TresPlaneGeometry
+        :args="[props.board.cols * CELL_SIZE * 5, props.board.rows * CELL_SIZE * 5]"
+      />
+      <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
+    </TresMesh>
 
-    <template v-if="props.board">
-      <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
-        <TresPlaneGeometry
-          :args="[props.board.cols * CELL_SIZE * 5, props.board.rows * CELL_SIZE * 5]"
-        />
-        <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
-      </TresMesh>
+    <TresMesh
+      v-for="cell in allCells"
+      :key="`cell-${cell.i}-${cell.j}`"
+      :position="cellToField(cell)"
+      :rotation="[-Math.PI / 2, 0, 0]"
+      @click="onCellClick(cell)"
+    >
+      <template v-if="cell.type === 'BLOCKED'">
+        <TheGrass />
+      </template>
 
-      <TresMesh
-        v-for="cell in allCells"
-        :key="`cell-${cell.i}-${cell.j}`"
-        :position="cellToField(cell)"
-        :rotation="[-Math.PI / 2, 0, 0]"
-        @click="onCellClick(cell)"
-      >
-        <template v-if="cell.type === 'BARRIER' || cell.blocked">
-          <TheRock />
-          <TresMesh :position="[0, 0, 0.2]">
-            <TresPlaneGeometry :args="[1.8, 1.8]" />
-            <TresMeshStandardMaterial color="red" :opacity="0.6" :transparent="true" />
-          </TresMesh>
-        </template>
+      <template v-else-if="cell.type === 'BARRIER'">
+        <Barrier />
+      </template>
 
-        <template v-else-if="cell.type === 'PATH' || cell.type === 'START'">
-          <TheRock />
-          <TresMesh :position="[0, 0, 0.1]">
-            <TresPlaneGeometry :args="[1.8, 1.8]" />
-            <TresMeshStandardMaterial color="yellow" :opacity="0.3" :transparent="true" />
-          </TresMesh>
-        </template>
-      </TresMesh>
+      <template v-else-if="cell.type === 'PATH' || cell.type === 'START'">
+        <TheRock />
+      </template>
 
-      <!-- <ThePlayerFigureCensored
-        v-for="fig in props.figures"
-        :key="fig.id"
-        :playerId="fig.playerId"
-        :color="fig.color"
+      <template v-else-if="cell.type === 'GOAL'">
+        <TheCrown />
+      </template>
+    </TresMesh>
+
+    <template v-for="fig in props.figures" :key="fig.id">
+      <ThePlayerFigure
+        v-if="fig.playerId === myId"
         :position="fig.position"
-      /> -->
+        :color="fig.color"
+        :orientation="fig.orientation"
+      />
+
+      <ThePlayerFigureCensored
+        v-else
+        :position="fig.position"
+        :color="fig.color"
+        :playerId="fig.playerId"
+      />
     </template>
   </TresCanvas>
 </template>
