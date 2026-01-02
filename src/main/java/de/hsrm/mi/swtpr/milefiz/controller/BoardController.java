@@ -37,11 +37,14 @@ public class BoardController {
     public Board sendBoard(@RequestParam("code") String code) {
         try {
             Game theGame = service.getGame(code);
+            Board b = theGame.getBoard();
             // logger.info("THE GAME IS LOADED:" + theGame.toString() + "and its board: " + theGame.getBoard().toString());
-            if (theGame.getBoard().getCols() == 0) { // Board is leer
+            if (b.getCols() == 0) { // Board is leer
                 return null;
             }
-            return theGame.getBoard();
+            // Prüfen, warum sich die alte Barriere nicht verschwindet.
+            logger.info("REST-Anfrage Board: Feld (5,1) ist Typ: {}", b.get(5, 1).getType());
+            return b;
         } catch (Exception e) {
             return null;
         }

@@ -568,7 +568,7 @@ defineExpose({
 
     <TresMesh
       v-for="cell in allCells"
-      :key="`cell-${cell.i}-${cell.j}`"
+      :key="`cell-${cell.i}-${cell.j}-${cell.type}`"
       :position="cellToField(cell)"
       :rotation="[-Math.PI / 2, 0, 0]"
     >
