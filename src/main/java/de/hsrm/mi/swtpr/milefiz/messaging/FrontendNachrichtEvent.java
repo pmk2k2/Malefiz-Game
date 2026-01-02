@@ -29,7 +29,8 @@ public class FrontendNachrichtEvent {
 
         // Ingame-Operationen
         MOVE,
-        ENERGY_UPDATED
+        ENERGY_UPDATED,
+        DUEL_PREPARE
     }
 
     private Nachrichtentyp typ;
