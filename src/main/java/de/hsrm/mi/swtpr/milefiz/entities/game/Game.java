@@ -228,6 +228,20 @@ public class Game {
         return playerNumber;
     }
 
+    private final Map<String, Boolean> movementFinished = new HashMap<>();
+
+    public void startMovement(String playerId) {
+        movementFinished.put(playerId, false);
+    }
+
+    public void finishMovement(String playerId) {
+        movementFinished.put(playerId, true);
+    }
+
+    public boolean isMovementFinished(String playerId) {
+        return movementFinished.getOrDefault(playerId, false);
+    }
+
     public int getMaxCollectableEnergy() {
         return maxCollectableEnergy;
     }

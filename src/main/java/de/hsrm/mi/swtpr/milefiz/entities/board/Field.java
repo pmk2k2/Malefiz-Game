@@ -80,4 +80,15 @@ public class Field {
         return "Field [i=" + i + ", j=" + j + ", type=" + type + "]";
     }
 
+    // Duell: deutet an, ob das Feld derzeit ein Duellfeld ist
+    public boolean isDuelField() {
+        List<Figure> figs = getFigures();
+
+        if(figs.size() != 2) {
+            return false;
+        }
+        // Nur wenn 2 Figuren auf einem Feld 
+        return !figs.get(0).getOwnerPlayerId().equals(figs.get(1).getOwnerPlayerId());
+    }
+
 }
