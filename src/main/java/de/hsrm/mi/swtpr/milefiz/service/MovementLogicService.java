@@ -13,6 +13,7 @@ import de.hsrm.mi.swtpr.milefiz.entities.board.CellType;
 import de.hsrm.mi.swtpr.milefiz.entities.board.Field;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
+import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.IngameMoveEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
@@ -186,14 +187,42 @@ public class MovementLogicService {
         }
 
         // Hole die echte Zahl aus dem Backend-Speicher
-        int allowedDistance = result.getValue();
-        //int allowedDistance = game.getCurrentMovementAmount();
-
+        int allowedDistance = result.getValue(); 
+        
         // Prüfungen ob gewuerfelt wurde
         if (allowedDistance <= 0) {
             return FigureMoveResult.fail("Du musst erst würfeln!");
         }
 
+        // Energie sammeln Logik
+        if (request.collectEnergy) {
+            Player player = game.getPlayerById(request.playerId);
+            if (player == null) return FigureMoveResult.fail("Spieler nicht gefunden");
+
+            //Rest wird gespeichert
+            int laufEnergieRest = allowedDistance;
+            //Maximale energie für die Partie gestgelegt
+            int limit = game.getMaxCollectableEnergy();
+
+            // Die Laufenergie wird zur Sprungenergie umgewandelt und dem Spieler gutgeschrieben
+            player.addEnergy(laufEnergieRest, limit);
+
+            //die Laufenergie muss jetzt auf 0 gesetzt werden damnit der Spieler nicht mehr laufen kann
+            result.setValue(0);
+            game.setRollForPlayer(request.playerId, 0); 
+
+            // Frontend informieren
+            var energyEvent = new FrontendNachrichtEvent(
+                Nachrichtentyp.INGAME, 
+                request.playerId, 
+                Operation.ENERGY_UPDATED, 
+                gameCode, 
+                player.getName(), 
+                player.getEnergy()
+            );
+            publisher.publishEvent(energyEvent);
+            return FigureMoveResult.ok();
+        }
 
         // Finden von Figur
         Figure figure = game.getFigures().stream()

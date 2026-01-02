@@ -28,7 +28,8 @@ public class FrontendNachrichtEvent {
         COUNTDOWN_ABORTED,
 
         // Ingame-Operationen
-        MOVE
+        MOVE,
+        ENERGY_UPDATED
     }
 
     private Nachrichtentyp typ;
@@ -44,6 +45,7 @@ public class FrontendNachrichtEvent {
     // private String playerId;     // Unterschied playerId und playerName???
     private String figureId;
     private Bewegung bewegung;
+    private int newEnergyValue;
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -54,7 +56,16 @@ public class FrontendNachrichtEvent {
         this.playerName = playerName;
     }
 
-
+    // Konstruktor für Energeie Einstellung in der Lobby
+    public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
+            String playerName, int newEnergyValue) {
+        this.typ = typ;
+        this.id = id;
+        this.operation = operation;
+        this.gameCode = gameCode;
+        this.playerName = playerName;
+        this.newEnergyValue = newEnergyValue;
+    }
 
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
@@ -158,5 +169,13 @@ public class FrontendNachrichtEvent {
 
     public Bewegung getBewegung() {
         return bewegung;
+    }
+    
+    public int getNewEnergyValue() {
+        return newEnergyValue;
+    }
+
+    public void setNewEnergyValue(int newEnergyValue) {
+        this.newEnergyValue = newEnergyValue;
     }
 }

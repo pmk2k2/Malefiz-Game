@@ -40,6 +40,8 @@ public class Game {
 
     // Speichert das Würfelergebnis pro Spieler-ID
     private Map<String, Integer> playerRolls = new HashMap<>();
+    //Standardwert für energie falls der Host nichts einstellt 
+    private int maxCollectableEnergy = 10;
 
     public Game() {
         playerList = new HashMap<>();
@@ -224,5 +226,13 @@ public class Game {
 
     public List<String> getPlayerNumber() {
         return playerNumber;
+    }
+
+    public int getMaxCollectableEnergy() {
+        return maxCollectableEnergy;
+    }
+
+    public void setMaxCollectableEnergy(int maxCollectableEnergy) {
+        this.maxCollectableEnergy = maxCollectableEnergy;
     }
 }
