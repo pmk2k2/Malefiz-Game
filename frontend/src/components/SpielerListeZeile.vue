@@ -1,12 +1,19 @@
 <template>
   <div class="spieler-zeile" :class="{ selected: selected }" @click="selectRow">
     <div class="spieler-info">
-      <img
-        v-if="spieler.spielfiguren && spieler.spielfiguren.length"
-        :src="spieler.spielfiguren[0]?.icon"
-        alt="Spielfigur"
-        class="spielfigur"
-      />
+    <!---
+    v-if="spieler.spielfiguren && spieler.spielfiguren.length"
+    :src="spieler.spielfiguren[0]?.color"
+    alt="Spielfigur"
+    class="spielfigur"
+    />
+     <img-->
+     <span
+        class="spieler-farbe"
+        :style="{ backgroundColor: spieler.color}"
+      ></span>
+
+
       <span class="spieler-name">
         {{ spieler.name }}
         <span v-if="spieler.isHost">(Host)</span>
@@ -36,6 +43,7 @@ const props = defineProps<{
   selected: boolean
   meHost: boolean
 }>()
+
 
 const emit = defineEmits<{
   deletezeile: [id: string]
@@ -126,4 +134,12 @@ async function kicken() {
 .status.nicht-bereit {
   color: #d1d5db;
 }
+.spieler-farbe {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #fff;
+  display: inline-block;
+}
+
 </style>

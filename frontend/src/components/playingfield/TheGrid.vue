@@ -523,6 +523,25 @@ async function sendMoveDirection() {
   }
 }
 
+function selectNextFigure() {
+  if (ownFigures.value.length === 0) return
+  figureControlInd = (figureControlInd + 1) % ownFigures.value.length
+  // Aktuelle Figur ins Store setzen
+  const currentFig = ownFigures.value[figureControlInd]
+  if (currentFig) gameStore.selectedFigureId = currentFig.id
+}
+
+function selectPrevFigure() {
+  if (ownFigures.value.length === 0) return
+  figureControlInd = (figureControlInd - 1 + ownFigures.value.length) % ownFigures.value.length
+  const currentFig = ownFigures.value[figureControlInd]
+  if (currentFig) gameStore.selectedFigureId = currentFig.id
+}
+
+defineExpose({
+   calculateHomePosition,
+  calculateHomeCenter
+})
 </script>
 
 <template>

@@ -6,6 +6,7 @@ import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import TheGrid from '@/components/playingfield/TheGrid.vue'
 import TheMapBarrierEditor from '@/components/playingfield/TheMapBarrierEditor.vue'
 import { NodeFunctionInput } from 'three/webgpu';
+import HUDInfoView from '@/components/hud/HUDInfoView.vue'
 
 const gridRef = ref<any>(null)
 const sichtbar = ref(false)
@@ -110,6 +111,12 @@ function startCooldownTimer() {
             :is-loading="isBusy" 
             @trigger="onRoll" 
           />
+        </div>
+      </div>
+      <!-- HUD-Player-Infos -->
+      <div class="relative w-full h-full">
+        <div class="absolute top-0 right-4 m-4">
+            <HUDInfoView />
         </div>
       </div>
     </div>

@@ -19,6 +19,8 @@ export const useGameStore = defineStore('gamestore', () => {
   const countdown = ref<number | null>(null)
   const gameState = ref<string>('WAITING')
   let countdownInterval: any = null
+// ID der aktuell ausgewählten Figur (für HUD)
+const selectedFigureId = ref<string | null>(null)
 
   const gameData = reactive<{
     ok: boolean
@@ -370,5 +372,6 @@ export const useGameStore = defineStore('gamestore', () => {
     resetGameCode,
     triggerGameStart,
     stopCountdown,
+    selectedFigureId
   }
 })
