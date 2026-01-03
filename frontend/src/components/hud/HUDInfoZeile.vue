@@ -1,12 +1,12 @@
 <template>
   <div class="bg-[rgba(255,255,255,0.05)] p-4 rounded-xl shadow-inner">
-    <!-- Spielername + Farbe -->
+
     <div class="flex items-center gap-2 mb-3">
       <span class="w-4 h-4 rounded-full" :style="{ backgroundColor: player.color }"></span>
       <span class="font-semibold text-white">{{ player.name }}</span>
     </div>
 
-    <!-- Haus-Figuren -->
+
     <div class="flex items-center gap-3 mb-2">
       <span class="w-16 text-sm font-medium text-slate-200">Haus:</span>
       <div class="flex gap-2">
@@ -22,7 +22,7 @@
       </div>
     </div>
 
-    <!-- Feld-Figuren -->
+
     <div class="flex items-center gap-3">
       <span class="w-16 text-sm font-medium text-slate-200">Feld:</span>
       <div class="flex gap-2">

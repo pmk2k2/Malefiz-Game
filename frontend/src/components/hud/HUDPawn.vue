@@ -1,10 +1,3 @@
-<script setup lang="ts">
-defineProps<{
-  color: string
-  active: boolean
-}>()
-</script>
-
 <template>
   <div
     class="flex flex-col items-center transition-all duration-200"
@@ -24,3 +17,10 @@ defineProps<{
 
   </div>
 </template>
+
+<script setup lang="ts">
+defineProps<{
+  color: string
+  active: boolean
+}>()
+</script>

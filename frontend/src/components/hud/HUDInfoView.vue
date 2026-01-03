@@ -26,18 +26,14 @@ import HUDInfoZeile from "./HUDInfoZeile.vue"
 const gameStore = useGameStore()
 const figures = computed(() => gameStore.figures)
 
-/**
- * Prüft, ob Figur im Haus ist
- */
+// Prüfen, ob Figuren im Haus sind
 function isFigureInHome(fig: ISpielerDTD["spielfiguren"][0]) {
   if (!fig.position) return true
   const [, , z] = fig.position
   return z > 5
 }
 
-/**
- * Spielerzeilen für HUD vorbereiten
- */
+//Sammeln der Figuren pro Spieler
 const groupedByPlayer = computed(() => {
   return gameStore.gameData.players.map(player => {
     const playerFigures = figures.value.filter(f => f.playerId === player.id)

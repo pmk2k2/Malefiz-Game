@@ -1,13 +1,6 @@
 <template>
   <div class="spieler-zeile" :class="{ selected: selected }" @click="selectRow">
     <div class="spieler-info">
-    <!---
-    v-if="spieler.spielfiguren && spieler.spielfiguren.length"
-    :src="spieler.spielfiguren[0]?.color"
-    alt="Spielfigur"
-    class="spielfigur"
-    />
-     <img-->
      <span
         class="spieler-farbe"
         :style="{ backgroundColor: spieler.color}"
