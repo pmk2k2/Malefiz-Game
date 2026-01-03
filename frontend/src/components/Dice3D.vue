@@ -41,54 +41,54 @@ export async function rollDice(gameCode: string, playerId: string) {
   try {
   const result = await getDiceRollFromServer(gameCode, playerId)
 
-  const duration = 1300
-  const start = performance.now()
-  const target = faceRotations[result]! // Winkel, damit die gewünschte Kante zur Kamera zeigt
-  const startRotation = cube.rotation.clone() // aktuelle Position des Würfels (Kopie, um zu wissen, woher gedreht werden soll)
+    const duration = 1300
+    const start = performance.now()
+    const target = faceRotations[result]! // Winkel, damit die gewünschte Kante zur Kamera zeigt
+    const startRotation = cube.rotation.clone() // aktuelle Position des Würfels (Kopie, um zu wissen, woher gedreht werden soll)
 
-  // hinzufügen von paar extra Rotierungen des Würfels
-  const randomTurns = {
-    x: (Math.floor(Math.random() * 2) + 1) * Math.PI * 2,
-    y: (Math.floor(Math.random() * 2) + 1) * Math.PI * 2,
-  }
-
-  // Bestimmen der Endposition der Animation
-  const endRotation = new THREE.Euler(target.x + randomTurns.x, target.y + randomTurns.y, 0)
-
-  const minScale = 0.3
-  const endScale = 1
-
-  function animate(now: number) {
-    const elapsed = now - start
-    const t = Math.min(elapsed / duration, 1)
-    const eased = easeInOutCubic(t)
-
-    // Maschtabieren
-    let s: number
-
-    if (t < 0.5) {
-      // Erste Hälfte der Animation. Der Würfel wird kleiner
-      s = 1 - (1 - minScale) * (t * 2)
-    } else {
-      // Zweite Hälfte. Der Würfel kehrt zu seiner normalen Größe zurück
-      s = minScale + (endScale - minScale) * ((t - 0.5) * 2)
+    // hinzufügen von paar extra Rotierungen des Würfels
+    const randomTurns = {
+      x: (Math.floor(Math.random() * 2) + 1) * Math.PI * 2,
+      y: (Math.floor(Math.random() * 2) + 1) * Math.PI * 2,
     }
 
-    cube.scale.set(s, s, s)
+    // Bestimmen der Endposition der Animation
+    const endRotation = new THREE.Euler(target.x + randomTurns.x, target.y + randomTurns.y, 0)
 
-    // Rotation des Würfels
-    cube.rotation.x = startRotation.x + (endRotation.x - startRotation.x) * eased
-    cube.rotation.y = startRotation.y + (endRotation.y - startRotation.y) * eased
-    cube.rotation.z = 0
+    const minScale = 0.3
+    const endScale = 1
 
-    // renderer.render(scene, camera)
-    if (t < 1) requestAnimationFrame(animate)
-  }
+    function animate(now: number) {
+      const elapsed = now - start
+      const t = Math.min(elapsed / duration, 1)
+      const eased = easeInOutCubic(t)
 
-  requestAnimationFrame(animate)
-  }catch (e) {
-      console.error("Würfeln fehlgeschlagen:", e)
+      // Maschtabieren
+      let s: number
+
+      if (t < 0.5) {
+        // Erste Hälfte der Animation. Der Würfel wird kleiner
+        s = 1 - (1 - minScale) * (t * 2)
+      } else {
+        // Zweite Hälfte. Der Würfel kehrt zu seiner normalen Größe zurück
+        s = minScale + (endScale - minScale) * ((t - 0.5) * 2)
+      }
+
+      cube.scale.set(s, s, s)
+
+      // Rotation des Würfels
+      cube.rotation.x = startRotation.x + (endRotation.x - startRotation.x) * eased
+      cube.rotation.y = startRotation.y + (endRotation.y - startRotation.y) * eased
+      cube.rotation.z = 0
+
+      // renderer.render(scene, camera)
+      if (t < 1) requestAnimationFrame(animate)
     }
+
+    requestAnimationFrame(animate)
+  } catch(e) {
+    console.error("Wuerfeln fehlgeschlagen:", e);
+  }
 }
 
 // Funktion für sanfte Bewegung

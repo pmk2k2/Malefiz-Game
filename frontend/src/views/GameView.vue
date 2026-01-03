@@ -1,8 +1,10 @@
 <script setup lang="ts">
-  import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { TresCanvas } from '@tresjs/core'
 import RollButton from '@/components/RollButton.vue'
 import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import TheGrid from '@/components/playingfield/TheGrid.vue'
+import PopupSpielende from '@/components/playingfield/PopupSpielende.vue'
 import TheMapBarrierEditor from '@/components/playingfield/TheMapBarrierEditor.vue'
 import { NodeFunctionInput } from 'three/webgpu';
 
@@ -92,8 +94,11 @@ function startCooldownTimer() {
 <template>
   <div class="game-scene">
     <!-- 3D-Spielfeld -->
-    <TheGrid ref="gridRef"/>
-    
+    <TresCanvas clear-color="#87CEEB" class="w-full h-full">
+      <TheGrid ref="gridRef"/>
+    </TresCanvas>
+
+    <PopupSpielende /> 
     <div class="ui-panel-left">
       <div class="wood-panel dice-box">
         <div class="dice-container">
@@ -103,6 +108,7 @@ function startCooldownTimer() {
           :is-loading="isBusy" 
           @trigger="onRoll" 
         />
+
       </div>
     </div>
 

@@ -23,4 +23,8 @@ public class DiceResult {
     public long getTimeStamp(){
         return timeStamp;
     }
+
+    public void setValue(int value) {
+        this.value = value;
+    }
 }

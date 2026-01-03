@@ -7,6 +7,7 @@ public class Figure {
     private int gridI;
     private int gridJ;
     private String orientation;
+    private boolean isOnField;  // Ist Figur auf Feld oder im Haeusschen?
 
     public Figure(String id, String ownerPlayerId, String color, int startI, int startJ) {
         this.id = id;
@@ -15,6 +16,7 @@ public class Figure {
         this.gridI = startI;
         this.gridJ = startJ;
         this.orientation = "north";
+        this.isOnField = false;
     }
 
     // hier Validierung der Bewegung (Wegnetz, Sperren) ?
@@ -65,4 +67,11 @@ public class Figure {
         this.gridJ = gridJ;
     }
 
+    public boolean isOnField() {
+        return isOnField;
+    }
+
+    public void setOnField(boolean isOnField) {
+        this.isOnField = isOnField;
+    }
 }
