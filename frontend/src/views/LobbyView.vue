@@ -1,35 +1,53 @@
 <template>
-  <div class="background">
-    <h1>Malefiz</h1>
-    <h2>{{ gameStore.gameData.gameCode ?? 'kein LobbyID vorhanden' }}</h2>
+  <div class="menu-container"> <header class="header">
+      <h1><span>Lobby</span>Malefiz</h1>
+      <div class="code-display">
+        <span class="label">Lobby ID</span>
+        <h2 class="code-number">{{ gameStore.gameData.gameCode ?? '---' }}</h2>
+      </div>
+    </header>
 
-    <div class="info-box" v-if="info.inhalt">
-      <button @click="loescheInfo" class="cancel-button">✕</button>
-      <span class="info-text">{{ info.inhalt }}</span>
+    <div class="info-box-wrapper" v-if="info.inhalt"> 
+      <div class="info-box">
+        <button @click="loescheInfo" class="cancel-button">✕</button>
+        <span class="info-text">{{ info.inhalt }}</span>
+      </div>
     </div>
 
-    <div class="icon-button">
-      <button type="button" @click="toggleRulesView">
-        <img :src="infoIcon" alt="Info" />
+    <div class="icon-nav">
+      <button class="icon-btn" type="button" @click="toggleRulesView">
+        <img :src= "infoIcon" alt="Info" />
       </button>
-      <button type="button" @click="toggleSettingsView">
-        <img :src="einstellungIcon" alt="Einstellungen" />
+
+      <button class="icon-btn" type="button" @click="toggleSettingsView">
+        <img :src= "einstellungIcon" alt="Einstellungen" />
       </button>
     </div>
 
-    <InfoView v-if="showRules" @close="toggleRulesView" />
+   <main class="main-content-lobby">
+      <InfoView v-if="showRules" @close="toggleRulesView" />
+      <EinstellungView v-if="showSettings" />
 
-    <EinstellungView v-if="showSettings" />
+      <div class="spieler-liste-container">
+        <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
+      </div>
 
-    <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
+      <div class="button-group-lobby">
+        <button 
+          class="btn ready-btn small-btn" 
+          :class="{ 'is-ready': gameStore.gameData.isBereit }" 
+          @click="isReady"
+        > 
+          {{ gameStore.gameData.isBereit ? "✓ Bereit" : "Bereit" }}
+        </button>
+        
+        <button v-if="isHost" class="btn create small-btn" @click="gameStartenByAdmin">Starten</button>
+      </div>
 
-    <div class="buttons">
-      <button @click="isReady"> {{ gameStore.gameData.isBereit ? "Bereitschaft zurücknehmen" : "Bereit" }}</button>
-      <button v-if="isHost" @click="gameStartenByAdmin">Starten</button>
-      <button @click="goBack">Verlassen</button>
-    </div>
+      <button class="btn logout exit-btn" @click="goBack">Verlassen</button>
+    </main>
+
     <Counter v-if="showCounter" />
-
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
   </div>
 </template>
@@ -193,65 +211,276 @@ function toggleRulesView() {
 </script>
 
 <style scoped>
-.background {
-  background-image: url('@/assets/hintergrund.jpeg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  height: 100vh;
+.header {
+  width: 100%;
   display: flex;
-  justify-content: flex-start;
-  align-items: center;
   flex-direction: column;
-  padding-top: 2rem;
+  align-items: center; 
+  text-align: center;
 }
 
-.buttons {
-  margin-top: 2rem;
+.code-display {
+  margin-top: 5px;
+  background: rgba(45, 35, 10, 0.9);
+  border: 3px solid #ffc107;
+  border-radius: 10px;
+  display: inline-block;
+  padding: 10px 30px;
+  margin-top: 10px;
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
+  transform: rotate(-1deg);
 }
 
-button {
-  margin: 10px;
-  padding: 12px 24px;
-  background-color: rgb(131, 102, 21);
-  border: none;
-  border-radius: 8px;
+.code-display .label {
+  color: #ffc107;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  display: block;
+  letter-spacing: 2px;
+}
+
+.code-number {
+  color: #ffffff;
+  font-size: 1.4rem;
+  margin: 0;
+  letter-spacing: 3px;
+  text-shadow: 2px 2px 0px #3d2b1f;
+}
+
+.menu-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+  background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('@/assets/backg.jpg');
+  background-size: cover;
+}
+
+.main-content-lobby {
+  flex: 1; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; 
+  gap: 10px;
+  padding: 20px;
+  min-height: 0; 
+}
+
+.spieler-liste-container {
+  width: 100%;
+  max-width: 500px;
+  flex: 0 1 auto;
+  max-height: 40vh;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  background-color: #3d2b1f;
+  background-image: 
+    linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%),
+    repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(0,0,0,0.15) 39px, rgba(0,0,0,0.15) 40px);
+  
+  padding: 15px;
+  border: 5px solid #2d1b0d;
+  border-radius: 15px;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.4);
+  overflow-y: auto;
+}
+
+
+.spieler-liste-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+.spieler-liste-container::-webkit-scrollbar-track {
+  background: #2d1b0d;
+  border-radius: 10px;
+}
+
+.spieler-liste-container::-webkit-scrollbar-thumb {
+  background: #4caf50; 
+  border: 2px solid #2d1b0d;
+  border-radius: 10px;
+}
+
+.spieler-liste-container::-webkit-scrollbar-thumb:hover {
+  background: #a7ff83;
+}
+
+.button-group-lobby {
+  display: flex;
+  flex-direction: row; 
+  gap: 15px;
+  flex-shrink: 0; 
+  padding-bottom: 10px;
+  justify-content: center;
+  width: 100%;
+}
+
+.button-group-lobby .btn {
+  width: 220px; 
+  font-size: 1.2rem;
+  padding: 10px 0;
+}
+
+.icon-nav {
+  position: absolute;
+  top: 25px;
+  right: 25px;
+  display: flex;
+  flex-direction: row; 
+  gap: 20px;
+  z-index: 100; 
+}
+
+.icon-btn {
+  width: 65px; 
+  height: 65px;
+  border-radius: 15px; 
+  background-color: #3d2b1f;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  border: 3px solid #2d1b0d;
+  border-bottom-width: 6px; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
   cursor: pointer;
-  font-size: 26px;
-  color: rgb(247, 247, 247);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
 }
 
-button:hover {
-  background-color: rgba(255, 255, 255, 1);
+.icon-btn img {
+  width: 60px; 
+  height: 60px;
+  object-fit: contain;
+  filter: sepia(1) saturate(5) hue-rotate(-10deg) drop-shadow(0 0 5px rgba(255, 193, 7, 0.5));
+  transition: all 0.3s ease;
 }
 
-button img {
-  width: 62px;
-  height: 62px;
-  margin: 0 300px;
+.icon-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  background-color: #4d3319;
 }
 
-button:has(img) {
-  background-color: transparent;
-  padding: 0;
-  border-radius: 0;
-}
-.icon-button button {
-  background-color: transparent;
-  padding: 0;
-  border-radius: 0;
-  cursor: pointer;
+.icon-btn:hover img {
+  transform: rotate(10deg);
 }
 
-.icon-button button:hover {
-  background-color: transparent; /* verhindert den weißen Hover */
+.icon-btn:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
 }
 
-.roll-result {
-  margin-top: 1rem;
-  font-size: 1.5rem;
-  font-weight: bold;
+.button-group-lobby {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+
+.ready-btn.is-ready {
+  background-color: #2d4d19;
+  border-color: #a7ff83;
+  color: #a7ff83;
+  box-shadow: 0 0 20px rgba(167, 255, 131, 0.4);
+}
+
+
+.info-box {
+  background: #6d2d2d;
   color: white;
-  text-shadow: 1px 1px 2px black;
+  padding: 15px 40px;
+  border-radius: 8px;
+  border: 2px solid #f44336;
+  position: relative;
+  animation: slideIn 0.3s ease-out;
+}
+
+.cancel-button {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+}
+
+.btn {
+  width: 320px;
+  padding: 15px 0; 
+  font-size: 1.5rem; 
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-radius: 12px; 
+  
+  background-color: #4d3319;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, transparent 100%),
+    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,0,0,0.1) 41px, rgba(0,0,0,0.1) 42px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 50px 100%;
+  
+  border: 4px solid #3d2b1f; 
+  border-bottom-width: 8px;   
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #f0e2d0; 
+  text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+
+.btn:not(.create):not(.logout) {
+  background-color: #2d4d19; 
+  border-color: #1e3311;
+  color: #e0f2d8;
+}
+
+.btn:hover {
+  transform: translateY(2px); 
+  border-bottom-width: 4px;   
+  filter: brightness(1.1);
+}
+
+.create {
+  background-color: #634121;
+  border-color: #3d2b1f;
+  color: #ffcc66; 
+}
+
+
+.btn.logout {
+  background-color: #6d2d2d;
+  border-color: #421a1a;
+  width: 220px;
+}
+
+.exit-btn {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 150px !important;
+  padding: 8px 0 !important;
+  font-size: 1rem !important;
+  border-bottom-width: 4px !important;
+  z-index: 10;
 }
 </style>
