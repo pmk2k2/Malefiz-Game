@@ -123,7 +123,7 @@ public class Game {
 
         // Spieler aus playerNumber rausnehmen
         for (int i = 0; i < playerNumber.size(); i++) {
-            if (playerNumber.get(i).equals(playerId)) {
+            if (playerNumber.get(i) != null && playerNumber.get(i).equals(playerId)) {
                 playerNumber.set(i, null);
             }
         }
