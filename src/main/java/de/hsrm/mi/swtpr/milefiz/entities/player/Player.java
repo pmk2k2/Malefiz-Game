@@ -76,4 +76,8 @@ public class Player {
     public void addEnergy(int amount, int maxLimit) {
         this.energy = Math.min(this.energy + amount, maxLimit);
     }
+
+    public void consumeEnergy(int amount) {
+        this.energy = Math.max(0, this.energy - amount);
+    }
 }

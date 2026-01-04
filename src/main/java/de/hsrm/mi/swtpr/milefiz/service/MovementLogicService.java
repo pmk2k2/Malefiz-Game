@@ -1,8 +1,6 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +13,6 @@ import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
-import de.hsrm.mi.swtpr.milefiz.messaging.IngameMoveEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
@@ -25,159 +22,24 @@ import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
+import de.hsrm.mi.swtpr.milefiz.service.BoardNavigationService.MoveType;
 
 @Service
 public class MovementLogicService {
     private Logger logger = LoggerFactory.getLogger(MovementLogicService.class);
 
-    private enum MoveType {
-        STRAIGHT_NS,
-        STRAIGHT_WE,
-        CURVE_WS,
-        CURVE_ES,
-        CURVE_WN,
-        CURVE_EN,
-        T_CROSSING,
-        CROSSING,
-        DEADEND
-    };
-
     // Damit man Zwischenstaende an alle aus dem Spiel senden kann
     private ApplicationEventPublisher publisher;
+    private BoardNavigationService navService;
 
-    public MovementLogicService(ApplicationEventPublisher publisher) {
+    public MovementLogicService(ApplicationEventPublisher publisher, BoardNavigationService navService) {
         this.publisher = publisher;
+        this.navService = navService;
     }
-
-
-
-    // alle begehbaren Nachbarfelder
-    public Map<String, Field> getWalkableNeighbors(Game game, Figure figure) {
-
-        Map<String, Field> result = new HashMap<>();
-
-        int i = figure.getGridI();
-        int j = figure.getGridJ();
-
-        // Maske: west, ost, norden, sueden
-        int[][] mask = {
-            {-1, 0}, // west
-            { 1, 0}, // ost
-            { 0, 1}, // norden
-            { 0,-1}  // sueden 
-        };
-
-        String[] names = { "west", "east", "north", "south" };
-
-        for (int k = 0; k < mask.length; k++) {
-            int ni = i + mask[k][0];
-            int nj = j + mask[k][1];
-
-            // Prüfung: innerhalb des Spielfelds
-            if (ni < 0 || nj < 0 || ni >= game.getBoard().getWidth() || nj >= game.getBoard().getHeight()) {
-                continue;
-            }
-
-            Field f = game.getBoard().get(ni, nj);
-
-            // BLOCKED ist nicht begehbar
-            if (f.getType() == CellType.BLOCKED) {
-                continue;
-            }
-
-            result.put(names[k], f);
-        }
-
-        return result;
-    }
-
-    // Ermittlung von Richtung, Kreuzung
-    public MoveType classifyField(Game game, Figure figure) {
-
-        Map<String, Field> n = getWalkableNeighbors(game, figure);
-
-        boolean west = n.containsKey("west");
-        boolean east = n.containsKey("east");
-        boolean north = n.containsKey("north");
-        boolean south = n.containsKey("south");
-
-        int count = n.size();
-
-        // Kreuzung wenn = 4 Richtungen, T-Kreuzung bei 3 Richtungen
-        if (count >= 4) return MoveType.CROSSING;
-        if (count == 3) return MoveType.T_CROSSING;
-
-        // Gerade Strecke
-        boolean geradeNordSued = north && south && !west && !east;
-        if(geradeNordSued) return MoveType.STRAIGHT_NS;
-
-        boolean geradeWestOst  = !north && !south && west && east;
-        if(geradeWestOst) return MoveType.STRAIGHT_WE;
-
-        // Kurven
-        boolean curveWestSouth = !north && south && west && !east;
-        if(curveWestSouth)  return MoveType.CURVE_WS;
-        boolean curveWestNorth = north && !south && west && !east;
-        if(curveWestNorth)  return MoveType.CURVE_WN;
-        boolean curveEastNorth = north && !south && !west && east;
-        if(curveEastNorth)  return MoveType.CURVE_EN;
-        boolean curveEastSouth = !north && south && !west && east;
-        if(curveEastSouth)  return MoveType.CURVE_ES;
-
-        // Ansonsten -> Sackgasse
-        return MoveType.DEADEND;
-    }
-
-    // Statt zu gucken, welche Richtungen man darf, einfach schauen aus welcher man kommt (also nicht darf)
-    // in dem Fall ist lastDir die gelaufene Richtung, also darf man nicht in die entgegengesetzte
-    public Direction getForbiddenDirection(Direction lastDir) {
-        Direction dir = null;
-
-        switch(lastDir) {
-            case Direction.NORTH:
-                dir = Direction.SOUTH;
-                break;
-            case Direction.SOUTH:
-                dir = Direction.NORTH;
-                break;
-            case Direction.EAST:
-                dir = Direction.WEST;
-                break;
-            case Direction.WEST:
-                dir = Direction.EAST;
-                break;
-        }
-
-        return dir;
-    }
-
-    // Bei Kurven die richtige Richtung erhalten
-    public Direction getNewDirection(MoveType mT, Direction dir) {
-        Direction newDir;
-        
-        // Erst gucken nach Typ von Kurve, dann aus welcher Richtung man kommt
-        switch(mT) {
-            case MoveType.CURVE_WS:
-                newDir = (dir == Direction.EAST) ? Direction.SOUTH : Direction.WEST;
-                break;
-            case MoveType.CURVE_ES:
-                newDir = (dir == Direction.WEST) ? Direction.SOUTH : Direction.EAST;
-                break;
-            case MoveType.CURVE_WN:
-                newDir = (dir == Direction.EAST) ? Direction.NORTH : Direction.WEST;
-                break;
-            default:
-            case MoveType.CURVE_EN:
-                newDir = (dir == Direction.WEST) ? Direction.NORTH : Direction.EAST;
-                break;
-        }
-
-        return newDir;
-    }
-
 
     public FigureMoveResult moveFigure(Game game, String gameCode, FigureMoveRequest request) {
-        boolean hasEnergy = false; // Zeitlich da, da die Energie noch nicht erstellt wurde
+        // Energie des Spielers
+        Player player = game.getPlayerById(request.playerId);
         DiceResult result = game.getDiceResultById(request.playerId);
         // SpielerId prüfen und vergleichen
         if (result == null) {
@@ -194,7 +56,7 @@ public class MovementLogicService {
 
         // Energie sammeln Logik
         if (request.collectEnergy) {
-            Player player = game.getPlayerById(request.playerId);
+            player = game.getPlayerById(request.playerId);
             if (player == null) return FigureMoveResult.fail("Spieler nicht gefunden");
 
             //Rest wird gespeichert
@@ -342,6 +204,18 @@ public class MovementLogicService {
                     // Figur stoppen
                     // Energie speichern (und spaeter weiterleiten)
                     int remainingEnergy = allowedDistance;
+                    //Energie hinzufügen anhand der voreingestellten Menge vom Host
+                    player.addEnergy(remainingEnergy, game.getMaxCollectableEnergy());
+                    
+                    publisher.publishEvent(new FrontendNachrichtEvent(
+                        Nachrichtentyp.INGAME, 
+                        request.playerId, 
+                        Operation.ENERGY_UPDATED, 
+                        gameCode, 
+                        player.getName(), 
+                        player.getEnergy()
+                    ));
+
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
                     return FigureMoveResult.ok();
@@ -355,7 +229,32 @@ public class MovementLogicService {
             // Nur zwei Figuren können auf das gleiche Feld -> Dritter Spieler kann nicht
             if (destField.isDuelField()) {
 
-                // Dritte Figur kann überspringen (wenn Energie da ist und Schritte übrig bleiben)
+                player = game.getPlayerById(request.playerId);
+                int energy = player.getEnergy();
+                // Kosten = Maximale Kapazität der Partie, um ein Duell zu überspringen
+                int moveEnergy = game.getMaxCollectableEnergy();
+
+                boolean hasEnergy = energy >= moveEnergy;
+
+                if (!hasEnergy || allowedDistance <= 1) {
+                    //Energie hinzufügen anhand der voreingestellten Menge vom Host
+                    player.addEnergy(allowedDistance, game.getMaxCollectableEnergy());
+                    
+                    publisher.publishEvent(new FrontendNachrichtEvent(
+                        Nachrichtentyp.INGAME, 
+                        request.playerId, 
+                        Operation.ENERGY_UPDATED, 
+                        gameCode, 
+                        player.getName(), 
+                        player.getEnergy()
+                    ));
+                    //Energie wird auf 0 gesetzt da für das überspringen nötig ist
+                    allowedDistance = 0;
+                    result.setValue(0);
+                    game.setRollForPlayer(request.playerId, 0);
+                    break;
+                }
+
                 if (hasEnergy && allowedDistance > 1) {
 
                     int landI = destI + deltaI;
@@ -373,6 +272,19 @@ public class MovementLogicService {
                         break;
                     }
 
+                    //Energie für den Sprung verbrauchen
+                    //Sprung soll noch implementiert werden, aber der abzug der Energie ist schon hier implementiert
+                    player.consumeEnergy(moveEnergy);
+
+                    publisher.publishEvent(new FrontendNachrichtEvent(
+                        Nachrichtentyp.INGAME,
+                        request.playerId,
+                        Operation.ENERGY_UPDATED,
+                        gameCode,
+                        player.getName(),
+                        player.getEnergy()
+                    ));
+
                     Field currentField = game.getBoard().get(figure.getGridI(), figure.getGridJ());
                     currentField.removeFigure(figure);
 
@@ -386,14 +298,6 @@ public class MovementLogicService {
 
                     stepsCount++;
                     continue;
-                }
-
-                // Wenn es aber keine Energie gibt, dann vor dem Duellfeld stoppen
-                if (!hasEnergy) {
-                    allowedDistance = 0;
-                    result.setValue(0);
-                    game.getDiceResultById(request.playerId).setValue(0);
-                    break;
                 }
             }
 
@@ -419,21 +323,34 @@ public class MovementLogicService {
                 break;
 
             // Gucken, ob Anfrage noetig
-            MoveType moveType = classifyField(game, figure);
+            //Ausgelagert in BoardNavigationService
+            MoveType moveType = navService.classifyField(game, figure);
             logger.info("Neues Feld ist {}", moveType);
             if(result.getValue() <= 0) break;
             switch(moveType) {
-                case MoveType.DEADEND:
+                case DEADEND:
                     // restliche Energie speichern eigentlich
                     int remainingEnergy = allowedDistance;
+
+                    player.addEnergy(remainingEnergy, game.getMaxCollectableEnergy());
+                    
+                    publisher.publishEvent(new FrontendNachrichtEvent(
+                        Nachrichtentyp.INGAME, 
+                        request.playerId, 
+                        Operation.ENERGY_UPDATED, 
+                        gameCode, 
+                        player.getName(), 
+                        player.getEnergy()
+                    ));
+
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
                     break;
                     //return FigureMoveResult.ok();
 
-                case MoveType.T_CROSSING:
-                case MoveType.CROSSING:
-                    Direction forbiddenDir = getForbiddenDirection(lastDir);
+                case T_CROSSING:
+                case CROSSING:
+                    Direction forbiddenDir = navService.getForbiddenDirection(lastDir);
                     Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
                     var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
                     publisher.publishEvent(moveEv);
@@ -442,10 +359,10 @@ public class MovementLogicService {
                     stepsCount = 0;
                     return FigureMoveResult.ok();
 
-                case MoveType.CURVE_WS:
-                case MoveType.CURVE_ES:
-                case MoveType.CURVE_WN:
-                case MoveType.CURVE_EN:
+                case CURVE_WS:
+                case CURVE_ES:
+                case CURVE_WN:
+                case CURVE_EN:
                     // Figur im Frontend bis zur Kurve bewegen
                     Bewegung bew2 = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
                     var moveEv2 = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew2);
@@ -453,14 +370,14 @@ public class MovementLogicService {
 
                     // Drehen in richtige Richtung, startPos anpassen fuer naechste Animation
                     stepsCount = 0;
-                    lastDir = getNewDirection(moveType, lastDir);
+                    lastDir = navService.getNewDirection(moveType, lastDir);
                     startI = figure.getGridI();
                     startJ = figure.getGridJ();
                     logger.info("Neue Richtung: {}", lastDir);
                     break;
 
-                case MoveType.STRAIGHT_NS:
-                case MoveType.STRAIGHT_WE:
+                case STRAIGHT_NS:
+                case STRAIGHT_WE:
                     logger.info("Laufe gerade");
                 default:
                     break;
