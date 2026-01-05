@@ -382,4 +382,27 @@ public class GameService {
                         f.getGridJ()))
                 .collect(Collectors.toList());
     }
+
+    // spieleinstwllungen aktualisieren
+    public void updateGameSettings(String gameCode, String playerId, int maxEnergy) throws NotHostException {
+        Game game = games.get(gameCode);
+        if (game == null) return;
+
+        //Nur der Host darf die Einstellungen ändern
+        Player player = game.getPlayerById(playerId);
+        if (player == null || !player.isHost()) {
+            throw new NotHostException("Nur der Host kann Einstellungen ändern.");
+        }
+
+        game.setMaxCollectableEnergy(maxEnergy);
+        
+        //Informiere Frontend über die eingestellte Energie
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.READY_UPDATED, 
+                gameCode,
+                null);
+        publisher.publishEvent(e);
+    }
 }

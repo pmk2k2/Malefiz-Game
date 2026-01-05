@@ -8,4 +8,5 @@ public class FigureMoveRequest {
     public int toJ;
     */
    public String direction;
+   public boolean collectEnergy;
 }

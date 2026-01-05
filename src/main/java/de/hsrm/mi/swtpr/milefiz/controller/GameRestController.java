@@ -141,13 +141,39 @@ public class GameRestController {
         }
     }
 
+    @PostMapping("/updateSettings")
+    public ResponseEntity<Map<String, Object>> updateSettings(@RequestBody Map<String, Object> body, HttpSession session) {
+        String gameCode = (String) body.get("code");
+        String playerId = (String) body.get("playerId");
+        
+        //Validierung ob alle Daten vorhanden sind 
+        if (gameCode == null || playerId == null || body.get("maxEnergy") == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Fehlende Daten (code, playerId, maxEnergy)"));
+        }
+
+        try {
+            //parse int aus Objekt und update Spieleinstellungen
+            int maxEnergy = Integer.parseInt(body.get("maxEnergy").toString());
+            service.updateGameSettings(gameCode, playerId, maxEnergy);
+            return ResponseEntity.ok(Map.of("success", true, "maxEnergy", maxEnergy));
+        } catch (NotHostException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Nur der Host darf Einstellungen ändern."));
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "maxEnergy muss eine Zahl sein."));
+        }
+    }
+
     @GetMapping("/get")
     public Map<String, Object> getPlayers(@RequestParam("code") String code) {
         Game game = service.getGame(code);
         if (game == null)
             return Map.of("error", "Spiel nicht gefunden.");
 
-        return Map.of("players", game.getPlayers());
+        //maxCollectableEnergy wird jetzt mit zurückgegeben
+        return Map.of("players", game.getPlayers(),
+            "maxCollectableEnergy", game.getMaxCollectableEnergy()
+        );
     }
 
     @GetMapping("/{code}/figures")
