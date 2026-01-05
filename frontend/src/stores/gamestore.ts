@@ -36,6 +36,9 @@ export const useGameStore = defineStore('gamestore', () => {
     movingFigure: string | null
     requireInput: boolean
     forbiddenDir: string | null
+    stepsTaken: number
+    remainingSteps: number | null
+    totalSteps: number
   }>({
     ok: false,
     players: [],
@@ -51,7 +54,10 @@ export const useGameStore = defineStore('gamestore', () => {
     moveChoiceAllowed: false,
     movingFigure: null,
     requireInput: false,
-    forbiddenDir: null
+    forbiddenDir: null,
+    stepsTaken: 0,
+    remainingSteps: 0,
+    totalSteps: 0
   })
   const figures = ref<IPlayerFigure[]>([])
   const ingameMoveEvent = ref<IFrontendNachrichtEvent>()
@@ -66,7 +72,9 @@ export const useGameStore = defineStore('gamestore', () => {
       isHost: gameData.isHost,
       isBereit: gameData.isBereit,
       winnerId: gameData.winnerId,
-      gameOver: gameData.gameCode
+      gameOver: gameData.gameCode,
+      totalStepsTaken: gameData.stepsTaken,
+      remainingSteps: gameData.remainingSteps,
     }),
     saveToLocalStorage,
   )
@@ -115,6 +123,11 @@ export const useGameStore = defineStore('gamestore', () => {
               console.log("DING DONG Figur bewegen")
               console.log(event)
               ingameMoveEvent.value = event
+
+              if (event.bewegung && typeof event.bewegung.steps === 'number') {
+                gameData.stepsTaken+=event.bewegung.steps
+                gameData.remainingSteps=event.bewegung.remainingSteps
+              }
             }
             if (event.operation === 'GAME_OVER') {
               gameData.gameOver = true
@@ -228,6 +241,9 @@ export const useGameStore = defineStore('gamestore', () => {
             gameData.requireInput = true
             gameData.moveChoiceAllowed = true
             // Wuerfel freigeben
+            gameData.stepsTaken = 0
+            gameData.remainingSteps = event.result
+            gameData.totalSteps = event.result
           }
         } catch (err) {
           console.error('WS Fehler:', err)
@@ -337,6 +353,9 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.players = []
     gameData.ok = false
     gameData.gameOver = null
+    gameData.stepsTaken=0
+    gameData.remainingSteps=0
+    gameData.totalSteps=0
     stopCountdown()
 
     localStorage.removeItem('gameData')
@@ -348,6 +367,9 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.playerId = null
     gameData.isBereit = false
     gameData.gameOver = null
+    gameData.stepsTaken=0
+    gameData.remainingSteps=0
+    gameData.totalSteps=0
 
     stopCountdown()
     console.log(JSON.stringify(gameData))

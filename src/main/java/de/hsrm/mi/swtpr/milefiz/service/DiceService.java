@@ -67,6 +67,8 @@ public class DiceService {
         int result = random.nextInt(6) + 1;
         DiceResult diceResult = new DiceResult(result, playerName);
 
+        publisher.publishEvent(new IngameRequestEvent(Aktion.DICE_ROLL, playerId, gameCode, result));
+
         // Wurfzeitpunkt wird gespeichert
         playerCooldown.put(playerName, diceResult.getTimeStamp());
 

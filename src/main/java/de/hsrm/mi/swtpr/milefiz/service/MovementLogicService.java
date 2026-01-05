@@ -268,7 +268,8 @@ public class MovementLogicService {
             // -1 als "startPos" der Bewegung, um startPosition ausserhalb des Feldes zu
             // vermitteln,
             // da Felder im Model nicht < 0 werden koennen
-            Bewegung bew = new Bewegung(-1, -1, startFeld.getI(), startFeld.getJ(), Direction.NORTH, 0);
+            Bewegung bew = new Bewegung(-1, -1, startFeld.getI(), startFeld.getJ(), Direction.NORTH, 0,
+                    allowedDistance);
             var moveEvent = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
                     request.figureId, request.playerId, bew);
             publisher.publishEvent(moveEvent);
@@ -398,7 +399,8 @@ public class MovementLogicService {
                         Operation.GAME_OVER,
                         gameCode,
                         null));
-                Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
+                Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount,
+                        allowedDistance);
                 var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
                         request.figureId,
                         request.playerId, bew);
@@ -435,7 +437,7 @@ public class MovementLogicService {
                 case MoveType.CROSSING:
                     Direction forbiddenDir = getForbiddenDirection(lastDir);
                     Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir,
-                            stepsCount);
+                            stepsCount, allowedDistance);
                     var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
                             request.figureId, request.playerId, bew);
                     publisher.publishEvent(moveEv);
@@ -451,7 +453,7 @@ public class MovementLogicService {
                 case MoveType.CURVE_EN:
                     // Figur im Frontend bis zur Kurve bewegen
                     Bewegung bew2 = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir,
-                            stepsCount);
+                            stepsCount, allowedDistance);
                     var moveEv2 = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
                             request.figureId, request.playerId, bew2);
                     publisher.publishEvent(moveEv2);
@@ -476,7 +478,8 @@ public class MovementLogicService {
         logger.info("Alle Zuege verbraucht");
 
         // wenn alle Zuege verbraucht sind
-        Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
+        Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount,
+                allowedDistance);
         var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId,
                 request.playerId, bew);
         publisher.publishEvent(moveEv);

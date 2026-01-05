@@ -19,7 +19,6 @@ const liveFigures = computed(() => {
   return gridRef.value?.figures || []
 })
 
-
 function openCensoredMap() {
   sichtbar.value = true;
   console.log("CensoredMap geöffnet")
@@ -108,7 +107,20 @@ function startCooldownTimer() {
           :is-loading="isBusy" 
           @trigger="onRoll" 
         />
-
+        <div class="steps-remaining">
+            <div>
+              <span>Gesamt:</span>
+              <span>{{ gameStore.gameData.totalSteps }}</span>
+            </div>
+            <div>
+              <span>Gegangen:</span>
+              <span>{{ gameStore.gameData.stepsTaken }}</span>
+            </div>
+            <div>
+              <span>Übrig:</span>
+              <span>{{ gameStore.gameData.remainingSteps }}</span>
+            </div>
+          </div>
       </div>
     </div>
 
@@ -267,5 +279,28 @@ function startCooldownTimer() {
   width: 100%;
   height: 100%;
   padding: 20px;
+}
+
+.steps-remaining {
+  margin-top: 10px;
+  font-size: 1.1rem;
+  color: #ffe7b0;
+  background: #2d1b0d;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.step-item {
+  display: flex;
+  justify-content:left;
+  align-items: left;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s;
 }
 </style>

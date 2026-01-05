@@ -5,4 +5,5 @@ export interface IBewegung {
   endZ: number
   dir: string
   steps: number
+  remainingSteps: number
 }
