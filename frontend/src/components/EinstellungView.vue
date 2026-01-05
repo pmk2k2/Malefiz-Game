@@ -155,8 +155,6 @@ async function sendEnergy() {
 
 
 <style scoped>
-<<<<<<< HEAD
-=======
   
 .einstellung-view h3 {
 
@@ -172,7 +170,6 @@ async function sendEnergy() {
   margin-bottom: 1.5rem;
 }
 
->>>>>>> Merge_EnergieSammeln+DuellVorbereitung
 .einstellung-view {
   position: fixed;
   top: 15%; 
@@ -204,12 +201,9 @@ async function sendEnergy() {
   text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
 }
 
-<<<<<<< HEAD
-.time-control {
-=======
+.time-control {}
 /* Eine Reihe */
 .settings-control {
->>>>>>> Merge_EnergieSammeln+DuellVorbereitung
   display: flex;
   align-items: center;
   justify-content: center;
@@ -229,14 +223,13 @@ async function sendEnergy() {
   box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
 }
 
-<<<<<<< HEAD
 .timeButton {
   width: 50px;
   height: 50px;
   font-size: 1.8rem;
   font-weight: 900;
   color: #f0e2d0;
-=======
+}
 /* Buttons */
 .settingsButton {
   width: 55px;
@@ -249,7 +242,6 @@ async function sendEnergy() {
   border-radius: 15px;
 
   background: rgba(255,255,255,0.15);
->>>>>>> Merge_EnergieSammeln+DuellVorbereitung
   cursor: pointer;
   
   background-color: #4d3319;
@@ -265,7 +257,6 @@ async function sendEnergy() {
   text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
-<<<<<<< HEAD
 .timeButton:hover {
   filter: brightness(1.2);
 }
@@ -273,30 +264,5 @@ async function sendEnergy() {
 .timeButton:active {
   transform: translateY(2px);
   border-bottom-width: 3px;
-=======
-
-.settingsButton:hover {
-  background: rgba(255,255,255,0.35);
-}
-
-.settingsButton:active {
-  transform: scale(0.95);
-}
-
-/* Wert-Anzeige */
-.valueDisplay {
-  min-width: 100px;
-  padding: 0.8rem 1rem;
-
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: white;
-  text-align: center;
-
-  border: 2px solid rgba(255,255,255,0.6);
-  border-radius: 15px;
-
-  background: rgba(255,255,255,0.20);
->>>>>>> Merge_EnergieSammeln+DuellVorbereitung
 }
 </style>

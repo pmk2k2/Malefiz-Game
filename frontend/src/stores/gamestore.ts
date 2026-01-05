@@ -118,21 +118,19 @@ export const useGameStore = defineStore('gamestore', () => {
               console.log(event)
               ingameMoveEvent.value = event
             }
-<<<<<<< HEAD
-            if (event.operation === 'GAME_OVER') {
+            else if (event.operation === 'GAME_OVER') {
               gameData.gameOver = true
               gameData.winnerId = event.id
               disconnect()
-=======
+            }
             //aktualisiert die energie des lokalen Spielers falls die Event und Player ID übereinstimmt
-            if(event.operation === 'ENERGY_UPDATED') {
+            else if(event.operation === 'ENERGY_UPDATED') {
                console.log("Energie Update empfangen:", event);
                if(event.id === gameData.playerId) {
                  const newVal = (event as any).newEnergyValue;
                  gameData.energy = newVal ?? 0;
                  console.log(`Neue Sprungenergie gespeichert: ${gameData.energy}`);
                }
->>>>>>> Merge_EnergieSammeln+DuellVorbereitung
             }
           }
           else if (event.typ === 'LOBBY') {
