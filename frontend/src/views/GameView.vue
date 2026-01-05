@@ -127,68 +127,69 @@ function startCooldownTimer() {
 
 <template>
   <div class="game-scene">
-    <!-- 3D-Spielfeld -->
+    <!-- 3D поле -->
     <TresCanvas clear-color="#87CEEB" class="w-full h-full">
-      <TheGrid ref="gridRef"/>
+      <TheGrid ref="gridRef" />
     </TresCanvas>
 
-<<<<<<< HEAD
-    <PopupSpielende /> 
-    <div class="ui-panel-left">
-      <div class="wood-panel dice-box">
-        <div class="dice-container">
-          <Dice3D />
-        </div>
-        <RollButton 
-          :is-loading="isBusy" 
-          @trigger="onRoll" 
-        />
+    <!-- Popup конца игры -->
+    <PopupSpielende />
 
-      </div>
-    </div>
-
-    <div class="ui-controls-bottom">
-      <button class="map-btn" @click="openCensoredMap">
-        <span class="icon">🗺️</span> Map öffnen
-      </button>
-    </div>
-
-    <div v-if="sichtbar" class="modal-overlay" @click.self="closeCensoredMap">
-      <div class="map-modal">
-        <button class="close-seal" @click="closeCensoredMap">✕</button>
-        <div class="map-content">
-          <TheMapBarrierEditor 
-              :grid="liveGrid" 
-              :figures="liveFigures" 
-          />
-=======
+    <!-- UI Overlay -->
     <div class="pointer-events-none absolute inset-0 flex items-start m-2 z-50">
-      
-      <div class="pointer-events-auto flex w-96 flex-col gap-6 rounded-2xl bg-black/40 p-4 backdrop-blur-sm border border-white/10">
-        
+      <div
+        class="pointer-events-auto flex w-96 flex-col gap-6 rounded-2xl
+               bg-black/40 p-4 backdrop-blur-sm border border-white/10"
+      >
+        <!-- Dice -->
         <div class="flex flex-col items-center gap-4">
           <div class="h-40 w-40 relative">
             <Dice3D />
           </div>
-          
+
+          <!-- Buttons -->
           <div class="flex flex-row gap-2 w-full justify-center">
-            <RollButton 
-              :is-loading="isBusy" 
-              @trigger="onRoll" 
+            <RollButton
+              :is-loading="isBusy"
+              @trigger="onRoll"
             />
-            
+
             <CollectEnergyButton
               :is-loading="isSavingEnergy"
               @trigger="saveEnergy"
             />
           </div>
 
->>>>>>> Merge_EnergieSammeln+DuellVorbereitung
+          <!-- Map button -->
+          <button
+            class="mt-2 rounded-xl bg-green-700 px-4 py-2 text-white font-bold"
+            @click="openCensoredMap"
+          >
+            🗺️ Map öffnen
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Modal -->
+    <div
+      v-if="sichtbar"
+      class="modal-overlay"
+      @click.self="closeCensoredMap"
+    >
+      <div class="map-modal">
+        <button class="close-seal" @click="closeCensoredMap">✕</button>
+        <div class="map-content">
+          <TheMapBarrierEditor
+            :grid="liveGrid"
+            :figures="liveFigures"
+          />
         </div>
       </div>
     </div>
   </div>
 </template>
+
 
 <style scoped>
 .game-scene {
