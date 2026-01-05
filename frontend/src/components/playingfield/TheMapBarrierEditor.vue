@@ -6,6 +6,7 @@ import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
 import TheGrass from './models/TheGrass.vue'
 import ThePlayerFigureCensored from './ThePlayerFigureCensored.vue'
+import TheTreeCensored from './TheTreeCensored.vue'
 import Barrier from './models/Barrier.vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
@@ -149,7 +150,7 @@ const camHeight = computed(() => (props.board?.rows || 1) * CELL_SIZE)
       @click="onCellClick(cell)"
     >
       <template v-if="cell.type === 'BLOCKED'">
-        <TheGrass />
+        <TheTreeCensored />
       </template>
 
       <template v-else-if="cell.type === 'BARRIER'">
@@ -172,7 +173,7 @@ const camHeight = computed(() => (props.board?.rows || 1) * CELL_SIZE)
         :color="fig.color"
         :orientation="fig.orientation"
       />
-
+      
       <ThePlayerFigureCensored
         v-else
         :position="fig.position"
