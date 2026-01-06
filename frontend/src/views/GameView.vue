@@ -2,13 +2,14 @@
 import { ref, onMounted, computed } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import RollButton from '@/components/RollButton.vue'
-import CollectEnergyButton from '@/components/CollectEnergyButton.vue' 
+import CollectEnergyButton from '@/components/CollectEnergyButton.vue'
 import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import TheGrid from '@/components/playingfield/TheGrid.vue'
 import PopupSpielende from '@/components/playingfield/PopupSpielende.vue'
 import TheMapBarrierEditor from '@/components/playingfield/TheMapBarrierEditor.vue'
 import { NodeFunctionInput } from 'three/webgpu';
 import PauseMenu from '@/components/PauseMenu.vue'
+import EnergyBar from '@/components/playingfield/EnergyBar.vue'
 
 const gridRef = ref<any>(null)
 const sichtbar = ref(false)
@@ -33,6 +34,7 @@ function closeCensoredMap() {
 }
 
 import { useGameStore } from '@/stores/gamestore'
+import { storeToRefs } from 'pinia'
 
 
 const gameStore = useGameStore()
@@ -41,6 +43,10 @@ const gameStore = useGameStore()
 const isBusy = ref(false)
 const isSavingEnergy = ref(false) // Nur für Energie
 const cooldownSeconds = ref(3) // Default 3s, wird überschrieben
+
+// Energie aus Stores gameData aber reaktiv
+const energy = computed(() => gameStore.gameData.energy)
+const maxEnergy = 10  // !!! Max-Energie sollte eigentlich irgendwo anders herkommen
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -79,7 +85,7 @@ async function onRoll(id: string) {
   } catch (e) {
     console.error("Fehler beim Würfeln", e)
     // Bei Fehler: Button sofort wieder freigeben oder Fehlermeldung zeigen
-    isBusy.value = false 
+    isBusy.value = false
   }
 }
 
@@ -93,10 +99,10 @@ async function saveEnergy() {
 
   // Sucht nach Figuren der Spieler
   const myFigure = liveFigures.value.find((f: any) => f.playerId === playerId)
-  isSavingEnergy.value = true 
+  isSavingEnergy.value = true
 
   try {
-    //Ziel URL 
+    //Ziel URL
     const url = `${API_BASE_URL}/move/${gameCode}`;
 
     //aufruf an Backend um im Spiel Energie zu sammeln anstatt zu ziehen
@@ -105,8 +111,8 @@ async function saveEnergy() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         playerId: playerId,
-        direction: "north", 
-        collectEnergy: true 
+        direction: "north",
+        collectEnergy: true
       })
     })
   } catch(e) {
@@ -121,7 +127,7 @@ function startCooldownTimer() {
   setTimeout(() => {
     // Erst hier hört die Animation auf und der Button wird wieder klickbar
     isBusy.value = false
-  }, cooldownSeconds.value * 1000) 
+  }, cooldownSeconds.value * 1000)
 }
 
 </script>
@@ -170,7 +176,15 @@ function startCooldownTimer() {
             🗺️ Map öffnen
           </button>
         </div>
+
       </div>
+    </div>
+
+    <div class="energy-bar-container pointer-events-none absolute m-2 z-50">
+      <EnergyBar
+        :max-energy="maxEnergy"
+        :current-energy="energy"
+      ></EnergyBar>
     </div>
 
     <!-- Map Modal -->
@@ -199,7 +213,7 @@ function startCooldownTimer() {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background: #0a0f1a; 
+  background: #0a0f1a;
 }
 
 
@@ -218,13 +232,13 @@ function startCooldownTimer() {
   align-items: center;
   gap: 20px;
   padding: 25px;
-  
- 
+
+
   background-color: #3d2b1f;
-  background-image: 
+  background-image:
     linear-gradient(to bottom, rgba(0,0,0,0.3), transparent),
     repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(0,0,0,0.1) 39px, rgba(0,0,0,0.1) 40px);
-  
+
   border: 4px solid #2d1b0d;
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 0 15px rgba(0,0,0,0.5);
@@ -250,7 +264,7 @@ function startCooldownTimer() {
 }
 
 .map-btn {
-  background: #2d4d19; 
+  background: #2d4d19;
   color: #f0e2d0;
   border: 3px solid #1e3311;
   border-bottom-width: 6px;
@@ -296,7 +310,7 @@ function startCooldownTimer() {
   width: 85vw;
   height: 85vh;
   background: #1a1a1a;
-  border: 8px solid #3d2b1f; 
+  border: 8px solid #3d2b1f;
   border-radius: 15px;
   box-shadow: 0 0 50px rgba(0,0,0,1);
   overflow: hidden;
@@ -329,4 +343,14 @@ function startCooldownTimer() {
   height: 100%;
   padding: 20px;
 }
+
+.energy-bar-container {
+  bottom: 2%;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
 </style>
