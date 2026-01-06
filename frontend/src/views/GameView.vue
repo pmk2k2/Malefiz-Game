@@ -8,6 +8,7 @@ import TheGrid from '@/components/playingfield/TheGrid.vue'
 import PopupSpielende from '@/components/playingfield/PopupSpielende.vue'
 import TheMapBarrierEditor from '@/components/playingfield/TheMapBarrierEditor.vue'
 import { NodeFunctionInput } from 'three/webgpu';
+import PauseMenu from '@/components/PauseMenu.vue'
 
 const gridRef = ref<any>(null)
 const sichtbar = ref(false)
@@ -134,6 +135,7 @@ function startCooldownTimer() {
 
     <!-- Popup конца игры -->
     <PopupSpielende />
+    <PauseMenu />
 
     <!-- UI Overlay -->
     <div class="pointer-events-none absolute inset-0 flex items-start m-2 z-50">
