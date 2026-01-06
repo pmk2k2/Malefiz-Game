@@ -149,12 +149,8 @@ const camHeight = computed(() => (props.board?.rows || 1) * CELL_SIZE)
       :rotation="[-Math.PI / 2, 0, 0]"
       @click="onCellClick(cell)"
     >
-      <template v-if="cell.type === 'BLOCKED'">
+      <template v-if="cell.type === 'BLOCKED' || cell.type === 'BARRIER'">
         <TheTreeCensored />
-      </template>
-
-      <template v-else-if="cell.type === 'BARRIER'">
-        <Barrier />
       </template>
 
       <template v-else-if="cell.type === 'PATH' || cell.type === 'START'">
@@ -173,7 +169,7 @@ const camHeight = computed(() => (props.board?.rows || 1) * CELL_SIZE)
         :color="fig.color"
         :orientation="fig.orientation"
       />
-      
+
       <ThePlayerFigureCensored
         v-else
         :position="fig.position"
