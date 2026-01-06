@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import RollButton from '@/components/RollButton.vue'
+import CollectEnergyButton from '@/components/CollectEnergyButton.vue' 
 import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import TheGrid from '@/components/playingfield/TheGrid.vue'
 import PopupSpielende from '@/components/playingfield/PopupSpielende.vue'
@@ -35,7 +36,8 @@ import { useGameStore } from '@/stores/gamestore'
 const gameStore = useGameStore()
 
 // Steuert alles: Button-Animation, Disabled-State und Logik
-const isBusy = ref(false) 
+const isBusy = ref(false)
+const isSavingEnergy = ref(false) // Nur für Energie
 const cooldownSeconds = ref(3) // Default 3s, wird überschrieben
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -58,12 +60,12 @@ async function onRoll(id: string) {
 
   // Sicherheitscheck
   if (!gameCode || !playerId) return
-  if(isBusy.value) return // Kein Doppelklick möglich
+  if(isBusy.value || isSavingEnergy.value) return // Kein Doppelklick möglich und nicht während energie gesammelt wird
 
 
   isBusy.value = true
 
-  try {
+    try {
     // Würfelwurf (Backend & 3D Animation)
     // Warten auf die Animation, aber der Button bleibt gesperrt
     await rollDice(gameCode, playerId)
@@ -79,6 +81,38 @@ async function onRoll(id: string) {
   }
 }
 
+//funktion zum Speichern der Energie
+async function saveEnergy() {
+  const { gameCode, playerId } = gameStore.gameData
+  if (!gameCode || !playerId) return
+
+  //prüfen ob Button blockiert ist
+  if(isBusy.value || isSavingEnergy.value) return
+
+  // Sucht nach Figuren der Spieler
+  const myFigure = liveFigures.value.find((f: any) => f.playerId === playerId)
+  isSavingEnergy.value = true 
+
+  try {
+    //Ziel URL 
+    const url = `${API_BASE_URL}/move/${gameCode}`;
+
+    //aufruf an Backend um im Spiel Energie zu sammeln anstatt zu ziehen
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        playerId: playerId,
+        direction: "north", 
+        collectEnergy: true 
+      })
+    })
+  } catch(e) {
+    console.error(e)
+  } finally {
+    isSavingEnergy.value = false
+  }
+}
 
 function startCooldownTimer() {
   // Zeit vom Backend
@@ -92,22 +126,15 @@ function startCooldownTimer() {
 
 <template>
   <div class="game-scene">
-    <!-- 3D-Spielfeld -->
+    <!-- 3D поле -->
     <TresCanvas clear-color="#87CEEB" class="w-full h-full">
-      <TheGrid ref="gridRef"/>
+      <TheGrid ref="gridRef" />
     </TresCanvas>
 
-    <PopupSpielende /> 
-    <div class="ui-panel-left">
-      <div class="wood-panel dice-box">
-        <div class="dice-container">
-          <Dice3D />
-        </div>
-        <RollButton 
-          :is-loading="isBusy" 
-          @trigger="onRoll" 
-        />
-        <div class="steps-remaining">
+    <!-- Popup конца игры -->
+    <PopupSpielende />
+
+    <div class="steps-remaining">
             <div>
               <span>Gesamt:</span>
               <span>{{ gameStore.gameData.totalSteps }}</span>
@@ -120,29 +147,63 @@ function startCooldownTimer() {
               <span>Übrig:</span>
               <span>{{ gameStore.gameData.remainingSteps }}</span>
             </div>
+    </div>
+
+    <!-- UI Overlay -->
+    <div class="pointer-events-none absolute inset-0 flex items-start m-2 z-50">
+      <div
+        class="pointer-events-auto flex w-96 flex-col gap-6 rounded-2xl
+               bg-black/40 p-4 backdrop-blur-sm border border-white/10"
+      >
+        <!-- Dice -->
+        <div class="flex flex-col items-center gap-4">
+          <div class="h-40 w-40 relative">
+            <Dice3D />
           </div>
+
+          <!-- Buttons -->
+          <div class="flex flex-row gap-2 w-full justify-center">
+            <RollButton
+              :is-loading="isBusy"
+              @trigger="onRoll"
+            />
+
+            <CollectEnergyButton
+              :is-loading="isSavingEnergy"
+              @trigger="saveEnergy"
+            />
+          </div>
+
+          <!-- Map button -->
+          <button
+            class="mt-2 rounded-xl bg-green-700 px-4 py-2 text-white font-bold"
+            @click="openCensoredMap"
+          >
+            🗺️ Map öffnen
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="ui-controls-bottom">
-      <button class="map-btn" @click="openCensoredMap">
-        <span class="icon">🗺️</span> Map öffnen
-      </button>
-    </div>
-
-    <div v-if="sichtbar" class="modal-overlay" @click.self="closeCensoredMap">
+    <!-- Map Modal -->
+    <div
+      v-if="sichtbar"
+      class="modal-overlay"
+      @click.self="closeCensoredMap"
+    >
       <div class="map-modal">
         <button class="close-seal" @click="closeCensoredMap">✕</button>
         <div class="map-content">
-          <TheMapBarrierEditor 
-              :grid="liveGrid" 
-              :figures="liveFigures" 
+          <TheMapBarrierEditor
+            :grid="liveGrid"
+            :figures="liveFigures"
           />
         </div>
       </div>
     </div>
   </div>
 </template>
+
 
 <style scoped>
 .game-scene {
@@ -282,25 +343,26 @@ function startCooldownTimer() {
 }
 
 .steps-remaining {
-  margin-top: 10px;
-  font-size: 1.1rem;
-  color: #ffe7b0;
-  background: #2d1b0d;
-  padding: 8px 16px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 40;
+  background: rgba(45, 35, 10, 0.9);
   border-radius: 10px;
+  display: inline-block;
+  padding: 10px 20px;
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
+  transform: rotate(-1deg);
+  min-width: 180px;
+  color: #ffe7b0;
   font-weight: bold;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .step-item {
   display: flex;
-  justify-content:left;
-  align-items: left;
-  padding: 8px 12px;
-  background: rgba(0,0,0,0.2);
-  border-radius: 8px;
-  font-size: 0.95rem;
-  transition: all 0.2s;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
 }
+
 </style>

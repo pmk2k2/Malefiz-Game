@@ -7,6 +7,7 @@ public class Player {
     private boolean isHost;
     private boolean isReady;
     private String color; // Spieler- / Figurenfarbe
+    private int energy = 0;
 
     // Konstruktor aus Datei 1 (Lobby / Ready-State)
     public Player(String name, String id, boolean isHost, boolean isReady) {
@@ -62,5 +63,21 @@ public class Player {
 
     public void setColor(String color) {
         this.color = color;
+    }
+
+    public int getEnergy() {
+        return energy;
+    }
+
+    public void setEnergy(int energy) {
+        this.energy = energy;
+    }
+
+    public void addEnergy(int amount, int maxLimit) {
+        this.energy = Math.min(this.energy + amount, maxLimit);
+    }
+
+    public void consumeEnergy(int amount) {
+        this.energy = Math.max(0, this.energy - amount);
     }
 }

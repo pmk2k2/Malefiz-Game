@@ -39,6 +39,7 @@ export const useGameStore = defineStore('gamestore', () => {
     stepsTaken: number
     remainingSteps: number | null
     totalSteps: number
+    energy: number
   }>({
     ok: false,
     players: [],
@@ -57,7 +58,8 @@ export const useGameStore = defineStore('gamestore', () => {
     forbiddenDir: null,
     stepsTaken: 0,
     remainingSteps: 0,
-    totalSteps: 0
+    totalSteps: 0,
+    energy: 0
   })
   const figures = ref<IPlayerFigure[]>([])
   const ingameMoveEvent = ref<IFrontendNachrichtEvent>()
@@ -129,10 +131,19 @@ export const useGameStore = defineStore('gamestore', () => {
                 gameData.remainingSteps=event.bewegung.remainingSteps
               }
             }
-            if (event.operation === 'GAME_OVER') {
+            else if (event.operation === 'GAME_OVER') {
               gameData.gameOver = true
               gameData.winnerId = event.id
               disconnect()
+            }
+            //aktualisiert die energie des lokalen Spielers falls die Event und Player ID übereinstimmt
+            else if(event.operation === 'ENERGY_UPDATED') {
+               console.log("Energie Update empfangen:", event);
+               if(event.id === gameData.playerId) {
+                 const newVal = (event as any).newEnergyValue;
+                 gameData.energy = newVal ?? 0;
+                 console.log(`Neue Sprungenergie gespeichert: ${gameData.energy}`);
+               }
             }
           }
           else if (event.typ === 'LOBBY') {
