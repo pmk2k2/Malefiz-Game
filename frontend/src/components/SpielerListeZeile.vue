@@ -1,5 +1,5 @@
 <template>
-  <div class="spieler-zeile" :class="{ selected: selected }" @click="selectRow">
+  <div class="spieler-zeile"  @click="selectRow">
     <div class="spieler-info">
      <span
         class="spieler-farbe"
@@ -25,7 +25,6 @@
 </template>
 
 <script setup lang="ts">
-import router from '@/router'
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import { useGameStore } from '@/stores/gamestore'
 

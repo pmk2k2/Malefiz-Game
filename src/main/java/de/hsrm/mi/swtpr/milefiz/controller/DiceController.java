@@ -55,7 +55,7 @@ public class DiceController {
     // Speichert die gewuerfelte Zahl im backend
     // "gameCode"
     @PostMapping("/game/{gameCode}/roll")
-    public DiceResult roll(@PathVariable String gameCode, @RequestParam("playerId") String playerId) throws CooldownException {
+    public DiceResult roll(@PathVariable("gameCode") String gameCode, @RequestParam("playerId") String playerId) throws CooldownException {
 
         // Spiel laden
         Game game = gameService.getGame(gameCode);

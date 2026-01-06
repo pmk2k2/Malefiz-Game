@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useLoop, type TresObject } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref, shallowRef, watch } from 'vue'
 import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
@@ -51,8 +51,8 @@ const { queueMove, queueRotation } = useAnimationQueue()
 const camRef = shallowRef<TresObject | null>(null)
 const default_cam_pos: [number, number, number] = [0, 15, 18]
 const camHeight = 1.2
-let figureControlInd = 0
-const egoPersp = ref(false)
+const figureControlInd = ref(0) //figureControlInd als ref geändert, um änderungen reacktiv für HUD und Store zu machen
+const egoPersp = ref(true)
 const figureViewDir = ref(-1)
 
 // Abspielen von Animation etc
@@ -276,7 +276,7 @@ onBeforeRender(({ delta }) => {
   if (!cam) return
 
   if (egoPersp.value) {
-    const fig = ownFigures.value[figureControlInd]
+    const fig = ownFigures.value[figureControlInd.value]
     if (!fig) return
 
     const [x, y, z] = fig.position
@@ -324,9 +324,9 @@ function onKeyDown(event: KeyboardEvent) {
     if (numOwnFigures === 0) return
 
     if (key === 'ArrowRight') {
-      figureControlInd = (figureControlInd + 1) % numOwnFigures
+      figureControlInd.value = (figureControlInd.value + 1) % numOwnFigures
     } else if (key === 'ArrowLeft') {
-      figureControlInd = (figureControlInd - 1 + numOwnFigures) % numOwnFigures
+      figureControlInd.value = (figureControlInd.value - 1 + numOwnFigures) % numOwnFigures
     }
 
 
@@ -360,7 +360,7 @@ function onKeyDown(event: KeyboardEvent) {
   if (key === 'e' || key === 'E') {
     egoPersp.value = !egoPersp.value
     if (egoPersp.value && numOwnFigures > 0) {
-      figureControlInd = 0
+      figureControlInd.value = 0
     }
     //updateCam()
   }
@@ -390,9 +390,9 @@ function onRoll(id: string) {
 */
 
 function getCurrentFigureRot() {
-  if(!ownFigures.value[figureControlInd]) return
+  if(!ownFigures.value[figureControlInd.value]) return
 
-  switch(ownFigures.value[figureControlInd]?.orientation) {
+  switch(ownFigures.value[figureControlInd.value]?.orientation) {
     case 'north':
       figureViewDir.value = 0
       break;
@@ -409,7 +409,7 @@ function getCurrentFigureRot() {
 }
 
 function rotateCurrentFigure(rot: number) {
-  const fig = ownFigures.value[figureControlInd]
+  const fig = ownFigures.value[figureControlInd.value]
   if(!fig)  return
   getCurrentFigureRot()
   if(rot <= 0) {
@@ -458,18 +458,18 @@ async function sendMoveDirection() {
   }
 
   // Wenn der versuchte Move nicht der zu bewegenden Figur entspricht -> Abbruch
-  console.log(gameStore.gameData.moveDone, gameStore.gameData.movingFigure, ownFigures.value[figureControlInd]?.id)
+  console.log(gameStore.gameData.moveDone, gameStore.gameData.movingFigure, ownFigures.value[figureControlInd.value]?.id)
   if(gameStore.gameData.movingFigure) {
-    if(gameStore.gameData.movingFigure !== ownFigures.value[figureControlInd]?.id) {
+    if(gameStore.gameData.movingFigure !== ownFigures.value[figureControlInd.value]?.id) {
       alert("Du musst deinen Zug mit der Figur beenden!")
       return
     }
   }
 
   // Wenn versucht wird in "verbotene" Richtung zu gehen
-  console.log(`--- ${gameStore.gameData.forbiddenDir} ${ownFigures.value[figureControlInd]?.orientation}`)
+  console.log(`--- ${gameStore.gameData.forbiddenDir} ${ownFigures.value[figureControlInd.value]?.orientation}`)
   if(gameStore.gameData.forbiddenDir) {
-    if(gameStore.gameData.forbiddenDir.toLowerCase() === ownFigures.value[figureControlInd]?.orientation) {
+    if(gameStore.gameData.forbiddenDir.toLowerCase() === ownFigures.value[figureControlInd.value]?.orientation) {
       alert("Du darfst nicht zurueck gehen!")
       return
     }
@@ -486,8 +486,8 @@ async function sendMoveDirection() {
 
   // Orientierung etc von aktueller Figur kriegen
   if(currentPlayerId === null) return
-  const figureIdReq = ownFigures.value[figureControlInd]?.id
-  const directionReq = ownFigures.value[figureControlInd]?.orientation
+  const figureIdReq = ownFigures.value[figureControlInd.value]?.id
+  const directionReq = ownFigures.value[figureControlInd.value]?.orientation
 
   if(!figureIdReq || !directionReq) return
   const moveReq: IFigureMoveRequest = {
@@ -523,25 +523,17 @@ async function sendMoveDirection() {
   }
 }
 
-function selectNextFigure() {
-  if (ownFigures.value.length === 0) return
-  figureControlInd = (figureControlInd + 1) % ownFigures.value.length
-  // Aktuelle Figur ins Store setzen
-  const currentFig = ownFigures.value[figureControlInd]
-  if (currentFig) gameStore.selectedFigureId = currentFig.id
-}
 
-function selectPrevFigure() {
-  if (ownFigures.value.length === 0) return
-  figureControlInd = (figureControlInd - 1 + ownFigures.value.length) % ownFigures.value.length
-  const currentFig = ownFigures.value[figureControlInd]
-  if (currentFig) gameStore.selectedFigureId = currentFig.id
-}
-
-defineExpose({
-   calculateHomePosition,
-  calculateHomeCenter
+const selectedFigure = computed(() => {
+  return ownFigures.value[figureControlInd.value] ?? null
 })
+watch(
+  selectedFigure,
+  (fig) => {
+    gameStore.selectedFigureId = fig?.id ?? null
+  },
+  { immediate: true }
+)
 </script>
 
 <template>

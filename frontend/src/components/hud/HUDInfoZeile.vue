@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-[rgba(255,255,255,0.05)] p-4 rounded-xl shadow-inner">
+  <div class="bg-[rgba(255,255,255,0.05)] p-4 rounded-xl shadow-inner ring-2 ring-[#8B5E3C]">
 
     <div class="flex items-center gap-2 mb-3">
       <span class="w-4 h-4 rounded-full" :style="{ backgroundColor: player.color }"></span>
@@ -14,7 +14,7 @@
           v-for="fig in player.home"
           :key="fig.id"
           :color="player.color"
-          :active="true"
+          :active="fig.id === selectedFigureId"
         />
         <span v-if="player.home.length === 0" class="text-xs text-slate-400 italic">
           leer
@@ -30,7 +30,7 @@
           v-for="fig in player.field"
           :key="fig.id"
           :color="player.color"
-          :active="true"
+          :active="fig.id === selectedFigureId"
         />
         <span v-if="player.field.length === 0" class="text-xs text-slate-400 italic">
           keine
@@ -56,5 +56,6 @@ interface PlayerRow {
 
 const props = defineProps<{
   player: PlayerRow
+  selectedFigureId: string | null
 }>()
 </script>

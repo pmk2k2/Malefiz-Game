@@ -1,14 +1,13 @@
 <template>
-  <div class="w-[300px] max-w-[90vw] mx-auto bg-[rgba(0,64,0,0.25)] 
-              backdrop-blur-[10px] rounded-2xl shadow-lg p-6 space-y-1 text-slate-100">
-
-    <h2 class="text-lg font-bold text-white mb-4 text-center">Spielerübersicht</h2>
+  <div class="w-[300px] max-w-[90vw] mx-auto ] 
+             rounded-2xl  space-y-1 text-slate-100">
 
     <div class="space-y-4">
       <HUDInfoZeile
         v-for="player in groupedByPlayer"
         :key="player.playerId"
         :player="player"
+        :selectedFigureId="selectedFigureId"
       />
     </div>
   </div>
@@ -18,13 +17,19 @@
 
 
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, inject, type Ref } from "vue"
 import { useGameStore } from "@/stores/gamestore"
 import type { ISpielerDTD } from "@/stores/ISpielerDTD"
 import HUDInfoZeile from "./HUDInfoZeile.vue"
+import { storeToRefs } from "pinia"
+
+
 
 const gameStore = useGameStore()
-const figures = computed(() => gameStore.figures)
+const { selectedFigureId, figures } = storeToRefs(gameStore)
+
+
+
 
 // Prüfen, ob Figuren im Haus sind
 function isFigureInHome(fig: ISpielerDTD["spielfiguren"][0]) {
