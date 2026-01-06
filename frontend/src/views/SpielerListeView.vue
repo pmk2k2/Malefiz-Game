@@ -50,9 +50,5 @@ defineExpose({ handleDelete, spielerListe })
   height: 300px;
   max-width: 800px;
   margin: 2rem auto;
-  background: rgba(0, 64, 0, 0.3);
-  padding: 2.5rem;
-  border-radius: 20px;
-  backdrop-filter: blur(8px);
 }
 </style>

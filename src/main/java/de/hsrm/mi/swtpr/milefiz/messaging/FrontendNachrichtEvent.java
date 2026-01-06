@@ -28,6 +28,7 @@ public class FrontendNachrichtEvent {
         COUNTDOWN_ABORTED,
 
         // Ingame-Operationen
+        GAME_OVER,
         MOVE
     }
 
@@ -41,7 +42,7 @@ public class FrontendNachrichtEvent {
     private long countdownDurationSeconds;
 
     // States fuer Movementupdates
-    // private String playerId;     // Unterschied playerId und playerName???
+    // private String playerId; // Unterschied playerId und playerName???
     private String figureId;
     private Bewegung bewegung;
 
@@ -53,9 +54,6 @@ public class FrontendNachrichtEvent {
         this.gameCode = gameCode;
         this.playerName = playerName;
     }
-
-
-
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName, Instant countdownStartedAt, GameState gameState) {
@@ -70,7 +68,7 @@ public class FrontendNachrichtEvent {
         this.operation = op;
         this.gameCode = gC;
         this.figureId = fId;
-        this.id= pId;
+        this.id = pId;
         this.bewegung = bew;
     }
 
@@ -140,7 +138,6 @@ public class FrontendNachrichtEvent {
     public void setGameState(GameState s) {
         this.gameState = s;
     }
-
 
     public long getCountdownDurationSeconds() {
         return countdownDurationSeconds;

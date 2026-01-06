@@ -26,16 +26,17 @@ public class Game {
     private GameState state = GameState.WAITING;
     private Instant countdownStartedAt;
 
-
     // temporäres Feld
     private Board board;
     // Figuren in Backend
     private List<Figure> figures = new ArrayList<>();
 
     /*
-    private int currentMovementAmount = 0; // Speichert die gewuerfelte Zahl serverseitig
-    private String playerWhoRolledId = null; // Speichert, wer gewuerfelt hat
-    */
+     * private int currentMovementAmount = 0; // Speichert die gewuerfelte Zahl
+     * serverseitig
+     * private String playerWhoRolledId = null; // Speichert, wer gewuerfelt hat
+     */
+    private String winnerId = null; // Speichert, wer Gewinner ist
     private Map<String, DiceResult> diceResults;
 
     // Speichert das Würfelergebnis pro Spieler-ID
@@ -45,23 +46,19 @@ public class Game {
         playerList = new HashMap<>();
         this.board = new Board(); // Board direkt anlegen
         diceResults = new HashMap<String, DiceResult>();
-        playerNumber = Arrays.asList(new String[numberOfPlayers]);  
+        playerNumber = Arrays.asList(new String[numberOfPlayers]);
     }
-
-    
 
     public Map<String, Integer> getplayerRolls() {
         return playerRolls;
     }
 
-
-
     public void setplayerRolls(Map<String, Integer> playerRolls) {
         this.playerRolls = playerRolls;
     }
 
-
-    // Prüft, ob ein Spieler schon gewürfelt hat. Wenn ja, wird die Zahl zurückgegeben.
+    // Prüft, ob ein Spieler schon gewürfelt hat. Wenn ja, wird die Zahl
+    // zurückgegeben.
     // Wenn nicht, wird 0 zurückgegeben
     // Um zu schauen, ob der Spieler laufen darf und wie viel er laufen darf
     public int getRollForPlayer(String playerId) {
@@ -69,10 +66,10 @@ public class Game {
     }
 
     // Setzt das Ergebnis für einen Spieler
-    public void setRollForPlayer(String playerId, int amount){
-        if (amount == 0){
+    public void setRollForPlayer(String playerId, int amount) {
+        if (amount == 0) {
             playerRolls.remove(playerId); // Wurf schon genutzt, deswegen Spieler entfernen
-        } else{
+        } else {
             playerRolls.put(playerId, amount);
         }
     }
@@ -82,7 +79,6 @@ public class Game {
         return playerRolls.containsKey(playerId);
     }
 
-
     public boolean addPlayer(Player player, String playerId) {
         if (playerList.containsKey(playerId)) {
             logger.info("Player " + player.getName() + "already exist!!!!!!");
@@ -91,9 +87,9 @@ public class Game {
         playerList.put(playerId, player);
 
         // Spieler an ersten freien Slot setzen
-        for(int i = 0; i < playerNumber.size(); i++) {
+        for (int i = 0; i < playerNumber.size(); i++) {
             logger.info("Spielerslot {} : {}", i, playerNumber.get(i));
-            if(playerNumber.get(i) == null) {
+            if (playerNumber.get(i) == null) {
                 playerNumber.set(i, playerId);
                 break;
             }
@@ -126,8 +122,8 @@ public class Game {
                 + Arrays.toString(playerList.values().stream().map(Player::getName).toArray(String[]::new)));
 
         // Spieler aus playerNumber rausnehmen
-        for(int i = 0; i < playerNumber.size(); i++) {
-            if(playerNumber.get(i).equals(playerId)) {
+        for (int i = 0; i < playerNumber.size(); i++) {
+            if (playerNumber.get(i).equals(playerId)) {
                 playerNumber.set(i, null);
             }
         }
@@ -150,8 +146,6 @@ public class Game {
     public void setCountdownStartedAt(Instant countdownStartedAt) {
         this.countdownStartedAt = countdownStartedAt;
     }
-
-
 
     public boolean adminStart() {
         if (playerList.size() > 4)
@@ -191,23 +185,23 @@ public class Game {
         board.get(fig.getGridI(), fig.getGridJ()).addFigure(fig); // Auf Feld setzen
     }
 
-    /* 
-    public int getCurrentMovementAmount() {
-        return currentMovementAmount;
-    }
-
-    public void setCurrentMovementAmount(int currentMovementAmount) {
-        this.currentMovementAmount = currentMovementAmount;
-    }
-
-    public String getPlayerWhoRolledId() {
-        return playerWhoRolledId;
-    }
-
-    public void setPlayerWhoRolledId(String playerWhoRolledId) {
-        this.playerWhoRolledId = playerWhoRolledId;
-    }
-    */
+    /*
+     * public int getCurrentMovementAmount() {
+     * return currentMovementAmount;
+     * }
+     * 
+     * public void setCurrentMovementAmount(int currentMovementAmount) {
+     * this.currentMovementAmount = currentMovementAmount;
+     * }
+     * 
+     * public String getPlayerWhoRolledId() {
+     * return playerWhoRolledId;
+     * }
+     * 
+     * public void setPlayerWhoRolledId(String playerWhoRolledId) {
+     * this.playerWhoRolledId = playerWhoRolledId;
+     * }
+     */
 
     public void updateDiceResult(String playerName, DiceResult result) {
         diceResults.put(playerName, result);
@@ -224,5 +218,13 @@ public class Game {
 
     public List<String> getPlayerNumber() {
         return playerNumber;
+    }
+
+    public String getWinnerId() {
+        return winnerId;
+    }
+
+    public void setWinnerId(String winnerId) {
+        this.winnerId = winnerId;
     }
 }

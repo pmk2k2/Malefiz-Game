@@ -77,80 +77,86 @@ function stopHold() {
 }
 </script>
 
+
 <style scoped>
-
-.einstellung-view h3 {
-
-  text-align: center;
-  font-size: 1.6rem;
-  font-weight: 700;
-
-  color: white;
-
-  padding-bottom: 0.4rem;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-
-  margin-bottom: 1.5rem;
-}
-
 .einstellung-view {
   position: fixed;
-  top: 5cm;
-  left: 65%;
-  width: 260px;
-  background: rgba(0, 64, 0, 0.3);
-  padding: 2rem;
-  border-radius: 20px;
-  backdrop-filter: blur(8px);
+  top: 15%; 
+  left: 70%;
+  width: 280px;
+  background-color: #3d2b1f;
+  background-image: 
+    linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%),
+    repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(0,0,0,0.15) 39px, rgba(0,0,0,0.15) 40px);
+  
+  padding: 1.5rem;
+  border: 5px solid #2d1b0d;
+  border-radius: 15px;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 15px 30px rgba(0,0,0,0.6);
   z-index: 1000;
+  font-family: 'Kanit', sans-serif;
 }
 
-/* Eine Reihe */
+.einstellung-view h3 {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #ffc107; 
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid #2d1b0d;
+  margin-bottom: 1.5rem;
+  text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+}
+
 .time-control {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  justify-content: center;
+  gap: 12px;
 }
 
-/* Buttons */
+.timeDisplay {
+  min-width: 90px;
+  padding: 0.6rem;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #2d1b0d;
+  text-align: center;
+  background-color: #f0e2d0; 
+  border: 3px solid #2d1b0d;
+  border-radius: 10px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+}
+
 .timeButton {
-  width: 55px;
-  height: 55px;
-  font-size: 2rem;
-  font-weight: bold;
-  color: white;
-
-  border: 2px solid rgba(255,255,255,0.6);
-  border-radius: 15px;
-
-  background: rgba(255,255,255,0.15);
+  width: 50px;
+  height: 50px;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #f0e2d0;
   cursor: pointer;
-  transition: background 0.25s ease, transform 0.15s ease;
+  
+  background-color: #4d3319;
+  background-image: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
+  border: 3px solid #2d1b0d;
+  border-bottom-width: 6px; 
+  border-radius: 12px;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s ease;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
-/* Hover Effekt */
 .timeButton:hover {
-  background: rgba(255,255,255,0.35);
+  filter: brightness(1.2);
 }
 
 .timeButton:active {
-  transform: scale(0.95);
-}
-
-/* Zeit-Anzeige */
-.timeDisplay {
-  min-width: 100px;
-  padding: 0.8rem 1rem;
-
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: white;
-  text-align: center;
-
-  border: 2px solid rgba(255,255,255,0.6);
-  border-radius: 15px;
-
-  background: rgba(255,255,255,0.20);
+  transform: translateY(2px);
+  border-bottom-width: 3px;
 }
 </style>

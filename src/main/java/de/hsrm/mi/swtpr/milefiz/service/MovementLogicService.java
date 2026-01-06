@@ -58,10 +58,10 @@ public class MovementLogicService {
 
         // Maske: west, ost, norden, sueden
         int[][] mask = {
-            {-1, 0}, // west
-            { 1, 0}, // ost
-            { 0, 1}, // norden
-            { 0,-1}  // sueden 
+                { -1, 0 }, // west
+                { 1, 0 }, // ost
+                { 0, 1 }, // norden
+                { 0, -1 } // sueden
         };
 
         String[] names = { "west", "east", "north", "south" };
@@ -106,36 +106,46 @@ public class MovementLogicService {
         int count = n.size();
 
         // Kreuzung wenn = 4 Richtungen, T-Kreuzung bei 3 Richtungen
-        if (count >= 4) return MoveType.CROSSING;
-        if (count == 3) return MoveType.T_CROSSING;
+        if (count >= 4)
+            return MoveType.CROSSING;
+        if (count == 3)
+            return MoveType.T_CROSSING;
 
         // Gerade Strecke
         boolean geradeNordSued = north && south && !west && !east;
-        if(geradeNordSued) return MoveType.STRAIGHT_NS;
+        if (geradeNordSued)
+            return MoveType.STRAIGHT_NS;
 
-        boolean geradeWestOst  = !north && !south && west && east;
-        if(geradeWestOst) return MoveType.STRAIGHT_WE;
+        boolean geradeWestOst = !north && !south && west && east;
+        if (geradeWestOst)
+            return MoveType.STRAIGHT_WE;
 
         // Kurven
         boolean curveWestSouth = !north && south && west && !east;
-        if(curveWestSouth)  return MoveType.CURVE_WS;
+        if (curveWestSouth)
+            return MoveType.CURVE_WS;
         boolean curveWestNorth = north && !south && west && !east;
-        if(curveWestNorth)  return MoveType.CURVE_WN;
+        if (curveWestNorth)
+            return MoveType.CURVE_WN;
         boolean curveEastNorth = north && !south && !west && east;
-        if(curveEastNorth)  return MoveType.CURVE_EN;
+        if (curveEastNorth)
+            return MoveType.CURVE_EN;
         boolean curveEastSouth = !north && south && !west && east;
-        if(curveEastSouth)  return MoveType.CURVE_ES;
+        if (curveEastSouth)
+            return MoveType.CURVE_ES;
 
         // Ansonsten -> Sackgasse
         return MoveType.DEADEND;
     }
 
-    // Statt zu gucken, welche Richtungen man darf, einfach schauen aus welcher man kommt (also nicht darf)
-    // in dem Fall ist lastDir die gelaufene Richtung, also darf man nicht in die entgegengesetzte
+    // Statt zu gucken, welche Richtungen man darf, einfach schauen aus welcher man
+    // kommt (also nicht darf)
+    // in dem Fall ist lastDir die gelaufene Richtung, also darf man nicht in die
+    // entgegengesetzte
     public Direction getForbiddenDirection(Direction lastDir) {
         Direction dir = null;
 
-        switch(lastDir) {
+        switch (lastDir) {
             case Direction.NORTH:
                 dir = Direction.SOUTH;
                 break;
@@ -156,9 +166,9 @@ public class MovementLogicService {
     // Bei Kurven die richtige Richtung erhalten
     public Direction getNewDirection(MoveType mT, Direction dir) {
         Direction newDir;
-        
+
         // Erst gucken nach Typ von Kurve, dann aus welcher Richtung man kommt
-        switch(mT) {
+        switch (mT) {
             case MoveType.CURVE_WS:
                 newDir = (dir == Direction.EAST) ? Direction.SOUTH : Direction.WEST;
                 break;
@@ -177,7 +187,6 @@ public class MovementLogicService {
         return newDir;
     }
 
-
     public FigureMoveResult moveFigure(Game game, String gameCode, FigureMoveRequest request) {
         DiceResult result = game.getDiceResultById(request.playerId);
         // SpielerId prüfen und vergleichen
@@ -187,13 +196,12 @@ public class MovementLogicService {
 
         // Hole die echte Zahl aus dem Backend-Speicher
         int allowedDistance = result.getValue();
-        //int allowedDistance = game.getCurrentMovementAmount();
+        // int allowedDistance = game.getCurrentMovementAmount();
 
         // Prüfungen ob gewuerfelt wurde
         if (allowedDistance <= 0) {
             return FigureMoveResult.fail("Du musst erst würfeln!");
         }
-
 
         // Finden von Figur
         Figure figure = game.getFigures().stream()
@@ -211,33 +219,34 @@ public class MovementLogicService {
         }
 
         // Wenn Figur nicht AUF dem Feld steht
-        if(!figure.isOnField()) {
-            Field startFeld = null, startFeldState = null;            
+        if (!figure.isOnField()) {
+            Field startFeld = null, startFeldState = null;
             List<String> playerNumber = game.getPlayerNumber();
             int playerIndex;
-            // zunaechst Figur auf Startfeld setzen    
-            for(int i = 0; i < playerNumber.size(); i++) {
-                if(playerNumber.get(i).equals(request.playerId)) {
+            // zunaechst Figur auf Startfeld setzen
+            for (int i = 0; i < playerNumber.size(); i++) {
+                if (playerNumber.get(i).equals(request.playerId)) {
                     startFeld = game.getBoard().getStartFieldByIndex(i);
                     playerIndex = i;
-                    logger.info("Startfeld fuer Spielerindex {} gefunden an: {} {}", playerIndex, startFeld.getI(), startFeld.getJ());
+                    logger.info("Startfeld fuer Spielerindex {} gefunden an: {} {}", playerIndex, startFeld.getI(),
+                            startFeld.getJ());
                     break;
                 }
             }
 
-            if(startFeld == null) {
+            if (startFeld == null) {
                 return FigureMoveResult.fail("Startfeld existiert nicht fuer Spieler!");
             }
 
             startFeldState = game.getBoard().get(startFeld.getI(), startFeld.getJ());
             // alle noetigen checks setzen
-            if(startFeld.getType() == CellType.BLOCKED) {   // sollte eigentlich nicht passieren
+            if (startFeld.getType() == CellType.BLOCKED) { // sollte eigentlich nicht passieren
                 return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
             }
-            if(startFeld.getFigures().size() >= 2) {
-                List<Figure>figuresOnField = startFeld.getFigures();
+            if (startFeld.getFigures().size() >= 2) {
+                List<Figure> figuresOnField = startFeld.getFigures();
                 // Check ob eigener Spieler
-                if(!figuresOnField.get(0).getOwnerPlayerId().equals(figuresOnField.get(1).getOwnerPlayerId())) {
+                if (!figuresOnField.get(0).getOwnerPlayerId().equals(figuresOnField.get(1).getOwnerPlayerId())) {
                     return FigureMoveResult.fail("Maximal 2 Figuren pro Feld");
                 }
             }
@@ -252,15 +261,31 @@ public class MovementLogicService {
             figure.setPosition(startFeld.getI(), startFeld.getJ());
             startFeldState.addFigure(figure);
 
+            logger.info("Figur {} wird auf Startfeld ({}, {}) gesetzt. CellType: {}",
+                    figure.getId(), startFeld.getI(), startFeld.getJ(), startFeld.getType());
+
             // Bewegung und Request an Frontend senden
-            // -1 als "startPos" der Bewegung, um startPosition ausserhalb des Feldes zu vermitteln,
+            // -1 als "startPos" der Bewegung, um startPosition ausserhalb des Feldes zu
+            // vermitteln,
             // da Felder im Model nicht < 0 werden koennen
             Bewegung bew = new Bewegung(-1, -1, startFeld.getI(), startFeld.getJ(), Direction.NORTH, 0);
-            var moveEvent = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
+            var moveEvent = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
+                    request.figureId, request.playerId, bew);
             publisher.publishEvent(moveEvent);
             var moveReqEvent = new IngameRequestEvent(Aktion.DIRECTION, request.playerId, request.figureId, gameCode);
             publisher.publishEvent(moveReqEvent);
 
+            // Wenn Spieler die Krone kriegt
+            if (currentField.getType() == CellType.GOAL) {
+                game.setWinnerId(request.playerId);
+                publisher.publishEvent(new FrontendNachrichtEvent(
+                        Nachrichtentyp.INGAME,
+                        request.playerId,
+                        Operation.GAME_OVER,
+                        gameCode,
+                        null));
+                logger.info("ENDDDDDDDDD");
+            }
 
             return FigureMoveResult.ok();
         }
@@ -271,12 +296,13 @@ public class MovementLogicService {
         int startI = figure.getGridI();
         int startJ = figure.getGridJ();
         do {
-            boolean moveOver = false;       // Zug beendet?
-            logger.info("Loopanfang mit stepsCount {}, lastDir {}, allowedDistance {}", stepsCount, lastDir, allowedDistance);
+            boolean moveOver = false; // Zug beendet?
+            logger.info("Loopanfang mit stepsCount {}, lastDir {}, allowedDistance {}", stepsCount, lastDir,
+                    allowedDistance);
             int deltaI = 0, deltaJ = 0;
 
             // Gucken, ob Schritt moeglich ist
-            switch(lastDir) {
+            switch (lastDir) {
                 case Direction.NORTH:
                     deltaJ = 1;
                     break;
@@ -293,17 +319,22 @@ public class MovementLogicService {
             int destI = figure.getGridI() + deltaI;
             int destJ = figure.getGridJ() + deltaJ;
 
-            // Die Figur darf nicht außerhalb der Grenzen des Feldes begehen (nur in dem programmierten Feld)
+            // Die Figur darf nicht außerhalb der Grenzen des Feldes begehen (nur in dem
+            // programmierten Feld)
             if (destI < 0 || destI >= game.getBoard().getWidth()
                     || destJ < 0 || destJ >= game.getBoard().getHeight()) {
                 return FigureMoveResult.fail("Bewegung ausserhalb Spielfelds ist nicht erlaubt");
             }
 
             Field destField = game.getBoard().get(destI, destJ);
+
+            logger.info("Figur {} bewegt sich auf Feld ({}, {}) mit CellType: {}",
+                    figure.getId(), destI, destJ, destField.getType());
+
             // Faelle wo Bewegung nicht moeglich ist
             // potentiell wird man hier als Spieler softlocked?
             // Energie speichern oder einfach neue Richtungsanfrage?
-            if(destField.getType() == CellType.BLOCKED) {
+            if (destField.getType() == CellType.BLOCKED) {
                 logger.info("Feld {} {} ist blockiert", destI, destJ);
                 return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
             }
@@ -312,15 +343,15 @@ public class MovementLogicService {
             }
 
             // Wenn Feld eine Barriere hat, schauen ob man AUF dieser landen kann
-            if(destField.hasBarrier()) {
-                if(allowedDistance > 1) {
+            if (destField.hasBarrier()) {
+                if (allowedDistance > 1) {
                     // Figur stoppen
                     // Energie speichern (und spaeter weiterleiten)
                     int remainingEnergy = allowedDistance;
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
                     return FigureMoveResult.ok();
-                } else if(allowedDistance == 1) {
+                } else if (allowedDistance == 1) {
                     // Wenn man genau auf Barriere landet
                     // Event einleiten
                     logger.info("Landung genau auf Barriere, tu etwas...");
@@ -330,21 +361,21 @@ public class MovementLogicService {
             // Nur zwei Figuren können auf das gleiche Feld -> Kampf einleiten (in Zukunft)
             if (destField.getFigures().size() == 1) {
                 // nur wenn man exakt auf dem Feld landet
-                if(allowedDistance == 1) {
-                    if( !destField.getFigures().get(0).getOwnerPlayerId().equals(request.playerId) ) {
+                if (allowedDistance == 1) {
+                    if (!destField.getFigures().get(0).getOwnerPlayerId().equals(request.playerId)) {
                         // hier muss ein Duell gestartet werden
                         logger.info("Zwei Spieler auf {} {}, starte Duell...", destI, destJ);
-                        //return FigureMoveResult.ok();
+                        // return FigureMoveResult.ok();
                         moveOver = true;
                     } else {
                         // wenn es eigene Figur ist, soll man einfach stehen bleiben
                         int remainingEnergy = allowedDistance;
                         allowedDistance = 0;
                         game.getDiceResultById(request.playerId).setValue(0);
-                        //return FigureMoveResult.ok();
+                        // return FigureMoveResult.ok();
                         break;
                     }
-                } else if(allowedDistance > 1) {
+                } else if (allowedDistance > 1) {
                     // einfach weitergehen
                     // evtll genaueres verhalten noch implementieren
                 }
@@ -352,11 +383,29 @@ public class MovementLogicService {
 
             // Alles ok
             // setzen der Figur auf neues Feld
-            logger.info("Setze Spielfigur auf neue Position {} {}", destI, destJ);
+            logger.info("Setze Spielfigur auf neue Position {} {} mit CellType: {}", destI, destJ, destField.getType());
             Field currentField = game.getBoard().get(figure.getGridI(), figure.getGridJ());
             currentField.removeFigure(figure);
             figure.setPosition(destI, destJ);
             destField.addFigure(figure);
+
+            // Prüfe ob Ziel erreicht
+            if (destField.getType() == CellType.GOAL) {
+                game.setWinnerId(request.playerId);
+                publisher.publishEvent(new FrontendNachrichtEvent(
+                        Nachrichtentyp.INGAME,
+                        request.playerId,
+                        Operation.GAME_OVER,
+                        gameCode,
+                        null));
+                Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
+                var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
+                        request.figureId,
+                        request.playerId, bew);
+                publisher.publishEvent(moveEv);
+                logger.info("ENDDDDDDDDD");
+                return FigureMoveResult.ok();
+            }
 
             // gelaufenen Schritt abziehen
             result.setValue(--allowedDistance);
@@ -366,28 +415,32 @@ public class MovementLogicService {
             stepsCount++;
 
             // Wenn Zug vorbei, direkt aus der Loop ausbrechen
-            if(moveOver)
+            if (moveOver)
                 break;
 
             // Gucken, ob Anfrage noetig
             MoveType moveType = classifyField(game, figure);
             logger.info("Neues Feld ist {}", moveType);
-            if(result.getValue() <= 0) break;
-            switch(moveType) {
+            if (result.getValue() <= 0)
+                break;
+            switch (moveType) {
                 case MoveType.DEADEND:
                     // restliche Energie speichern eigentlich
                     int remainingEnergy = allowedDistance;
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
-                    //return FigureMoveResult.ok();
+                    // return FigureMoveResult.ok();
 
                 case MoveType.T_CROSSING:
                 case MoveType.CROSSING:
                     Direction forbiddenDir = getForbiddenDirection(lastDir);
-                    Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
-                    var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
+                    Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir,
+                            stepsCount);
+                    var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
+                            request.figureId, request.playerId, bew);
                     publisher.publishEvent(moveEv);
-                    var event = new IngameRequestEvent(Aktion.DIRECTION, request.playerId, request.figureId, gameCode, forbiddenDir);
+                    var event = new IngameRequestEvent(Aktion.DIRECTION, request.playerId, request.figureId, gameCode,
+                            forbiddenDir);
                     publisher.publishEvent(event);
                     stepsCount = 0;
                     return FigureMoveResult.ok();
@@ -397,8 +450,10 @@ public class MovementLogicService {
                 case MoveType.CURVE_WN:
                 case MoveType.CURVE_EN:
                     // Figur im Frontend bis zur Kurve bewegen
-                    Bewegung bew2 = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
-                    var moveEv2 = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew2);
+                    Bewegung bew2 = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir,
+                            stepsCount);
+                    var moveEv2 = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
+                            request.figureId, request.playerId, bew2);
                     publisher.publishEvent(moveEv2);
 
                     // Drehen in richtige Richtung, startPos anpassen fuer naechste Animation
@@ -415,14 +470,15 @@ public class MovementLogicService {
                 default:
                     break;
             }
-            
-        } while(result.getValue() > 0);
+
+        } while (result.getValue() > 0);
 
         logger.info("Alle Zuege verbraucht");
 
         // wenn alle Zuege verbraucht sind
         Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
-        var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
+        var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId,
+                request.playerId, bew);
         publisher.publishEvent(moveEv);
         stepsCount = 0;
 

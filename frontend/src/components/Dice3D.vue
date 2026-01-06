@@ -124,7 +124,7 @@ export default defineComponent({
           }),
       )
 
-      const geometry = new THREE.BoxGeometry(2, 2, 2)
+      const geometry = new THREE.BoxGeometry(3, 3, 3)
       cube = new THREE.Mesh(geometry, materials)
       scene.add(cube)
 
