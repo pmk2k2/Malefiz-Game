@@ -41,6 +41,8 @@ public class Game {
 
     // Speichert das Würfelergebnis pro Spieler-ID
     private Map<String, Integer> playerRolls = new HashMap<>();
+    // Standardwert für energie falls der Host nichts einstellt
+    private int maxCollectableEnergy = 10;
 
     public Game() {
         playerList = new HashMap<>();
@@ -117,16 +119,16 @@ public class Game {
     }
 
     public boolean removePlayer(String playerId) {
-        Player removed = playerList.remove(playerId);
-        logger.info("The game now has players: "
-                + Arrays.toString(playerList.values().stream().map(Player::getName).toArray(String[]::new)));
-
         // Spieler aus playerNumber rausnehmen
         for (int i = 0; i < playerNumber.size(); i++) {
-            if (playerNumber.get(i).equals(playerId)) {
+            if (playerId.equals(playerNumber.get(i))) {
                 playerNumber.set(i, null);
             }
         }
+
+        Player removed = playerList.remove(playerId);
+        logger.info("The game now has players: "
+                + Arrays.toString(playerList.values().stream().map(Player::getName).toArray(String[]::new)));
 
         return removed != null;
     }
@@ -226,5 +228,27 @@ public class Game {
 
     public void setWinnerId(String winnerId) {
         this.winnerId = winnerId;
+    }
+
+    private final Map<String, Boolean> movementFinished = new HashMap<>();
+
+    public void startMovement(String playerId) {
+        movementFinished.put(playerId, false);
+    }
+
+    public void finishMovement(String playerId) {
+        movementFinished.put(playerId, true);
+    }
+
+    public boolean isMovementFinished(String playerId) {
+        return movementFinished.getOrDefault(playerId, false);
+    }
+
+    public int getMaxCollectableEnergy() {
+        return maxCollectableEnergy;
+    }
+
+    public void setMaxCollectableEnergy(int maxCollectableEnergy) {
+        this.maxCollectableEnergy = maxCollectableEnergy;
     }
 }

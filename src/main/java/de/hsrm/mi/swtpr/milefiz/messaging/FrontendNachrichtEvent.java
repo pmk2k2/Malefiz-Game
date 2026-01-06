@@ -3,7 +3,6 @@ package de.hsrm.mi.swtpr.milefiz.messaging;
 import java.time.Instant;
 
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
-import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
 public class FrontendNachrichtEvent {
@@ -26,10 +25,13 @@ public class FrontendNachrichtEvent {
         GAME_RUNNING,
         PLAYER_LIMIT_ERROR,
         COUNTDOWN_ABORTED,
-
+        BARRIER_WAIT,
+        BARRIER_PLACED,
         // Ingame-Operationen
         GAME_OVER,
-        MOVE
+        MOVE,
+        ENERGY_UPDATED,
+        DUEL_PREPARE
     }
 
     private Nachrichtentyp typ;
@@ -44,7 +46,9 @@ public class FrontendNachrichtEvent {
     // States fuer Movementupdates
     // private String playerId; // Unterschied playerId und playerName???
     private String figureId;
+    private String opponentId; // ID des zweiten spieler im duell
     private Bewegung bewegung;
+    private int newEnergyValue;
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -53,6 +57,17 @@ public class FrontendNachrichtEvent {
         this.operation = operation;
         this.gameCode = gameCode;
         this.playerName = playerName;
+    }
+
+    // Konstruktor für Energeie Einstellung in der Lobby
+    public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
+            String playerName, int newEnergyValue) {
+        this.typ = typ;
+        this.id = id;
+        this.operation = operation;
+        this.gameCode = gameCode;
+        this.playerName = playerName;
+        this.newEnergyValue = newEnergyValue;
     }
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
@@ -153,7 +168,23 @@ public class FrontendNachrichtEvent {
         return figureId;
     }
 
+    public String getOpponentId() {
+        return opponentId;
+    }
+
+    public void setOpponentId(String opponentId) {
+        this.opponentId = opponentId;
+    }
+
     public Bewegung getBewegung() {
         return bewegung;
+    }
+
+    public int getNewEnergyValue() {
+        return newEnergyValue;
+    }
+
+    public void setNewEnergyValue(int newEnergyValue) {
+        this.newEnergyValue = newEnergyValue;
     }
 }

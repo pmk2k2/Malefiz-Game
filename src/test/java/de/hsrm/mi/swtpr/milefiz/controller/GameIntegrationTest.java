@@ -26,6 +26,7 @@ public class GameIntegrationTest {
         @Autowired
         private ObjectMapper objectMapper;
 
+        @SuppressWarnings("null")
         @Test
         void testGameWorkflow() throws Exception {
                 // 1. Spiel erstellen (Host "Sam")

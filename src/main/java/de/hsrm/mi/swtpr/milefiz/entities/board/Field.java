@@ -24,7 +24,8 @@ public class Field {
     }
 
     public boolean hasBarrier() {
-        return this.barrier != null;
+        // Ein Feld hat eine Barriere, wenn entweder das Objekt gesetzt ist oder der Zelltyp explizit BARRIER ist.
+        return this.barrier != null || this.type == CellType.BARRIER;
     }
 
     public Barrier getBarrier() {
@@ -60,7 +61,11 @@ public class Field {
     }
 
     public boolean isBlocked() {
-        return type == CellType.BLOCKED;
+        if (this.type == CellType.BLOCKED) return true;
+        if (this.hasBarrier()) return true;
+        if (!this.getFigures().isEmpty()) return true;
+
+        return false;
     }
 
     public boolean isBarrier() {
@@ -78,6 +83,17 @@ public class Field {
     @Override
     public String toString() {
         return "Field [i=" + i + ", j=" + j + ", type=" + type + "]";
+    }
+
+    // Duell: deutet an, ob das Feld derzeit ein Duellfeld ist
+    public boolean isDuelField() {
+        List<Figure> figs = getFigures();
+
+        if(figs.size() != 2) {
+            return false;
+        }
+        // Nur wenn 2 Figuren auf einem Feld 
+        return !figs.get(0).getOwnerPlayerId().equals(figs.get(1).getOwnerPlayerId());
     }
 
 }

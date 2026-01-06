@@ -113,13 +113,6 @@ function startCooldownTimer() {
       </div>
     </div>
 
-    <!-- HUD -->
-    <div class="ui-panel-right">
-      <div class="hud-wrapper">
-        <HUDInfoView />
-      </div>
-    </div>
-
     <div class="ui-controls-bottom">
       <button class="map-btn" @click="openCensoredMap">
         <span class="icon">🗺️</span> Map öffnen
@@ -136,7 +129,12 @@ function startCooldownTimer() {
           />
         </div>
       </div>
-
+      <!-- HUD-Player-Infos -->
+      <div class="relative w-full h-full">
+        <div class="absolute top-0 right-4 m-4">
+            <HUDInfoView />
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -157,19 +155,6 @@ function startCooldownTimer() {
   left: 20px;
   z-index: 50;
   pointer-events: none;
-}
-
-.ui-panel-right {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 50;
-  pointer-events: none;
-}
-
-.hud-wrapper {
-  pointer-events: auto;
-  margin: 0;
 }
 
 .wood-panel {
