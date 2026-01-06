@@ -151,7 +151,7 @@ function startCooldownTimer() {
     <!-- DUEL / MINIGAME OVERLAY -->
     <div v-if="gameStore.gameData.duelActive" class="minigame-overlay">
       <div class="minigame-box">
-        <h2>DUEL STARTETE!</h2>
+        <h2>DUELL STARTET!</h2>
         <p>Bereite dich auf das Minispiel vor...</p>
         <div class="loader"></div>
       </div>
