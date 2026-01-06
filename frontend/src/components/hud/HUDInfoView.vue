@@ -1,6 +1,5 @@
 <template>
-  <div class="w-[300px] max-w-[90vw] mx-auto ] 
-             rounded-2xl  space-y-1 text-slate-100">
+  <div class="w-[300px] max-w-[90vw] mx-auto ] rounded-2xl  space-y-1 text-slate-100">
 
     <div class="space-y-4">
       <HUDInfoZeile
@@ -17,7 +16,7 @@
 
 
 <script setup lang="ts">
-import { computed, inject, type Ref } from "vue"
+import { computed, type Ref } from "vue"
 import { useGameStore } from "@/stores/gamestore"
 import type { ISpielerDTD } from "@/stores/ISpielerDTD"
 import HUDInfoZeile from "./HUDInfoZeile.vue"

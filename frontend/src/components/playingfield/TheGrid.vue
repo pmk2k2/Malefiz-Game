@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useLoop, type TresObject } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
-import { computed, onMounted, onUnmounted, provide, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
