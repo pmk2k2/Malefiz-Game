@@ -73,6 +73,14 @@ const allPlayers = computed(() => {
   return Array.from(playersMap.values())
 })
 
+const isFigureLocked = computed(() => {
+  return (
+    gameStore.gameData.remainingSteps !== null &&
+    gameStore.gameData.remainingSteps > 0 &&
+    gameStore.gameData.movingFigure !== null
+  )
+})
+
 onMounted(async () => {
   isLoading.value = true
 
@@ -320,6 +328,11 @@ function onKeyDown(event: KeyboardEvent) {
 
   if (key === 'ArrowRight' || key === 'ArrowLeft') {
     event.preventDefault()
+
+    if (isFigureLocked.value) {
+      alert('Figurwechsel gesperrt – Zug läuft noch')
+      return
+    }
 
     if (numOwnFigures === 0) return
 
