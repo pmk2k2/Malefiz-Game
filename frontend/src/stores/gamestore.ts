@@ -137,7 +137,10 @@ export const useGameStore = defineStore('gamestore', () => {
             // DUEL / MINIGAME START
             else if (event.operation === 'DUEL_PREPARE') {
                 console.log("DUEL_PREPARE Event empfangen!");
-                gameData.duelActive = true;
+                // Nur fuer beteiligte Spieler
+                if (gameData.playerId && (event.id === gameData.playerId || event.opponentId === gameData.playerId)) {
+                    gameData.duelActive = true;
+                }
             }
           }
           else if (event.typ === 'LOBBY') {
