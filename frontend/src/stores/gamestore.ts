@@ -36,6 +36,7 @@ export const useGameStore = defineStore('gamestore', () => {
     requireInput: boolean
     forbiddenDir: string | null
     energy: number
+    duelActive: boolean
   }>({
     ok: false,
     players: [],
@@ -53,6 +54,7 @@ export const useGameStore = defineStore('gamestore', () => {
     requireInput: false,
     forbiddenDir: null,
     energy: 0,
+    duelActive: false,
   })
   const figures = ref<IPlayerFigure[]>([])
   const ingameMoveEvent = ref<IFrontendNachrichtEvent>()
@@ -135,6 +137,17 @@ export const useGameStore = defineStore('gamestore', () => {
               }
             } else if (event.operation === 'BARRIER_PLACED') {
               gameState.value = 'RUNNING'
+            }
+            // DUEL / MINIGAME START
+            else if (event.operation === 'DUEL_PREPARE') {
+              console.log('DUEL_PREPARE Event empfangen!')
+              // Nur fuer beteiligte Spieler
+              if (
+                gameData.playerId &&
+                (event.id === gameData.playerId || event.opponentId === gameData.playerId)
+              ) {
+                gameData.duelActive = true
+              }
             }
           } else if (event.typ === 'LOBBY') {
             updatePlayerList(gameCode)
@@ -350,6 +363,7 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.players = []
     gameData.ok = false
     gameData.gameOver = null
+    gameData.duelActive = false
     stopCountdown()
 
     localStorage.removeItem('gameData')

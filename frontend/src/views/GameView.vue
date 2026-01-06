@@ -148,6 +148,15 @@ function startCooldownTimer() {
     <PopupSpielende />
     <PauseMenu />
 
+    <!-- DUEL / MINIGAME OVERLAY -->
+    <div v-if="gameStore.gameData.duelActive" class="minigame-overlay">
+      <div class="minigame-box">
+        <h2>DUEL STARTETE!</h2>
+        <p>Bereite dich auf das Minispiel vor...</p>
+        <div class="loader"></div>
+      </div>
+    </div>
+
     <!-- UI Overlay -->
     <div class="pointer-events-none absolute inset-0 flex items-start m-2 z-50">
       <div
@@ -341,5 +350,74 @@ function startCooldownTimer() {
   flex-direction: column;
   align-items: center;
   gap: 5px;
+}
+
+.minigame-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.5s ease;
+}
+
+.minigame-box {
+  text-align: center;
+  color: white;
+  font-family: 'Kanit', sans-serif;
+  animation: scaleUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.minigame-box h2 {
+  font-size: 4rem;
+  color: #fbbf24;
+  text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+  margin-bottom: 1rem;
+}
+
+.minigame-box p {
+  font-size: 2rem;
+  color: #cbd5e1;
+}
+
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #fff;
+  border-bottom-color: #fbbf24;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+  margin-top: 2rem;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    transform: scale(0.8);
+  }
+  to {
+    transform: scale(1);
+  }
 }
 </style>

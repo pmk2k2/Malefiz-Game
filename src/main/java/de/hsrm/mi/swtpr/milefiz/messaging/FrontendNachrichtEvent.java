@@ -46,6 +46,7 @@ public class FrontendNachrichtEvent {
     // States fuer Movementupdates
     // private String playerId; // Unterschied playerId und playerName???
     private String figureId;
+    private String opponentId; // ID des zweiten spieler im duell
     private Bewegung bewegung;
     private int newEnergyValue;
 
@@ -68,7 +69,6 @@ public class FrontendNachrichtEvent {
         this.playerName = playerName;
         this.newEnergyValue = newEnergyValue;
     }
-
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName, Instant countdownStartedAt, GameState gameState) {
@@ -168,10 +168,18 @@ public class FrontendNachrichtEvent {
         return figureId;
     }
 
+    public String getOpponentId() {
+        return opponentId;
+    }
+
+    public void setOpponentId(String opponentId) {
+        this.opponentId = opponentId;
+    }
+
     public Bewegung getBewegung() {
         return bewegung;
     }
-    
+
     public int getNewEnergyValue() {
         return newEnergyValue;
     }

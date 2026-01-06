@@ -48,8 +48,8 @@ public class MovementLogicService {
         }
 
         // Hole die echte Zahl aus dem Backend-Speicher
-        int allowedDistance = result.getValue(); 
-        
+        int allowedDistance = result.getValue();
+
         // Prüfungen ob gewuerfelt wurde
         if (allowedDistance <= 0) {
             return FigureMoveResult.fail("Du musst erst würfeln!");
@@ -58,29 +58,31 @@ public class MovementLogicService {
         // Energie sammeln Logik
         if (request.collectEnergy) {
             player = game.getPlayerById(request.playerId);
-            if (player == null) return FigureMoveResult.fail("Spieler nicht gefunden");
+            if (player == null)
+                return FigureMoveResult.fail("Spieler nicht gefunden");
 
-            //Rest wird gespeichert
+            // Rest wird gespeichert
             int laufEnergieRest = allowedDistance;
-            //Maximale energie für die Partie gestgelegt
+            // Maximale energie für die Partie gestgelegt
             int limit = game.getMaxCollectableEnergy();
 
-            // Die Laufenergie wird zur Sprungenergie umgewandelt und dem Spieler gutgeschrieben
+            // Die Laufenergie wird zur Sprungenergie umgewandelt und dem Spieler
+            // gutgeschrieben
             player.addEnergy(laufEnergieRest, limit);
 
-            //die Laufenergie muss jetzt auf 0 gesetzt werden damnit der Spieler nicht mehr laufen kann
+            // die Laufenergie muss jetzt auf 0 gesetzt werden damnit der Spieler nicht mehr
+            // laufen kann
             result.setValue(0);
-            game.setRollForPlayer(request.playerId, 0); 
+            game.setRollForPlayer(request.playerId, 0);
 
             // Frontend informieren
             var energyEvent = new FrontendNachrichtEvent(
-                Nachrichtentyp.INGAME, 
-                request.playerId, 
-                Operation.ENERGY_UPDATED, 
-                gameCode, 
-                player.getName(), 
-                player.getEnergy()
-            );
+                    Nachrichtentyp.INGAME,
+                    request.playerId,
+                    Operation.ENERGY_UPDATED,
+                    gameCode,
+                    player.getName(),
+                    player.getEnergy());
             publisher.publishEvent(energyEvent);
             return FigureMoveResult.ok();
         }
@@ -223,24 +225,22 @@ public class MovementLogicService {
                 return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
             }
 
-
             // Wenn Feld eine Barriere hat, schauen ob man AUF dieser landen kann
             if (destField.hasBarrier()) {
                 if (allowedDistance > 1) {
                     // Figur stoppen
                     // Energie speichern (und spaeter weiterleiten)
                     int remainingEnergy = allowedDistance;
-                    //Energie hinzufügen anhand der voreingestellten Menge vom Host
+                    // Energie hinzufügen anhand der voreingestellten Menge vom Host
                     player.addEnergy(remainingEnergy, game.getMaxCollectableEnergy());
-                    
+
                     publisher.publishEvent(new FrontendNachrichtEvent(
-                        Nachrichtentyp.INGAME, 
-                        request.playerId, 
-                        Operation.ENERGY_UPDATED, 
-                        gameCode, 
-                        player.getName(), 
-                        player.getEnergy()
-                    ));
+                            Nachrichtentyp.INGAME,
+                            request.playerId,
+                            Operation.ENERGY_UPDATED,
+                            gameCode,
+                            player.getName(),
+                            player.getEnergy()));
 
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
@@ -265,18 +265,17 @@ public class MovementLogicService {
                 boolean hasEnergy = energy >= moveEnergy;
 
                 if (!hasEnergy || allowedDistance <= 1) {
-                    //Energie hinzufügen anhand der voreingestellten Menge vom Host
+                    // Energie hinzufügen anhand der voreingestellten Menge vom Host
                     player.addEnergy(allowedDistance, game.getMaxCollectableEnergy());
-                    
+
                     publisher.publishEvent(new FrontendNachrichtEvent(
-                        Nachrichtentyp.INGAME, 
-                        request.playerId, 
-                        Operation.ENERGY_UPDATED, 
-                        gameCode, 
-                        player.getName(), 
-                        player.getEnergy()
-                    ));
-                    //Energie wird auf 0 gesetzt da für das überspringen nötig ist
+                            Nachrichtentyp.INGAME,
+                            request.playerId,
+                            Operation.ENERGY_UPDATED,
+                            gameCode,
+                            player.getName(),
+                            player.getEnergy()));
+                    // Energie wird auf 0 gesetzt da für das überspringen nötig ist
                     allowedDistance = 0;
                     result.setValue(0);
                     game.setRollForPlayer(request.playerId, 0);
@@ -288,7 +287,8 @@ public class MovementLogicService {
                     int landI = destI + deltaI;
                     int landJ = destJ + deltaJ;
 
-                    if (landI < 0 || landI >= game.getBoard().getWidth() || landJ < 0 || landJ >= game.getBoard().getHeight()) {
+                    if (landI < 0 || landI >= game.getBoard().getWidth() || landJ < 0
+                            || landJ >= game.getBoard().getHeight()) {
                         allowedDistance = 0;
                         break;
                     }
@@ -300,18 +300,18 @@ public class MovementLogicService {
                         break;
                     }
 
-                    //Energie für den Sprung verbrauchen
-                    //Sprung soll noch implementiert werden, aber der abzug der Energie ist schon hier implementiert
+                    // Energie für den Sprung verbrauchen
+                    // Sprung soll noch implementiert werden, aber der abzug der Energie ist schon
+                    // hier implementiert
                     player.consumeEnergy(moveEnergy);
 
                     publisher.publishEvent(new FrontendNachrichtEvent(
-                        Nachrichtentyp.INGAME,
-                        request.playerId,
-                        Operation.ENERGY_UPDATED,
-                        gameCode,
-                        player.getName(),
-                        player.getEnergy()
-                    ));
+                            Nachrichtentyp.INGAME,
+                            request.playerId,
+                            Operation.ENERGY_UPDATED,
+                            gameCode,
+                            player.getName(),
+                            player.getEnergy()));
 
                     Field currentField = game.getBoard().get(figure.getGridI(), figure.getGridJ());
                     currentField.removeFigure(figure);
@@ -359,8 +359,6 @@ public class MovementLogicService {
             result.setValue(--allowedDistance);
             game.getDiceResultById(request.playerId).setValue(allowedDistance);
 
-            
-
             // Anzahl Schritte und Richtung fuer Event anpassen
             stepsCount++;
 
@@ -371,36 +369,38 @@ public class MovementLogicService {
                 break;
 
             // Gucken, ob Anfrage noetig
-            //Ausgelagert in BoardNavigationService
+            // Ausgelagert in BoardNavigationService
             MoveType moveType = navService.classifyField(game, figure);
             logger.info("Neues Feld ist {}", moveType);
-            if(result.getValue() <= 0) break;
-            switch(moveType) {
+            if (result.getValue() <= 0)
+                break;
+            switch (moveType) {
                 case DEADEND:
                     // restliche Energie speichern eigentlich
                     int remainingEnergy = allowedDistance;
 
                     player.addEnergy(remainingEnergy, game.getMaxCollectableEnergy());
-                    
+
                     publisher.publishEvent(new FrontendNachrichtEvent(
-                        Nachrichtentyp.INGAME, 
-                        request.playerId, 
-                        Operation.ENERGY_UPDATED, 
-                        gameCode, 
-                        player.getName(), 
-                        player.getEnergy()
-                    ));
+                            Nachrichtentyp.INGAME,
+                            request.playerId,
+                            Operation.ENERGY_UPDATED,
+                            gameCode,
+                            player.getName(),
+                            player.getEnergy()));
 
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
                     break;
-                    //return FigureMoveResult.ok();
+                // return FigureMoveResult.ok();
 
                 case T_CROSSING:
                 case CROSSING:
                     Direction forbiddenDir = navService.getForbiddenDirection(lastDir);
-                    Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
-                    var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId, request.playerId, bew);
+                    Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir,
+                            stepsCount);
+                    var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
+                            request.figureId, request.playerId, bew);
                     publisher.publishEvent(moveEv);
                     var event = new IngameRequestEvent(Aktion.DIRECTION, request.playerId, request.figureId, gameCode,
                             forbiddenDir);
@@ -465,18 +465,16 @@ public class MovementLogicService {
                         figure.getGridI(),
                         figure.getGridJ(),
                         null,
-                        0
-                );
+                        0);
 
-                FrontendNachrichtEvent duelEvent =
-                    new FrontendNachrichtEvent(
+                FrontendNachrichtEvent duelEvent = new FrontendNachrichtEvent(
                         FrontendNachrichtEvent.Nachrichtentyp.INGAME,
                         FrontendNachrichtEvent.Operation.DUEL_PREPARE,
                         gameCode,
                         null,
-                        null,
-                        duelBew
-                    );
+                        p1, // Id des player1 im duell
+                        duelBew);
+                duelEvent.setOpponentId(p2);
 
                 publisher.publishEvent(duelEvent);
             }
