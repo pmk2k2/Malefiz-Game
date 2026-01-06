@@ -113,7 +113,7 @@ function startCooldownTimer() {
       </div>
     </div>
 
-    <!-- HUD on the right, opposite the dice -->
+    <!-- HUD -->
     <div class="ui-panel-right">
       <div class="hud-wrapper">
         <HUDInfoView />
@@ -164,12 +164,12 @@ function startCooldownTimer() {
   top: 20px;
   right: 20px;
   z-index: 50;
-  pointer-events: none; /* keep overall wrapper non-interactive */
+  pointer-events: none;
 }
 
 .hud-wrapper {
-  pointer-events: auto; /* allow interactions with HUD */
-  margin: 0; /* adjust spacing if needed */
+  pointer-events: auto;
+  margin: 0;
 }
 
 .wood-panel {
