@@ -11,7 +11,9 @@ import HUDInfoView from '@/components/hud/HUDInfoView.vue'
 
 const gridRef = ref<any>(null)
 const sichtbar = ref(false)
-
+const liveBoard = computed(() => {
+  return gridRef.value?.board ?? null
+})
 const liveGrid = computed(() => {
   return gridRef.value?.grid || { cols: 11, rows: 8, cells: [] }
 })
@@ -112,7 +114,12 @@ function startCooldownTimer() {
 
       </div>
     </div>
-
+   <!-- HUD -->
+    <div class="ui-panel-right">
+      <div class="hud-wrapper">
+        <HUDInfoView />
+      </div>
+    </div>
     <div class="ui-controls-bottom">
       <button class="map-btn" @click="openCensoredMap">
         <span class="icon">🗺️</span> Map öffnen
@@ -124,7 +131,7 @@ function startCooldownTimer() {
         <button class="close-seal" @click="closeCensoredMap">✕</button>
         <div class="map-content">
           <TheMapBarrierEditor 
-              :grid="liveGrid" 
+              :board="liveGrid" 
               :figures="liveFigures" 
           />
         </div>
@@ -157,6 +164,18 @@ function startCooldownTimer() {
   pointer-events: none;
 }
 
+	.ui-panel-right {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.hud-wrapper {
+  pointer-events: auto;
+  margin: 0;
+}
 .wood-panel {
   pointer-events: auto;
   display: flex;
