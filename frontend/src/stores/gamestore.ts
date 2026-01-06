@@ -37,6 +37,7 @@ export const useGameStore = defineStore('gamestore', () => {
     requireInput: boolean
     forbiddenDir: string | null
     energy: number
+    duelActive: boolean
   }>({
     ok: false,
     players: [],
@@ -53,7 +54,8 @@ export const useGameStore = defineStore('gamestore', () => {
     movingFigure: null,
     requireInput: false,
     forbiddenDir: null,
-    energy: 0
+    energy: 0,
+    duelActive: false
   })
   const figures = ref<IPlayerFigure[]>([])
   const ingameMoveEvent = ref<IFrontendNachrichtEvent>()
@@ -131,6 +133,11 @@ export const useGameStore = defineStore('gamestore', () => {
                  gameData.energy = newVal ?? 0;
                  console.log(`Neue Sprungenergie gespeichert: ${gameData.energy}`);
                }
+            }
+            // DUEL / MINIGAME START
+            else if (event.operation === 'DUEL_PREPARE') {
+                console.log("DUEL_PREPARE Event empfangen!");
+                gameData.duelActive = true;
             }
           }
           else if (event.typ === 'LOBBY') {
@@ -348,6 +355,7 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.players = []
     gameData.ok = false
     gameData.gameOver = null
+    gameData.duelActive = false
     stopCountdown()
 
     localStorage.removeItem('gameData')
