@@ -1,17 +1,13 @@
 <script setup lang="ts">
 import { TresCanvas } from '@tresjs/core'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import TheRock from './models/TheRock.vue'
-import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
-import TheGrass from './models/TheGrass.vue'
 import ThePlayerFigureCensored from './ThePlayerFigureCensored.vue'
 import TheTreeCensored from './TheTreeCensored.vue'
-import Barrier from './models/Barrier.vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 import ThePlayerFigure from './ThePlayerFigure.vue'
-import ThePawn from './models/ThePawn.vue'
 
 const figures = ref<IPlayerFigure[]>([])
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER'
@@ -37,50 +33,8 @@ const props = defineProps<{
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 const gameStore = useGameStore()
 const gameCode = gameStore.gameData.gameCode
-const isLoading = ref(true)
 const CELL_SIZE = 2
-const board = ref<Board | null>(null)
 const myId = gameStore.gameData.playerId
-
-/*
-async function getBoardFromBackend(): Promise<Board | null> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/board?code=${gameCode}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-
-    const text = await response.text()
-    if (!text) return null
-
-    const data = JSON.parse(text) as Board
-    console.log('MapBarrierEditor: Board received', data)
-    return data
-  } catch (err) {
-    console.error('MapBarrierEditor: Error getting board:', err)
-    return null
-  }
-}
-
-onMounted(async () => {
-  if (board.value) {
-    console.log('Spielfeld ist bereits gefetcht worden (Wenn das in Konsole steht wird mehrmals das Spielfeld gefetcht statt einmalig zu beginn also problem)')
-    return
-  }
-  isLoading.value = true
-  const fetched = await getBoardFromBackend()
-  if (fetched) {
-    board.value = fetched
-  } else {
-    console.error('MapBarrierEditor: Board konnte nicht geladen werden.')
-  }
-  isLoading.value = false
-})
-*/
 
 // Funktion zum Klicken auf einer Zelle aus Map, um die neue Position der Barriere auszuwählen
 async function onCellClick(cell: Field) {

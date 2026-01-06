@@ -10,6 +10,8 @@ import TheMapBarrierEditor from '@/components/playingfield/TheMapBarrierEditor.v
 import { NodeFunctionInput } from 'three/webgpu'
 import { storeToRefs } from 'pinia'
 import { useGameStore } from '@/stores/gamestore'
+import PauseMenu from '@/components/PauseMenu.vue'
+import EnergyBar from '@/components/playingfield/EnergyBar.vue'
 
 const gameStore = useGameStore()
 const { figures } = storeToRefs(gameStore)
@@ -17,12 +19,10 @@ const gridRef = ref<any>(null)
 const sichtbar = ref(false)
 
 const liveBoard = computed(() => {
-  return gridRef.value?.board || { cols: 11, rows: 8, cells: [] }
+  return gridRef.value?.board ?? null
 })
 
-const liveFigures = computed(() => {
-  return gridRef.value?.grid || { cols: 11, rows: 8, cells: [] }
-})
+const liveFigures = computed(() => gridRef.value?.figures ?? [])
 
 // Spielstatus ueberwachen, um OEffnen und Schließen des Maps zu steuern
 watch(
@@ -52,6 +52,10 @@ function closeCensoredMap() {
 const isBusy = ref(false)
 const isSavingEnergy = ref(false) // Nur für Energie
 const cooldownSeconds = ref(3) // Default 3s, wird überschrieben
+
+// Energie aus Stores gameData aber reaktiv
+const energy = computed(() => gameStore.gameData.energy)
+const maxEnergy = 10 // !!! Max-Energie sollte eigentlich irgendwo anders herkommen
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -142,37 +146,48 @@ function startCooldownTimer() {
 
     <!-- Popup конца игры -->
     <PopupSpielende />
+    <PauseMenu />
 
     <!-- UI Overlay -->
     <div class="pointer-events-none absolute inset-0 flex items-start m-2 z-50">
       <div
         class="pointer-events-auto flex w-80 flex-col gap-6 rounded-2xl bg-black/40 p-4 backdrop-blur-sm border border-white/10"
       >
+        <!-- Dice -->
         <div class="flex flex-col items-center gap-4">
           <div class="h-40 w-40 relative">
             <Dice3D />
           </div>
 
-          <RollButton :is-loading="isBusy" @trigger="onRoll" />
+          <!-- Buttons -->
+          <div class="flex flex-row gap-2 w-full justify-center">
+            <RollButton :is-loading="isBusy" @trigger="onRoll" />
+
+            <CollectEnergyButton :is-loading="isSavingEnergy" @trigger="saveEnergy" />
+          </div>
+
+          <!-- Map button -->
+          <button
+            class="mt-2 rounded-xl bg-green-700 px-4 py-2 text-white font-bold"
+            @click="openCensoredMap"
+          >
+            🗺️ Map öffnen
+          </button>
         </div>
       </div>
     </div>
 
-    <div class="absolute bottom-4 right-4 z-10">
-      <button class="open p-2 bg-green-600 text-white rounded-lg" @click="openCensoredMap">
-        open map
-      </button>
+    <div class="energy-bar-container pointer-events-none absolute m-2 z-50">
+      <EnergyBar :max-energy="maxEnergy" :current-energy="energy"></EnergyBar>
     </div>
 
-    <div v-if="sichtbar" class="absolute inset-0 bg-black/80 z-20 flex items-center justify-center">
-      <div class="h-[80vh] w-[80vw] bg-[#222] rounded-xl relative">
-        <TheMapBarrierEditor v-if="liveBoard" :board="liveBoard" :figures="figures" />
-        <button
-          class="absolute top-4 right-4 bg-red-600 text-white p-2 rounded-full z-30"
-          @click="closeCensoredMap"
-        >
-          X
-        </button>
+    <!-- Map Modal -->
+    <div v-if="sichtbar" class="modal-overlay" @click.self="closeCensoredMap">
+      <div class="map-modal">
+        <button class="close-seal" @click="closeCensoredMap">✕</button>
+        <div class="map-content">
+          <TheMapBarrierEditor :board="liveBoard" :figures="liveFigures" />
+        </div>
       </div>
     </div>
   </div>
@@ -317,5 +332,14 @@ function startCooldownTimer() {
   width: 100%;
   height: 100%;
   padding: 20px;
+}
+
+.energy-bar-container {
+  bottom: 2%;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
 }
 </style>
