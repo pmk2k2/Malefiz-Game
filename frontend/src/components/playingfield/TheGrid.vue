@@ -45,7 +45,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 // Animationqueue
 const ANIMATION_DURATION = 300   // laenge der Animation in ms
-const { queueMove, queueRotation } = useAnimationQueue()
+const { queueMove, queueRotation, vertJump } = useAnimationQueue()
 
 // Camera controls
 const camRef = shallowRef<TresObject | null>(null)
@@ -71,6 +71,12 @@ const allPlayers = computed(() => {
     }
   })
   return Array.from(playersMap.values())
+})
+
+// Prüft, ob die aktuell gesteuerte Figur gerade springt
+const isCurrentlyJumping = computed(() => {
+  const currentFig = ownFigures.value[figureControlInd]
+  return currentFig?.currentAnim?.isJump === true
 })
 
 onMounted(async () => {
@@ -281,42 +287,33 @@ onBeforeRender(({ delta }) => {
 
     const [x, y, z] = fig.position
     if(y == undefined) return
+
+    // Position der Kamera immer an die Figur heften
     cam.position.set(x, camHeight + (y - 0.2), z)
 
-    /*
-    let lookDir = 0
-    console.log("Blickrichtung Kamera/Figur: ", fig.orientation)
-    switch (fig.orientation) {
-      case 'north':
-        lookDir = 0
-        figureViewDir.value = 0
-        break
-      case 'east':
-        lookDir = -0.5
-        figureViewDir.value = 1
-        break
-      case 'south':
-        lookDir = 1
-        figureViewDir.value = 2
-        break
-      case 'west':
-        lookDir = 0.5
-        figureViewDir.value = 3
-        break
-    }
-    */
-    //console.log("Figur Rotation fuer Kamera: ", ownFigures.value[figureControlInd].viewDirRot)
-    cam.rotation.set(0, Math.PI * fig.viewDirRot, 0)
+    // Nur die Rotation synchronisieren, wenn kein Sprung aktiv ist
+    const isJumping = fig.currentAnim?.isJump === true
+
+    if (!isJumping) {
+      // Nur wenn nicht gesprungen wird, wird die Figur gezwungen in die Laufrichtung zu schauen
+      cam.rotation.set(0, Math.PI * fig.viewDirRot, 0)
+    } 
   } else {
+    // Vogelperspektive
     cam.position.set(default_cam_pos[0], default_cam_pos[1], default_cam_pos[2])
     cam.lookAt(0, 0, 0)
   }
-//}
 })
 
 function onKeyDown(event: KeyboardEvent) {
+  // Wenn gesprungen wird, keine Tasteneingaben möglich
+  if (isCurrentlyJumping.value) {
+    return 
+  }
+
   const key = event.key
   const numOwnFigures = ownFigures.value.length
+
 
   if (key === 'ArrowRight' || key === 'ArrowLeft') {
     event.preventDefault()
@@ -333,6 +330,20 @@ function onKeyDown(event: KeyboardEvent) {
 
     if (egoPersp.value) {
       //updateCam()
+    }
+  }
+
+  if (key === ' ') { 
+    console.log("Leertaste gedrückt, versuche Sprung für Index:", figureControlInd);
+    event.preventDefault() // Verhindert das Scrollen der Seite
+    
+    const fig = ownFigures.value[figureControlInd]
+    if (fig) {
+      // Der Index der Figur wird im globalen figures-Array vom Store gesucht
+      const globalIndex = figures.value.findIndex(f => f.id === fig.id)
+      if (globalIndex !== -1) {
+        vertJump(globalIndex, 2000) 
+      }
     }
   }
 
@@ -451,6 +462,12 @@ function rotateCurrentFigure(rot: number) {
 
 // Methode, damit die Bewegungsrichtung an den Server geschickt wird
 async function sendMoveDirection() {
+  // Abbruch, wenn die Figur gerade in der Luft ist
+  if (isCurrentlyJumping.value) {
+    console.log("Blockiert: Figur springt gerade.")
+    return
+  }
+
   // Wenn move nicht erlaubt ist -> Abbruch
   if(!gameStore.gameData.moveChoiceAllowed) {
     console.log("---> Bewegung gerade nicht erlaubt")
@@ -528,7 +545,17 @@ async function sendMoveDirection() {
 <template>
   <!-- TresCanvas clear-color="#87CEEB" class="w-full h-full" -->
     <TresPerspectiveCamera ref="camRef" :position="default_cam_pos" :look-at="[0, 0, 0]" />
-    <OrbitControls v-if="!egoPersp" />
+    <!-- Wenn Egoperspektive und man im Sprung ist, kann frei geschaut werden, sonst nicht-->
+    <OrbitControls
+    ref="orbitRef"
+    v-if="!egoPersp || (egoPersp && ownFigures[figureControlInd]?.currentAnim?.isJump)"
+    :enablePan="false"
+    :enableZoom="false"
+    :enableDamping="true"
+    :minPolarAngle="0"
+    :maxPolarAngle="Math.PI"
+    :rotateSpeed="0.6"
+  />
 
     <TresDirectionalLight :position="[20, 40, 10]" :intensity="1.5" />
 

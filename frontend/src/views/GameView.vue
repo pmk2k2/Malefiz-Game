@@ -54,12 +54,23 @@ onMounted(async () => {
   }
 })
 
+const isCurrentlyJumping = computed(() => {
+  const playerId = gameStore.gameData.playerId
+  if (!playerId) return false
+
+  // Es wird in allen Figuren gesucht, ob eine Figur des Spielers gerade die Animation 'isJump' hat
+  return gameStore.figures.some(fig => 
+    fig.playerId === playerId && 
+    fig.currentAnim?.isJump === true
+  )
+})
+
 async function onRoll(id: string) {
   const { gameCode, playerId } = gameStore.gameData
 
   // Sicherheitscheck
   if (!gameCode || !playerId) return
-  if(isBusy.value) return // Kein Doppelklick möglich
+  if(isBusy.value || isCurrentlyJumping.value) return 
 
 
   isBusy.value = true
@@ -106,6 +117,7 @@ function startCooldownTimer() {
         </div>
         <RollButton 
           :is-loading="isBusy" 
+          :is-jumping="isCurrentlyJumping"
           @trigger="onRoll" 
         />
 
