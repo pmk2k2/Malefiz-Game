@@ -1,40 +1,52 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import RollButton from '@/components/RollButton.vue'
-import CollectEnergyButton from '@/components/CollectEnergyButton.vue' 
+import CollectEnergyButton from '@/components/CollectEnergyButton.vue'
 import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import TheGrid from '@/components/playingfield/TheGrid.vue'
 import PopupSpielende from '@/components/playingfield/PopupSpielende.vue'
 import TheMapBarrierEditor from '@/components/playingfield/TheMapBarrierEditor.vue'
-import { NodeFunctionInput } from 'three/webgpu';
+import { NodeFunctionInput } from 'three/webgpu'
+import { storeToRefs } from 'pinia'
+import { useGameStore } from '@/stores/gamestore'
 
+const gameStore = useGameStore()
+const { figures } = storeToRefs(gameStore)
 const gridRef = ref<any>(null)
 const sichtbar = ref(false)
 
-const liveGrid = computed(() => {
-  return gridRef.value?.grid || { cols: 11, rows: 8, cells: [] }
+const liveBoard = computed(() => {
+  return gridRef.value?.board || { cols: 11, rows: 8, cells: [] }
 })
 
 const liveFigures = computed(() => {
-  return gridRef.value?.figures || []
+  return gridRef.value?.grid || { cols: 11, rows: 8, cells: [] }
 })
 
+// Spielstatus ueberwachen, um OEffnen und Schließen des Maps zu steuern
+watch(
+  () => gameStore.gameState,
+  (newState) => {
+    if (newState === 'BARRIER_PLACEMENT') {
+      sichtbar.value = true
+      console.log('Auto Öffnen: Barriere versetzen...')
+    } else if (newState === 'RUNNING') {
+      sichtbar.value = false
+      console.log('Auto Schließen: Spiel läuft weiter...')
+    }
+  },
+)
 
 function openCensoredMap() {
-  sichtbar.value = true;
-  console.log("CensoredMap geöffnet")
+  sichtbar.value = true
+  console.log('CensoredMap geöffnet')
 }
 
 function closeCensoredMap() {
   sichtbar.value = false
-  console.log("CensoredMap geschlossen")
+  console.log('CensoredMap geschlossen')
 }
-
-import { useGameStore } from '@/stores/gamestore'
-
-
-const gameStore = useGameStore()
 
 // Steuert alles: Button-Animation, Disabled-State und Logik
 const isBusy = ref(false)
@@ -42,7 +54,6 @@ const isSavingEnergy = ref(false) // Nur für Energie
 const cooldownSeconds = ref(3) // Default 3s, wird überschrieben
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-
 
 // Cooldown-Zeit beim Start laden
 onMounted(async () => {
@@ -52,7 +63,7 @@ onMounted(async () => {
       cooldownSeconds.value = await res.json()
     }
   } catch (e) {
-    console.error("Cooldown konnte nicht geladen werden", e)
+    console.error('Cooldown konnte nicht geladen werden', e)
   }
 })
 
@@ -61,12 +72,11 @@ async function onRoll(id: string) {
 
   // Sicherheitscheck
   if (!gameCode || !playerId) return
-  if(isBusy.value || isSavingEnergy.value) return // Kein Doppelklick möglich und nicht während energie gesammelt wird
-
+  if (isBusy.value || isSavingEnergy.value) return // Kein Doppelklick möglich und nicht während energie gesammelt wird
 
   isBusy.value = true
 
-    try {
+  try {
     // Würfelwurf (Backend & 3D Animation)
     // Warten auf die Animation, aber der Button bleibt gesperrt
     await rollDice(gameCode, playerId)
@@ -74,11 +84,10 @@ async function onRoll(id: string) {
     // Der Timer startet für den restlichen Cooldown
     // Die Animation im Button läuft weiter, weil isBusy true bleibt
     startCooldownTimer()
-
   } catch (e) {
-    console.error("Fehler beim Würfeln", e)
+    console.error('Fehler beim Würfeln', e)
     // Bei Fehler: Button sofort wieder freigeben oder Fehlermeldung zeigen
-    isBusy.value = false 
+    isBusy.value = false
   }
 }
 
@@ -88,15 +97,15 @@ async function saveEnergy() {
   if (!gameCode || !playerId) return
 
   //prüfen ob Button blockiert ist
-  if(isBusy.value || isSavingEnergy.value) return
+  if (isBusy.value || isSavingEnergy.value) return
 
   // Sucht nach Figuren der Spieler
   const myFigure = liveFigures.value.find((f: any) => f.playerId === playerId)
-  isSavingEnergy.value = true 
+  isSavingEnergy.value = true
 
   try {
-    //Ziel URL 
-    const url = `${API_BASE_URL}/move/${gameCode}`;
+    //Ziel URL
+    const url = `${API_BASE_URL}/move/${gameCode}`
 
     //aufruf an Backend um im Spiel Energie zu sammeln anstatt zu ziehen
     const response = await fetch(url, {
@@ -104,11 +113,11 @@ async function saveEnergy() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         playerId: playerId,
-        direction: "north", 
-        collectEnergy: true 
-      })
+        direction: 'north',
+        collectEnergy: true,
+      }),
     })
-  } catch(e) {
+  } catch (e) {
     console.error(e)
   } finally {
     isSavingEnergy.value = false
@@ -120,9 +129,8 @@ function startCooldownTimer() {
   setTimeout(() => {
     // Erst hier hört die Animation auf und der Button wird wieder klickbar
     isBusy.value = false
-  }, cooldownSeconds.value * 1000) 
+  }, cooldownSeconds.value * 1000)
 }
-
 </script>
 
 <template>
@@ -138,58 +146,37 @@ function startCooldownTimer() {
     <!-- UI Overlay -->
     <div class="pointer-events-none absolute inset-0 flex items-start m-2 z-50">
       <div
-        class="pointer-events-auto flex w-96 flex-col gap-6 rounded-2xl
-               bg-black/40 p-4 backdrop-blur-sm border border-white/10"
+        class="pointer-events-auto flex w-80 flex-col gap-6 rounded-2xl bg-black/40 p-4 backdrop-blur-sm border border-white/10"
       >
-        <!-- Dice -->
         <div class="flex flex-col items-center gap-4">
           <div class="h-40 w-40 relative">
             <Dice3D />
           </div>
 
-          <!-- Buttons -->
-          <div class="flex flex-row gap-2 w-full justify-center">
-            <RollButton
-              :is-loading="isBusy"
-              @trigger="onRoll"
-            />
-
-            <CollectEnergyButton
-              :is-loading="isSavingEnergy"
-              @trigger="saveEnergy"
-            />
-          </div>
-
-          <!-- Map button -->
-          <button
-            class="mt-2 rounded-xl bg-green-700 px-4 py-2 text-white font-bold"
-            @click="openCensoredMap"
-          >
-            🗺️ Map öffnen
-          </button>
+          <RollButton :is-loading="isBusy" @trigger="onRoll" />
         </div>
       </div>
     </div>
 
-    <!-- Map Modal -->
-    <div
-      v-if="sichtbar"
-      class="modal-overlay"
-      @click.self="closeCensoredMap"
-    >
-      <div class="map-modal">
-        <button class="close-seal" @click="closeCensoredMap">✕</button>
-        <div class="map-content">
-          <TheMapBarrierEditor
-            :grid="liveGrid"
-            :figures="liveFigures"
-          />
-        </div>
+    <div class="absolute bottom-4 right-4 z-10">
+      <button class="open p-2 bg-green-600 text-white rounded-lg" @click="openCensoredMap">
+        open map
+      </button>
+    </div>
+
+    <div v-if="sichtbar" class="absolute inset-0 bg-black/80 z-20 flex items-center justify-center">
+      <div class="h-[80vh] w-[80vw] bg-[#222] rounded-xl relative">
+        <TheMapBarrierEditor v-if="liveBoard" :board="liveBoard" :figures="figures" />
+        <button
+          class="absolute top-4 right-4 bg-red-600 text-white p-2 rounded-full z-30"
+          @click="closeCensoredMap"
+        >
+          X
+        </button>
       </div>
     </div>
   </div>
 </template>
-
 
 <style scoped>
 .game-scene {
@@ -197,9 +184,8 @@ function startCooldownTimer() {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background: #0a0f1a; 
+  background: #0a0f1a;
 }
-
 
 .ui-panel-left {
   position: absolute;
@@ -216,16 +202,23 @@ function startCooldownTimer() {
   align-items: center;
   gap: 20px;
   padding: 25px;
-  
- 
+
   background-color: #3d2b1f;
-  background-image: 
-    linear-gradient(to bottom, rgba(0,0,0,0.3), transparent),
-    repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(0,0,0,0.1) 39px, rgba(0,0,0,0.1) 40px);
-  
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.3), transparent),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 38px,
+      rgba(0, 0, 0, 0.1) 39px,
+      rgba(0, 0, 0, 0.1) 40px
+    );
+
   border: 4px solid #2d1b0d;
   border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 0 15px rgba(0,0,0,0.5);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.6),
+    inset 0 0 15px rgba(0, 0, 0, 0.5);
 }
 
 .dice-container {
@@ -236,9 +229,8 @@ function startCooldownTimer() {
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
 }
-
 
 .ui-controls-bottom {
   position: absolute;
@@ -248,7 +240,7 @@ function startCooldownTimer() {
 }
 
 .map-btn {
-  background: #2d4d19; 
+  background: #2d4d19;
   color: #f0e2d0;
   border: 3px solid #1e3311;
   border-bottom-width: 6px;
@@ -263,7 +255,7 @@ function startCooldownTimer() {
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
 }
 
 .map-btn:hover {
@@ -276,7 +268,6 @@ function startCooldownTimer() {
   transform: translateY(2px);
   border-bottom-width: 3px;
 }
-
 
 .modal-overlay {
   position: fixed;
@@ -294,9 +285,9 @@ function startCooldownTimer() {
   width: 85vw;
   height: 85vh;
   background: #1a1a1a;
-  border: 8px solid #3d2b1f; 
+  border: 8px solid #3d2b1f;
   border-radius: 15px;
-  box-shadow: 0 0 50px rgba(0,0,0,1);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 1);
   overflow: hidden;
 }
 
@@ -313,7 +304,7 @@ function startCooldownTimer() {
   font-weight: bold;
   cursor: pointer;
   z-index: 110;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
   transition: transform 0.2s;
 }
 

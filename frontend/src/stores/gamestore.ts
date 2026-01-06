@@ -12,8 +12,7 @@ import type { IBewegung } from '@/services/IBewegung'
 import type { IPlayerFigure } from './IPlayerFigure'
 
 export const useGameStore = defineStore('gamestore', () => {
-
-  console.log("Erstelle Gamestore")
+  console.log('Erstelle Gamestore')
   const { setzeInfo } = useInfo()
   const router = useRouter()
   const countdown = ref<number | null>(null)
@@ -53,7 +52,7 @@ export const useGameStore = defineStore('gamestore', () => {
     movingFigure: null,
     requireInput: false,
     forbiddenDir: null,
-    energy: 0
+    energy: 0,
   })
   const figures = ref<IPlayerFigure[]>([])
   const ingameMoveEvent = ref<IFrontendNachrichtEvent>()
@@ -68,7 +67,7 @@ export const useGameStore = defineStore('gamestore', () => {
       isHost: gameData.isHost,
       isBereit: gameData.isBereit,
       winnerId: gameData.winnerId,
-      gameOver: gameData.gameCode
+      gameOver: gameData.gameCode,
     }),
     saveToLocalStorage,
   )
@@ -78,8 +77,6 @@ export const useGameStore = defineStore('gamestore', () => {
 
   const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
   const stompEnv = (import.meta.env.VITE_STOMP_URL as string) || ''
-
-
 
   function computeSockJsUrl(target: string) {
     if (stompEnv && stompEnv.length) {
@@ -95,7 +92,7 @@ export const useGameStore = defineStore('gamestore', () => {
       return
     }
 
-    const sockJsUrl = computeSockJsUrl("stompbroker")
+    const sockJsUrl = computeSockJsUrl('stompbroker')
 
     stompClient = new Client({
       webSocketFactory: () => new SockJS(sockJsUrl),
@@ -112,28 +109,34 @@ export const useGameStore = defineStore('gamestore', () => {
           console.log('Empfangenes Event:', JSON.stringify(event))
 
           //  Ausschließlich Lobby updates (Joined, left, Countdown usw...)
-          if(event.typ === 'INGAME') {
-            if(event.operation === 'MOVE') {
-              console.log("DING DONG Figur bewegen")
+          if (event.typ === 'INGAME') {
+            if (event.operation === 'MOVE') {
+              console.log('DING DONG Figur bewegen')
               console.log(event)
               ingameMoveEvent.value = event
-            }
-            else if (event.operation === 'GAME_OVER') {
+            } else if (event.operation === 'GAME_OVER') {
               gameData.gameOver = true
               gameData.winnerId = event.id
               disconnect()
             }
             //aktualisiert die energie des lokalen Spielers falls die Event und Player ID übereinstimmt
-            else if(event.operation === 'ENERGY_UPDATED') {
-               console.log("Energie Update empfangen:", event);
-               if(event.id === gameData.playerId) {
-                 const newVal = (event as any).newEnergyValue;
-                 gameData.energy = newVal ?? 0;
-                 console.log(`Neue Sprungenergie gespeichert: ${gameData.energy}`);
-               }
+            else if (event.operation === 'ENERGY_UPDATED') {
+              console.log('Energie Update empfangen:', event)
+              if (event.id === gameData.playerId) {
+                const newVal = (event as any).newEnergyValue
+                gameData.energy = newVal ?? 0
+                console.log(`Neue Sprungenergie gespeichert: ${gameData.energy}`)
+              }
+            } else if (event.operation === 'BARRIER_WAIT') {
+              if (event.id === gameData.playerId) {
+                gameState.value = 'BARRIER_PLACEMENT'
+              } else {
+                console.log('Aus GameStore: Ein anderer Spieler setzt gerade eine Barriere.')
+              }
+            } else if (event.operation === 'BARRIER_PLACED') {
+              gameState.value = 'RUNNING'
             }
-          }
-          else if (event.typ === 'LOBBY') {
+          } else if (event.typ === 'LOBBY') {
             updatePlayerList(gameCode)
 
             //  Countdown starten
@@ -144,10 +147,9 @@ export const useGameStore = defineStore('gamestore', () => {
 
             if (event.operation === 'LEFT' && event.playerName) {
               setzeInfo(`${event.playerName} hat die Lobby verlassen.`) //InfoBox setzen wenn Player die Lobby verlässt
-
             }
-            if(event.operation==='KICKED'){
-              stopCountdown();
+            if (event.operation === 'KICKED') {
+              stopCountdown()
             }
 
             if (event.operation === 'COUNTDOWN_STARTED') {
@@ -170,10 +172,9 @@ export const useGameStore = defineStore('gamestore', () => {
                 }
               }, 500)
             }
-            if (event.operation ==='COUNTDOWN_ABORTED') {
-              stopCountdown();
+            if (event.operation === 'COUNTDOWN_ABORTED') {
+              stopCountdown()
             }
-
 
             // Admin oder Server startet Spiel → kein Countdown, direkt rein
             if (event.operation === 'GAME_RUNNING') {
@@ -203,7 +204,7 @@ export const useGameStore = defineStore('gamestore', () => {
       return
     }
 
-    const sockJsUrl = computeSockJsUrl("persstomp")
+    const sockJsUrl = computeSockJsUrl('persstomp')
 
     persStompClient = new Client({
       webSocketFactory: () => new SockJS(sockJsUrl),
@@ -221,16 +222,16 @@ export const useGameStore = defineStore('gamestore', () => {
           console.log('Empfangenes Event:', JSON.stringify(event))
 
           if (event.type === 'DIRECTION') {
-            console.log("DIRECTION Event empfangen")
+            console.log('DIRECTION Event empfangen')
             gameData.requireInput = true
             gameData.moveChoiceAllowed = true
-            if(event.figureId) {
+            if (event.figureId) {
               console.log(`Figur ${event.figureId} soll was machen`)
               console.log(`Aber nicht in Richtung ${event.forbiddenDir}`)
               gameData.movingFigure = event.figureId
               gameData.forbiddenDir = event.forbiddenDir
             } else {
-              console.log("Irgendeine Figur soll was machen")
+              console.log('Irgendeine Figur soll was machen')
               gameData.movingFigure = null
               gameData.forbiddenDir = null
             }
@@ -258,7 +259,8 @@ export const useGameStore = defineStore('gamestore', () => {
     }
 
     try {
-      const res = await fetch(`${apiBase}/game/start`, {        method: 'POST',
+      const res = await fetch(`${apiBase}/game/start`, {
+        method: 'POST',
         body: JSON.stringify({
           code: gameCode,
           playerId: playerId,

@@ -3,7 +3,6 @@ package de.hsrm.mi.swtpr.milefiz.messaging;
 import java.time.Instant;
 
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
-import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
 public class FrontendNachrichtEvent {
@@ -26,7 +25,8 @@ public class FrontendNachrichtEvent {
         GAME_RUNNING,
         PLAYER_LIMIT_ERROR,
         COUNTDOWN_ABORTED,
-
+        BARRIER_WAIT,
+        BARRIER_PLACED,
         // Ingame-Operationen
         GAME_OVER,
         MOVE,

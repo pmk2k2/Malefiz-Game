@@ -23,6 +23,7 @@ import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
 import de.hsrm.mi.swtpr.milefiz.service.BoardNavigationService.MoveType;
+import de.hsrm.mi.swtpr.milefiz.model.GameState;
 
 @Service
 public class MovementLogicService {
@@ -176,6 +177,8 @@ public class MovementLogicService {
         // Festhalten der Startpositionen (wichtig fuer Frontend-Animation)
         int startI = figure.getGridI();
         int startJ = figure.getGridJ();
+        boolean barrierHit = false;
+
         do {
             boolean moveOver = false; // Zug beendet?
             logger.info("Loopanfang mit stepsCount {}, lastDir {}, allowedDistance {}", stepsCount, lastDir,
@@ -242,10 +245,12 @@ public class MovementLogicService {
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
                     return FigureMoveResult.ok();
-                } else if (allowedDistance == 1) {
-                    // Wenn man genau auf Barriere landet
-                    // Event einleiten
-                    logger.info("Landung genau auf Barriere, tu etwas...");
+                } else if(allowedDistance == 1) {
+                    // Auf Barriere gelandet: Spielstatus ändern und variable auf true setzen
+                    destField.setBarrier(null);
+                    destField.setType(CellType.PATH);
+                    game.setState(GameState.BARRIER_PLACEMENT);
+                    barrierHit = true;
                 }
             }
 
@@ -358,6 +363,8 @@ public class MovementLogicService {
 
             // Anzahl Schritte und Richtung fuer Event anpassen
             stepsCount++;
+
+            if(barrierHit) break;
 
             // Wenn Zug vorbei, direkt aus der Loop ausbrechen
             if (moveOver)
@@ -475,8 +482,7 @@ public class MovementLogicService {
             }
         }
 
-
-
-        return FigureMoveResult.ok();
+        // Eine Nachricht schicken, falls eine Barriere getroffen wurde, damit der Controller das automatische Öffnen des Maps triggern kann.
+        return barrierHit ? FigureMoveResult.ok("BARRIER_HIT") : FigureMoveResult.ok();
     }
 }
