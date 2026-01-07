@@ -174,6 +174,12 @@ export function useAnimationQueue() {
       // Job beenden
       if(rawtime >= 1) {
         console.log("Animation fertig, entferne aus currentAnim")
+        if (state.currentAnim?.bewegung) {
+          if (gameStore.gameData.remainingSteps > 0) {
+            gameStore.gameData.remainingSteps--
+            gameStore.gameData.stepsTaken++
+          }
+        }
         state.currentAnim = null
       }
     })

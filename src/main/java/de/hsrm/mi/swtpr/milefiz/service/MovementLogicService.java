@@ -18,6 +18,7 @@ import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
 import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent.Aktion;
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
+import de.hsrm.mi.swtpr.milefiz.model.Step;
 import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
@@ -37,6 +38,20 @@ public class MovementLogicService {
         this.navService = navService;
     }
 
+    private void sendStepUpdate(
+            String gameCode,
+            String playerId,
+            int totalSteps,
+            int remainingSteps) {
+        publisher.publishEvent(
+                new FrontendNachrichtEvent(
+                        Nachrichtentyp.INGAME,
+                        Operation.STEP_UPDATE,
+                        gameCode,
+                        playerId,
+                        new Step(totalSteps, remainingSteps)));
+    }
+
     public FigureMoveResult moveFigure(Game game, String gameCode, FigureMoveRequest request) {
         // Energie des Spielers
         Player player = game.getPlayerById(request.playerId);
@@ -48,6 +63,7 @@ public class MovementLogicService {
 
         // Hole die echte Zahl aus dem Backend-Speicher
         int allowedDistance = result.getValue();
+        int gegangen = 0;
 
         // Prüfungen ob gewuerfelt wurde
         if (allowedDistance <= 0) {
@@ -151,8 +167,7 @@ public class MovementLogicService {
             // -1 als "startPos" der Bewegung, um startPosition ausserhalb des Feldes zu
             // vermitteln,
             // da Felder im Model nicht < 0 werden koennen
-            Bewegung bew = new Bewegung(-1, -1, startFeld.getI(), startFeld.getJ(), Direction.NORTH, 0,
-                    allowedDistance);
+            Bewegung bew = new Bewegung(-1, -1, startFeld.getI(), startFeld.getJ(), Direction.NORTH, 0);
             var moveEvent = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
                     request.figureId, request.playerId, bew);
             publisher.publishEvent(moveEvent);
@@ -242,6 +257,7 @@ public class MovementLogicService {
 
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
+                    sendStepUpdate(gameCode, request.playerId, gegangen, 0);
                     return FigureMoveResult.ok();
                 } else if (allowedDistance == 1) {
                     // Wenn man genau auf Barriere landet
@@ -275,6 +291,7 @@ public class MovementLogicService {
                     allowedDistance = 0;
                     result.setValue(0);
                     game.setRollForPlayer(request.playerId, 0);
+                    sendStepUpdate(gameCode, request.playerId, gegangen, 0);
                     break;
                 }
 
@@ -321,6 +338,8 @@ public class MovementLogicService {
                     game.getDiceResultById(request.playerId).setValue(allowedDistance);
 
                     stepsCount++;
+                    gegangen++;
+                    sendStepUpdate(gameCode, request.playerId, gegangen, allowedDistance);
                     continue;
                 }
             }
@@ -342,8 +361,7 @@ public class MovementLogicService {
                         Operation.GAME_OVER,
                         gameCode,
                         null));
-                Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount,
-                        allowedDistance);
+                Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
                 var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
                         request.figureId,
                         request.playerId, bew);
@@ -358,6 +376,8 @@ public class MovementLogicService {
 
             // Anzahl Schritte und Richtung fuer Event anpassen
             stepsCount++;
+            gegangen++;
+            sendStepUpdate(gameCode, request.playerId, gegangen, allowedDistance);
 
             // Wenn Zug vorbei, direkt aus der Loop ausbrechen
             if (moveOver)
@@ -386,6 +406,8 @@ public class MovementLogicService {
 
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
+                    sendStepUpdate(gameCode, request.playerId, gegangen, 0);
+
                     break;
                 // return FigureMoveResult.ok();
 
@@ -393,7 +415,7 @@ public class MovementLogicService {
                 case CROSSING:
                     Direction forbiddenDir = navService.getForbiddenDirection(lastDir);
                     Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir,
-                            stepsCount, allowedDistance);
+                            stepsCount);
                     var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
                             request.figureId, request.playerId, bew);
                     publisher.publishEvent(moveEv);
@@ -409,7 +431,7 @@ public class MovementLogicService {
                 case CURVE_EN:
                     // Figur im Frontend bis zur Kurve bewegen
                     Bewegung bew2 = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir,
-                            stepsCount, allowedDistance);
+                            stepsCount);
                     var moveEv2 = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
                             request.figureId, request.playerId, bew2);
                     publisher.publishEvent(moveEv2);
@@ -434,8 +456,7 @@ public class MovementLogicService {
         logger.info("Alle Zuege verbraucht");
 
         // wenn alle Zuege verbraucht sind
-        Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount,
-                allowedDistance);
+        Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
         var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode, request.figureId,
                 request.playerId, bew);
         publisher.publishEvent(moveEv);
@@ -461,8 +482,7 @@ public class MovementLogicService {
                         figure.getGridI(),
                         figure.getGridJ(),
                         null,
-                        0,
-                        allowedDistance);
+                        0);
 
                 FrontendNachrichtEvent duelEvent = new FrontendNachrichtEvent(
                         FrontendNachrichtEvent.Nachrichtentyp.INGAME,

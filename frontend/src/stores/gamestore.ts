@@ -37,7 +37,7 @@ export const useGameStore = defineStore('gamestore', () => {
     requireInput: boolean
     forbiddenDir: string | null
     stepsTaken: number
-    remainingSteps: number | null
+    remainingSteps: number
     totalSteps: number
     energy: number
   }>({
@@ -75,8 +75,6 @@ export const useGameStore = defineStore('gamestore', () => {
       isBereit: gameData.isBereit,
       winnerId: gameData.winnerId,
       gameOver: gameData.gameCode,
-      totalStepsTaken: gameData.stepsTaken,
-      remainingSteps: gameData.remainingSteps,
     }),
     saveToLocalStorage,
   )
@@ -125,11 +123,6 @@ export const useGameStore = defineStore('gamestore', () => {
               console.log("DING DONG Figur bewegen")
               console.log(event)
               ingameMoveEvent.value = event
-
-              if (event.bewegung && typeof event.bewegung.steps === 'number') {
-                gameData.stepsTaken+=event.bewegung.steps
-                gameData.remainingSteps=event.bewegung.remainingSteps
-              }
             }
             else if (event.operation === 'GAME_OVER') {
               gameData.gameOver = true
@@ -145,6 +138,10 @@ export const useGameStore = defineStore('gamestore', () => {
                  console.log(`Neue Sprungenergie gespeichert: ${gameData.energy}`);
                }
             }
+            if (event.operation === 'STEP_UPDATE' && event.step && event.id === gameData.playerId) {
+                gameData.stepsTaken = event.step.totalSteps
+                gameData.remainingSteps = event.step.remainingSteps
+              }
           }
           else if (event.typ === 'LOBBY') {
             updatePlayerList(gameCode)

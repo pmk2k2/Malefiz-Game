@@ -5,6 +5,7 @@ import java.time.Instant;
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
 import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
+import de.hsrm.mi.swtpr.milefiz.model.Step;
 
 public class FrontendNachrichtEvent {
 
@@ -30,6 +31,7 @@ public class FrontendNachrichtEvent {
         // Ingame-Operationen
         GAME_OVER,
         MOVE,
+        STEP_UPDATE,
         ENERGY_UPDATED,
         DUEL_PREPARE
     }
@@ -48,6 +50,7 @@ public class FrontendNachrichtEvent {
     private String figureId;
     private Bewegung bewegung;
     private int newEnergyValue;
+    private Step step;
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -69,7 +72,6 @@ public class FrontendNachrichtEvent {
         this.newEnergyValue = newEnergyValue;
     }
 
-
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName, Instant countdownStartedAt, GameState gameState) {
         this(typ, id, operation, gameCode, playerName);
@@ -85,6 +87,19 @@ public class FrontendNachrichtEvent {
         this.figureId = fId;
         this.id = pId;
         this.bewegung = bew;
+    }
+
+    public FrontendNachrichtEvent(
+            Nachrichtentyp typ,
+            Operation operation,
+            String gameCode,
+            String playerId,
+            Step step) {
+        this.typ = typ;
+        this.operation = operation;
+        this.gameCode = gameCode;
+        this.id = playerId;
+        this.step = step;
     }
 
     public Nachrichtentyp getTyp() {
@@ -171,7 +186,7 @@ public class FrontendNachrichtEvent {
     public Bewegung getBewegung() {
         return bewegung;
     }
-    
+
     public int getNewEnergyValue() {
         return newEnergyValue;
     }
