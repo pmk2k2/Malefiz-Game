@@ -1,5 +1,4 @@
 import type { IPlayerFigure } from "./IPlayerFigure"
-import type { ISpielfigurDTD } from "./ISpielfigurDTD"
 
 export interface ISpielerDTD {
   id: string

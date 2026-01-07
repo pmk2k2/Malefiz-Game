@@ -47,7 +47,7 @@ const selectedFigureId = ref<string | null>(null)
     playerName: null,
     isHost: null,
     counterWert: null,
-    isBereit: null,
+    isBereit: false,
     gameOver: null,
     winnerId: null,
     moveDone: true,
