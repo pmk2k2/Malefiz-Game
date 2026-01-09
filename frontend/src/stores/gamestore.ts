@@ -18,8 +18,8 @@ export const useGameStore = defineStore('gamestore', () => {
   const countdown = ref<number | null>(null)
   const gameState = ref<string>('WAITING')
   let countdownInterval: any = null
-// ID der aktuell ausgewählten Figur (für HUD)
-const selectedFigureId = ref<string | null>(null)
+  // ID der aktuell ausgewählten Figur (für HUD)
+  const selectedFigureId = ref<string | null>(null)
 
   const gameData = reactive<{
     ok: boolean
@@ -139,6 +139,7 @@ const selectedFigureId = ref<string | null>(null)
               }
             } else if (event.operation === 'BARRIER_PLACED') {
               gameState.value = 'RUNNING'
+              ingameMoveEvent.value = event
             }
             // DUEL / MINIGAME START
             else if (event.operation === 'DUEL_PREPARE') {
@@ -412,6 +413,6 @@ const selectedFigureId = ref<string | null>(null)
     resetGameCode,
     triggerGameStart,
     stopCountdown,
-    selectedFigureId
+    selectedFigureId,
   }
 })

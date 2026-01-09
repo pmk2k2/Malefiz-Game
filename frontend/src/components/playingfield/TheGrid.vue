@@ -111,9 +111,18 @@ watch(
 // moveEvents ueberwachen und ausfuehren
 watch(
   () => gameStore.ingameMoveEvent,
-  (newEv) => {
+  async (newEv) => {
     console.log('Neues Move-Event eingetroffen: ', newEv)
     if (!newEv) return
+    // Live-Aktualisierung des Boards, wenn eine Barriere neu positioniert wird
+    if (newEv.operation === 'BARRIER_PLACED') {
+      const fetched = await getBoardFromBackend()
+      if (fetched) {
+        board.value = { ...fetched }
+      }
+      return
+    }
+
     // FrontendNachricht mit Bewegung drin behandeln
     // Anzusteuernde Figur finden
     const index = figures.value.findIndex(
@@ -142,19 +151,6 @@ watch(
     // Orientierung richtig setzen
     if (!figures.value[index]) return
     figures.value[index].orientation = newEv.bewegung.dir.toLowerCase()
-  },
-)
-// Spielstatus ueberwachen, um Board mit neuen Barriere Positionen zu fetchen
-// Problem: Alte Barriere wird nicht gelöscht.. Fetchen von JSON-Board?
-watch(
-  () => gameStore.gameState,
-  async (newState) => {
-    if (newState === 'RUNNING') {
-      const fetched = await getBoardFromBackend()
-      if (fetched) {
-        board.value = { ...fetched }
-      }
-    }
   },
 )
 
@@ -406,7 +402,6 @@ function onRoll(id: string) {
 */
 
 function getCurrentFigureRot() {
-
   if (!ownFigures.value[figureControlInd.value]) return
 
   switch (ownFigures.value[figureControlInd.value]?.orientation) {
@@ -427,7 +422,7 @@ function getCurrentFigureRot() {
 
 function rotateCurrentFigure(rot: number) {
   const fig = ownFigures.value[figureControlInd.value]
-  if(!fig)  return
+  if (!fig) return
 
   getCurrentFigureRot()
   if (rot <= 0) {
@@ -554,8 +549,6 @@ async function sendMoveDirection() {
   }
 }
 
-
-
 const selectedFigure = computed(() => {
   return ownFigures.value[figureControlInd.value] ?? null
 })
@@ -564,7 +557,7 @@ watch(
   (fig) => {
     gameStore.selectedFigureId = fig?.id ?? null
   },
-  { immediate: true }
+  { immediate: true },
 )
 defineExpose({
   board,
