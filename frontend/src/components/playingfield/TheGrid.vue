@@ -566,9 +566,12 @@ watch(
   },
   { immediate: true }
 )
+
 defineExpose({
   board,
+  figures
 })
+
 </script>
 
 <template>

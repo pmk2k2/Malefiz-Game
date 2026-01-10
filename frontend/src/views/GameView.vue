@@ -197,7 +197,7 @@ function startCooldownTimer() {
       <div class="map-modal">
         <button class="close-seal" @click="closeCensoredMap">✕</button>
         <div class="map-content">
-          <TheMapBarrierEditor :board="liveBoard" :figures="liveFigures" />
+          <TheMapBarrierEditor :board="liveBoard" :figures="figures" />
         </div>
       </div>
     </div>
