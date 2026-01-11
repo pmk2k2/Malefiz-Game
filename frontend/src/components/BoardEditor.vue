@@ -33,13 +33,24 @@
 
             <!-- Grid Editor -->
             <div class="grid-container">
-                <div class="grid" :style="{
-                    gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                    gridTemplateRows: `repeat(${rows}, 1fr)`
-                }">
-                    <div v-for="(cell, index) in grid" :key="index" class="cell" :class="cell.type.toLowerCase()"
-                        @click="setCellType(cell)" :title="`(${cell.i}, ${cell.j}) - ${cell.type}`">
-                        <span class="cell-label">{{ getCellEmoji(cell.type) }}</span>
+                <div class="grid-wrapper">
+                    <!-- Direction Labels -->
+                    <div class="direction-label top">
+                        <span class="direction-text">🎯 GOAL SIDE</span>
+                    </div>
+
+                    <div class="grid" :style="{
+                        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                        gridTemplateRows: `repeat(${rows}, 1fr)`
+                    }">
+                        <div v-for="(cell, index) in grid" :key="index" class="cell" :class="cell.type.toLowerCase()"
+                            @click="setCellType(cell)" :title="`Grid: (${cell.i}, ${cell.j}) - ${cell.type}`">
+                            <span class="cell-label">{{ getCellEmoji(cell.type) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="direction-label bottom">
+                        <span class="direction-text">🏁 START SIDE</span>
                     </div>
                 </div>
             </div>
@@ -100,7 +111,8 @@ watch(() => props.isVisible, (visible) => {
 
 function initializeGrid() {
     grid.value = []
-    for (let j = 0; j < rows.value; j++) {
+    // Build grid from bottom to top (reversed j order)
+    for (let j = rows.value - 1; j >= 0; j--) {
         for (let i = 0; i < cols.value; i++) {
             grid.value.push({
                 i,
@@ -114,7 +126,8 @@ function initializeGrid() {
 function resizeGrid() {
     const newGrid: Field[] = []
 
-    for (let j = 0; j < rows.value; j++) {
+    // Build grid from bottom to top (reversed j order)
+    for (let j = rows.value - 1; j >= 0; j--) {
         for (let i = 0; i < cols.value; i++) {
             // Try to keep existing cell data if it exists
             const existing = grid.value.find(c => c.i === i && c.j === j)
@@ -166,6 +179,8 @@ async function confirmBoard() {
     }
 
     // Convert flat grid to 2D array for backend
+    // Grid is already in reversed order (bottom to top), 
+    // so we need to reverse it back for proper j-indexing
     const grid2D: Field[][] = []
     for (let j = 0; j < rows.value; j++) {
         const row: Field[] = []
@@ -377,6 +392,38 @@ function cancel() {
     align-items: center;
     justify-content: center;
     min-height: 0;
+}
+
+.grid-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.direction-label {
+    background: #4d3319;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 2px solid #ffc107;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+}
+
+.direction-label.top {
+    border-color: #f5a623;
+}
+
+.direction-label.bottom {
+    border-color: #4a90e2;
+}
+
+.direction-text {
+    color: #ffc107;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .grid {
