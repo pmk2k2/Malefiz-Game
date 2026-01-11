@@ -30,7 +30,7 @@ interface Board {
   rows: number
   grid: Field[][]
 }
-console.log("Erstelle Grid")
+console.log('Erstelle Grid')
 
 const gameStore = useGameStore()
 const CELL_SIZE = 2
@@ -44,15 +44,15 @@ const currentPlayerId = gameStore.gameData.playerId
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 // Animationqueue
-const ANIMATION_DURATION = 300   // laenge der Animation in ms
+const ANIMATION_DURATION = 300 // laenge der Animation in ms
 const { queueMove, queueRotation } = useAnimationQueue()
 
 // Camera controls
 const camRef = shallowRef<TresObject | null>(null)
 const default_cam_pos: [number, number, number] = [0, 15, 18]
 const camHeight = 1.2
-let figureControlInd = 0
-const egoPersp = ref(false)
+const figureControlInd = ref(0) //figureControlInd als ref geändert, um änderungen reacktiv für HUD und Store zu machen
+const egoPersp = ref(true)
 const figureViewDir = ref(-1)
 
 // Abspielen von Animation etc
@@ -96,12 +96,11 @@ onMounted(async () => {
   isLoading.value = false
   const gameCode = gameStore.gameData.gameCode
   const playerId = gameStore.gameData.playerId
-  if(gameCode != null && playerId != null) {
+  if (gameCode != null && playerId != null) {
     // Websockets fuer Gameupdates und persoenliche Requests
     gameStore.startIngameLiveUpdate(gameCode, playerId)
     gameStore.startLobbyLiveUpdate(gameCode)
   }
-
 })
 
 onUnmounted(() => {
@@ -109,42 +108,59 @@ onUnmounted(() => {
 })
 
 // Schau, ob Eingriff durch Nutzer erforderlich ist
-watch(() => gameStore.gameData.requireInput, (newVal) => {
-  // Irgendwas in der UI anzeigen lassen ig
-  console.log("Eingriff durch Nutzer erforderlich? ", newVal)
-})
+watch(
+  () => gameStore.gameData.requireInput,
+  (newVal) => {
+    // Irgendwas in der UI anzeigen lassen ig
+    console.log('Eingriff durch Nutzer erforderlich? ', newVal)
+  },
+)
 
 // moveEvents ueberwachen und ausfuehren
-watch(() => gameStore.ingameMoveEvent, (newEv) => {
-  console.log("Neues Move-Event eingetroffen: ", newEv)
-  if(!newEv)  return
-  // FrontendNachricht mit Bewegung drin behandeln
-  // Anzusteuernde Figur finden
-  const index = figures.value.findIndex((fig) => fig.id === newEv.figureId && fig.playerId === newEv.id)
-  // Logikkoordinaten in Spielkoordinaten umwandeln
-  //console.log("Startpos aus Ev: ", newEv?.bewegung.startX, newEv?.bewegung.startZ)
-  if(newEv.bewegung.startX == null || newEv.bewegung.startZ == null)  return
-  if(!(newEv.bewegung.startX < 0 || newEv.bewegung.startZ < 0)) {
-    const startPosField = cellToField( {i: newEv.bewegung.startX, j: newEv.bewegung.startZ} )
-    newEv.bewegung.startX = startPosField[0]
-    newEv.bewegung.startZ = startPosField[2]
-  } else {
-    newEv.bewegung.startX = null
-    newEv.bewegung.startZ = null
-  }
-  const endPosField = cellToField( {i: newEv.bewegung.endX, j: newEv.bewegung.endZ} )
-  newEv.bewegung.endX = endPosField[0]
-  newEv.bewegung.endZ = endPosField[2]
-  /*
+watch(
+  () => gameStore.ingameMoveEvent,
+  async (newEv) => {
+    console.log('Neues Move-Event eingetroffen: ', newEv)
+    if (!newEv) return
+    // Live-Aktualisierung des Boards, wenn eine Barriere neu positioniert wird
+    if (newEv.operation === 'BARRIER_PLACED') {
+      const fetched = await getBoardFromBackend()
+      if (fetched) {
+        board.value = { ...fetched }
+      }
+      return
+    }
+
+    // FrontendNachricht mit Bewegung drin behandeln
+    // Anzusteuernde Figur finden
+    const index = figures.value.findIndex(
+      (fig) => fig.id === newEv.figureId && fig.playerId === newEv.id,
+    )
+    // Logikkoordinaten in Spielkoordinaten umwandeln
+    //console.log("Startpos aus Ev: ", newEv?.bewegung.startX, newEv?.bewegung.startZ)
+    if (newEv.bewegung.startX == null || newEv.bewegung.startZ == null) return
+    if (!(newEv.bewegung.startX < 0 || newEv.bewegung.startZ < 0)) {
+      const startPosField = cellToField({ i: newEv.bewegung.startX, j: newEv.bewegung.startZ })
+      newEv.bewegung.startX = startPosField[0]
+      newEv.bewegung.startZ = startPosField[2]
+    } else {
+      newEv.bewegung.startX = null
+      newEv.bewegung.startZ = null
+    }
+    const endPosField = cellToField({ i: newEv.bewegung.endX, j: newEv.bewegung.endZ })
+    newEv.bewegung.endX = endPosField[0]
+    newEv.bewegung.endZ = endPosField[2]
+    /*
   console.log("Startpos aus Ev neu: ", newEv?.bewegung.startX, newEv?.bewegung.startZ)
   console.log("endpos aus Ev neu: ", newEv?.bewegung.endX, newEv?.bewegung.endZ)
   */
-  // Bewegung in Queue anhaengen
-  queueMove(index, newEv.bewegung, ANIMATION_DURATION)
-  // Orientierung richtig setzen
-  if(!figures.value[index]) return
-  figures.value[index].orientation = newEv.bewegung.dir.toLowerCase()
-})
+    // Bewegung in Queue anhaengen
+    queueMove(index, newEv.bewegung, ANIMATION_DURATION)
+    // Orientierung richtig setzen
+    if (!figures.value[index]) return
+    figures.value[index].orientation = newEv.bewegung.dir.toLowerCase()
+  },
+)
 
 async function sendBoard(boardData: Board) {
   try {
@@ -208,7 +224,7 @@ async function fetchGameState() {
         currentAnim: null,
         animQueue: [],
         position: [x, y, z],
-        viewDirRot: 0
+        viewDirRot: 0,
       } as IPlayerFigure
     })
     console.log('Figure geladen und positioniert:', figures.value.length)
@@ -276,7 +292,6 @@ function calculateHomeCenter(playerId: string) {
   return _calculateHomeBaseOffset(playerIndex, playersCount)
 }
 
-
 // war: updateCam()
 // so ists besser, da nicht jedes mal updateCam() aufgerufen werden muss
 onBeforeRender(({ delta }) => {
@@ -284,11 +299,11 @@ onBeforeRender(({ delta }) => {
   if (!cam) return
 
   if (egoPersp.value) {
-    const fig = ownFigures.value[figureControlInd]
+    const fig = ownFigures.value[figureControlInd.value]
     if (!fig) return
 
     const [x, y, z] = fig.position
-    if(y == undefined) return
+    if (y == undefined) return
     cam.position.set(x, camHeight + (y - 0.2), z)
 
     /*
@@ -319,7 +334,7 @@ onBeforeRender(({ delta }) => {
     cam.position.set(default_cam_pos[0], default_cam_pos[1], default_cam_pos[2])
     cam.lookAt(0, 0, 0)
   }
-//}
+  //}
 })
 
 function onKeyDown(event: KeyboardEvent) {
@@ -337,12 +352,10 @@ function onKeyDown(event: KeyboardEvent) {
     if (numOwnFigures === 0) return
 
     if (key === 'ArrowRight') {
-      figureControlInd = (figureControlInd + 1) % numOwnFigures
+      figureControlInd.value = (figureControlInd.value + 1) % numOwnFigures
     } else if (key === 'ArrowLeft') {
-      figureControlInd = (figureControlInd - 1 + numOwnFigures) % numOwnFigures
+      figureControlInd.value = (figureControlInd.value - 1 + numOwnFigures) % numOwnFigures
     }
-
-
 
     if (egoPersp.value) {
       //updateCam()
@@ -369,11 +382,10 @@ function onKeyDown(event: KeyboardEvent) {
     sendMoveDirection()
   }
 
-
   if (key === 'e' || key === 'E') {
     egoPersp.value = !egoPersp.value
     if (egoPersp.value && numOwnFigures > 0) {
-      figureControlInd = 0
+      figureControlInd.value = 0
     }
     //updateCam()
   }
@@ -403,29 +415,30 @@ function onRoll(id: string) {
 */
 
 function getCurrentFigureRot() {
-  if(!ownFigures.value[figureControlInd]) return
+  if (!ownFigures.value[figureControlInd.value]) return
 
-  switch(ownFigures.value[figureControlInd]?.orientation) {
+  switch (ownFigures.value[figureControlInd.value]?.orientation) {
     case 'north':
       figureViewDir.value = 0
-      break;
+      break
     case 'east':
       figureViewDir.value = 1
-      break;
+      break
     case 'south':
       figureViewDir.value = 2
-      break;
+      break
     case 'west':
       figureViewDir.value = 3
-      break;
+      break
   }
 }
 
 function rotateCurrentFigure(rot: number) {
-  const fig = ownFigures.value[figureControlInd]
-  if(!fig)  return
+  const fig = ownFigures.value[figureControlInd.value]
+  if (!fig) return
+
   getCurrentFigureRot()
-  if(rot <= 0) {
+  if (rot <= 0) {
     figureViewDir.value = (figureViewDir.value - 1 + 4) % 4
   } else {
     figureViewDir.value = (figureViewDir.value + 1) % 4
@@ -433,57 +446,70 @@ function rotateCurrentFigure(rot: number) {
   //const startRot = ownFigures.value[figureControllInd].viewDirRot
   const startRot = fig.viewDirRot
   let targetRot
-  switch(figureViewDir.value) {
+  switch (figureViewDir.value) {
     case 0:
       //ownFigures.value[figureControlInd].orientation = 'north'
       fig.orientation = 'north'
       targetRot = 0
-      break;
+      break
     case 1:
       //ownFigures.value[figureControlInd].orientation = 'east'
       fig.orientation = 'east'
       targetRot = -0.5
-      break;
+      break
     case 2:
       //ownFigures.value[figureControlInd].orientation = 'south'
       fig.orientation = 'south'
       targetRot = 1
-      break;
+      break
     case 3:
       //ownFigures.value[figureControlInd].orientation = 'west'
       fig.orientation = 'west'
       targetRot = 0.5
-      break;
+      break
   }
-  console.log("Rotation von Figur: ", startRot, targetRot)
-  const index = figures.value.findIndex((figInd) => figInd.id === fig.id && figInd.playerId === fig.playerId)
-  if(targetRot === undefined) return
+  console.log('Rotation von Figur: ', startRot, targetRot)
+  const index = figures.value.findIndex(
+    (figInd) => figInd.id === fig.id && figInd.playerId === fig.playerId,
+  )
+  if (targetRot === undefined) return
   queueRotation(index, startRot, targetRot, ANIMATION_DURATION / 2)
-
 }
 
 // Methode, damit die Bewegungsrichtung an den Server geschickt wird
 async function sendMoveDirection() {
   // Wenn move nicht erlaubt ist -> Abbruch
-  if(!gameStore.gameData.moveChoiceAllowed) {
-    console.log("---> Bewegung gerade nicht erlaubt")
-    return;
+  if (!gameStore.gameData.moveChoiceAllowed) {
+    console.log('---> Bewegung gerade nicht erlaubt')
+    return
   }
 
   // Wenn der versuchte Move nicht der zu bewegenden Figur entspricht -> Abbruch
-  console.log(gameStore.gameData.moveDone, gameStore.gameData.movingFigure, ownFigures.value[figureControlInd]?.id)
-  if(gameStore.gameData.movingFigure) {
-    if(gameStore.gameData.movingFigure !== ownFigures.value[figureControlInd]?.id) {
-      alert("Du musst deinen Zug mit der Figur beenden!")
+
+  console.log(
+    gameStore.gameData.moveDone,
+    gameStore.gameData.movingFigure,
+    ownFigures.value[figureControlInd.value]?.id,
+  )
+  if (gameStore.gameData.movingFigure) {
+    if (gameStore.gameData.movingFigure !== ownFigures.value[figureControlInd.value]?.id) {
+      alert('Du musst deinen Zug mit der Figur beenden!')
       return
     }
   }
 
   // Wenn versucht wird in "verbotene" Richtung zu gehen
-  console.log(`--- ${gameStore.gameData.forbiddenDir} ${ownFigures.value[figureControlInd]?.orientation}`)
-  if(gameStore.gameData.forbiddenDir) {
-    if(gameStore.gameData.forbiddenDir.toLowerCase() === ownFigures.value[figureControlInd]?.orientation) {
-      alert("Du darfst nicht zurueck gehen!")
+
+  console.log(
+    `--- ${gameStore.gameData.forbiddenDir} ${ownFigures.value[figureControlInd.value]?.orientation}`,
+  )
+  if (gameStore.gameData.forbiddenDir) {
+    if (
+      gameStore.gameData.forbiddenDir.toLowerCase() ===
+      ownFigures.value[figureControlInd.value]?.orientation
+    ) {
+      alert('Du darfst nicht zurueck gehen!')
+
       return
     }
   }
@@ -498,15 +524,16 @@ async function sendMoveDirection() {
   */
 
   // Orientierung etc von aktueller Figur kriegen
-  if(currentPlayerId === null) return
-  const figureIdReq = ownFigures.value[figureControlInd]?.id
-  const directionReq = ownFigures.value[figureControlInd]?.orientation
 
-  if(!figureIdReq || !directionReq) return
+  if (currentPlayerId === null) return
+  const figureIdReq = ownFigures.value[figureControlInd.value]?.id
+  const directionReq = ownFigures.value[figureControlInd.value]?.orientation
+
+  if (!figureIdReq || !directionReq) return
   const moveReq: IFigureMoveRequest = {
     playerId: currentPlayerId,
-    figureId:  figureIdReq,
-    direction: directionReq
+    figureId: figureIdReq,
+    direction: directionReq,
   }
 
   // Datenobjekt schicken
@@ -525,74 +552,89 @@ async function sendMoveDirection() {
     console.log('Move-Request sent successfully:', data)
 
     // wenn Antwort negativ -> nochmal input geben
-    if(data.success === false) {
+    if (data.success === false) {
       gameStore.gameData.requireInput = true
       gameStore.gameData.moveChoiceAllowed = true
-      alert("Ueberprufe deine Richtungseingabe!")
+      alert('Ueberprufe deine Richtungseingabe!')
     }
-
   } catch (err) {
     console.error('Error sending move request:', err)
   }
 }
 
+const selectedFigure = computed(() => {
+  return ownFigures.value[figureControlInd.value] ?? null
+})
+watch(
+  selectedFigure,
+  (fig) => {
+    gameStore.selectedFigureId = fig?.id ?? null
+  },
+  { immediate: true },
+)
+
+defineExpose({
+  board,
+  figures
+})
+
 </script>
 
 <template>
   <!-- TresCanvas clear-color="#87CEEB" class="w-full h-full" -->
-    <TresPerspectiveCamera ref="camRef" :position="default_cam_pos" :look-at="[0, 0, 0]" />
-    <OrbitControls v-if="!egoPersp" />
+  <TresPerspectiveCamera ref="camRef" :position="default_cam_pos" :look-at="[0, 0, 0]" />
+  <OrbitControls v-if="!egoPersp" />
 
-    <TresDirectionalLight :position="[20, 40, 10]" :intensity="1.5" />
+  <TresDirectionalLight :position="[20, 40, 10]" :intensity="1.5" />
 
-    <template v-if="board">
-      <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
-        <TresPlaneGeometry :args="[board.cols * CELL_SIZE * 5, board.rows * CELL_SIZE * 5]" />
-        <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
-      </TresMesh>
+  <template v-if="board">
+    <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
+      <TresPlaneGeometry :args="[board.cols * CELL_SIZE * 5, board.rows * CELL_SIZE * 5]" />
+      <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
+    </TresMesh>
 
+    <TresMesh
+      v-for="cell in allCells"
+      :key="`cell-${cell.i}-${cell.j}-${cell.type}`"
+      :position="cellToField(cell)"
+      :rotation="[-Math.PI / 2, 0, 0]"
+    >
+      <template v-if="cell.type === 'PATH' || cell.type === 'START'">
+        <TheRock />
+      </template>
+      <template v-if="cell.type === 'BARRIER'">
+        <Barrier />
+        <TheRock />
+      </template>
+      <template v-else-if="cell.type === 'BLOCKED'">
+        <TheTree />
+        <TheGrass />
+      </template>
+      <template v-else-if="cell.type === 'GOAL'">
+        <TheRock />
+        <TheCrown />
+      </template>
+    </TresMesh>
+
+    <!-- Home bases for players -->
+    <template v-for="(player, index) in allPlayers" :key="`home-${player.id}`">
       <TresMesh
-        v-for="cell in allCells"
-        :key="`cell-${cell.i}-${cell.j}`"
-        :position="cellToField(cell)"
+        :position="[calculateHomeCenter(player.id).x, -0.01, calculateHomeCenter(player.id).z]"
         :rotation="[-Math.PI / 2, 0, 0]"
       >
-        <template v-if="cell.type === 'PATH' || cell.type === 'START'">
-          <TheRock />
-        </template>
-        <template v-if="cell.type === 'BARRIER'">
-          <Barrier />
-          <TheRock />
-        </template>
-        <template v-else-if="cell.type === 'BLOCKED'">
-          <TheTree />
-          <TheGrass />
-        </template>
-        <template v-else-if="cell.type === 'GOAL'">
-          <TheRock />
-          <TheCrown />
-        </template>
+        <TresPlaneGeometry :args="[6, 3]" />
+        <TresMeshStandardMaterial :color="player.color || '#cccccc'" />
       </TresMesh>
-
-      <!-- Home bases for players -->
-      <template v-for="(player, index) in allPlayers" :key="`home-${player.id}`">
-        <TresMesh
-          :position="[calculateHomeCenter(player.id).x, -0.01, calculateHomeCenter(player.id).z]"
-          :rotation="[-Math.PI / 2, 0, 0]"
-        >
-          <TresPlaneGeometry :args="[6, 3]" />
-          <TresMeshStandardMaterial :color="player.color || '#cccccc'" />
-        </TresMesh>
-      </template>
-
-      <!-- Player figures -->
-      <ThePlayerFigure
-        v-for="fig in figures"
-        :key="fig.id"
-        :position="fig.position"
-        :color="fig.color"
-        :orientation="fig.orientation"
-      />
     </template>
+
+    <!-- Player figures -->
+    <ThePlayerFigure
+      v-for="fig in figures"
+      :key="fig.id"
+      :position="fig.position"
+      :color="fig.color"
+      :orientation="fig.orientation"
+    />
+  </template>
   <!-- /TresCanvas -->
 </template>

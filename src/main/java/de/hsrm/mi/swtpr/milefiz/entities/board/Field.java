@@ -24,7 +24,8 @@ public class Field {
     }
 
     public boolean hasBarrier() {
-        return this.barrier != null;
+        // Ein Feld hat eine Barriere, wenn entweder das Objekt gesetzt ist oder der Zelltyp explizit BARRIER ist.
+        return this.barrier != null || this.type == CellType.BARRIER;
     }
 
     public Barrier getBarrier() {
@@ -60,7 +61,11 @@ public class Field {
     }
 
     public boolean isBlocked() {
-        return type == CellType.BLOCKED;
+        if (this.type == CellType.BLOCKED) return true;
+        if (this.hasBarrier()) return true;
+        if (!this.getFigures().isEmpty()) return true;
+
+        return false;
     }
 
     public boolean isBarrier() {

@@ -3,7 +3,6 @@ package de.hsrm.mi.swtpr.milefiz.messaging;
 import java.time.Instant;
 
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
-import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 import de.hsrm.mi.swtpr.milefiz.model.Step;
 
@@ -27,7 +26,8 @@ public class FrontendNachrichtEvent {
         GAME_RUNNING,
         PLAYER_LIMIT_ERROR,
         COUNTDOWN_ABORTED,
-
+        BARRIER_WAIT,
+        BARRIER_PLACED,
         // Ingame-Operationen
         GAME_OVER,
         MOVE,
@@ -48,6 +48,7 @@ public class FrontendNachrichtEvent {
     // States fuer Movementupdates
     // private String playerId; // Unterschied playerId und playerName???
     private String figureId;
+    private String opponentId; // ID des zweiten spieler im duell
     private Bewegung bewegung;
     private int newEnergyValue;
     private Step step;
@@ -181,6 +182,14 @@ public class FrontendNachrichtEvent {
 
     public String getFigureId() {
         return figureId;
+    }
+
+    public String getOpponentId() {
+        return opponentId;
+    }
+
+    public void setOpponentId(String opponentId) {
+        this.opponentId = opponentId;
     }
 
     public Bewegung getBewegung() {

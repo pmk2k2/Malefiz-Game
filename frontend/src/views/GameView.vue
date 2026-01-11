@@ -1,47 +1,64 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import RollButton from '@/components/RollButton.vue'
-import CollectEnergyButton from '@/components/CollectEnergyButton.vue' 
+import CollectEnergyButton from '@/components/CollectEnergyButton.vue'
 import Dice3D, { rollDice } from '@/components/Dice3D.vue'
 import TheGrid from '@/components/playingfield/TheGrid.vue'
 import PopupSpielende from '@/components/playingfield/PopupSpielende.vue'
 import TheMapBarrierEditor from '@/components/playingfield/TheMapBarrierEditor.vue'
-import { NodeFunctionInput } from 'three/webgpu';
+import { NodeFunctionInput } from 'three/webgpu'
+import { storeToRefs } from 'pinia'
+import { useGameStore } from '@/stores/gamestore'
+import PauseMenu from '@/components/PauseMenu.vue'
+import EnergyBar from '@/components/playingfield/EnergyBar.vue'
+import HUDInfoView from '@/components/hud/HUDInfoView.vue'
 
+const gameStore = useGameStore()
+const { figures } = storeToRefs(gameStore)
 const gridRef = ref<any>(null)
 const sichtbar = ref(false)
 
-const liveGrid = computed(() => {
-  return gridRef.value?.grid || { cols: 11, rows: 8, cells: [] }
+const liveBoard = computed(() => {
+  return gridRef.value?.board ?? null
 })
 
-const liveFigures = computed(() => {
-  return gridRef.value?.figures || []
-})
+const liveFigures = computed(() => gridRef.value?.figures ?? [])
+
+// Spielstatus ueberwachen, um OEffnen und Schließen des Maps zu steuern
+watch(
+  () => gameStore.gameState,
+  (newState) => {
+    if (newState === 'BARRIER_PLACEMENT') {
+      sichtbar.value = true
+      console.log('Auto Öffnen: Barriere versetzen...')
+    } else if (newState === 'RUNNING') {
+      sichtbar.value = false
+      console.log('Auto Schließen: Spiel läuft weiter...')
+    }
+  },
+)
 
 function openCensoredMap() {
-  sichtbar.value = true;
-  console.log("CensoredMap geöffnet")
+  sichtbar.value = true
+  console.log('CensoredMap geöffnet')
 }
 
 function closeCensoredMap() {
   sichtbar.value = false
-  console.log("CensoredMap geschlossen")
+  console.log('CensoredMap geschlossen')
 }
-
-import { useGameStore } from '@/stores/gamestore'
-
-
-const gameStore = useGameStore()
 
 // Steuert alles: Button-Animation, Disabled-State und Logik
 const isBusy = ref(false)
 const isSavingEnergy = ref(false) // Nur für Energie
 const cooldownSeconds = ref(3) // Default 3s, wird überschrieben
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+// Energie aus Stores gameData aber reaktiv
+const energy = computed(() => gameStore.gameData.energy)
+const maxEnergy = 10 // !!! Max-Energie sollte eigentlich irgendwo anders herkommen
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 // Cooldown-Zeit beim Start laden
 onMounted(async () => {
@@ -51,7 +68,7 @@ onMounted(async () => {
       cooldownSeconds.value = await res.json()
     }
   } catch (e) {
-    console.error("Cooldown konnte nicht geladen werden", e)
+    console.error('Cooldown konnte nicht geladen werden', e)
   }
 })
 
@@ -60,12 +77,11 @@ async function onRoll(id: string) {
 
   // Sicherheitscheck
   if (!gameCode || !playerId) return
-  if(isBusy.value || isSavingEnergy.value) return // Kein Doppelklick möglich und nicht während energie gesammelt wird
-
+  if (isBusy.value || isSavingEnergy.value) return // Kein Doppelklick möglich und nicht während energie gesammelt wird
 
   isBusy.value = true
 
-    try {
+  try {
     // Würfelwurf (Backend & 3D Animation)
     // Warten auf die Animation, aber der Button bleibt gesperrt
     await rollDice(gameCode, playerId)
@@ -73,11 +89,10 @@ async function onRoll(id: string) {
     // Der Timer startet für den restlichen Cooldown
     // Die Animation im Button läuft weiter, weil isBusy true bleibt
     startCooldownTimer()
-
   } catch (e) {
-    console.error("Fehler beim Würfeln", e)
+    console.error('Fehler beim Würfeln', e)
     // Bei Fehler: Button sofort wieder freigeben oder Fehlermeldung zeigen
-    isBusy.value = false 
+    isBusy.value = false
   }
 }
 
@@ -87,15 +102,15 @@ async function saveEnergy() {
   if (!gameCode || !playerId) return
 
   //prüfen ob Button blockiert ist
-  if(isBusy.value || isSavingEnergy.value) return
+  if (isBusy.value || isSavingEnergy.value) return
 
   // Sucht nach Figuren der Spieler
   const myFigure = liveFigures.value.find((f: any) => f.playerId === playerId)
-  isSavingEnergy.value = true 
+  isSavingEnergy.value = true
 
   try {
-    //Ziel URL 
-    const url = `${API_BASE_URL}/move/${gameCode}`;
+    //Ziel URL
+    const url = `${API_BASE_URL}/move/${gameCode}`
 
     //aufruf an Backend um im Spiel Energie zu sammeln anstatt zu ziehen
     const response = await fetch(url, {
@@ -103,11 +118,11 @@ async function saveEnergy() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         playerId: playerId,
-        direction: "north", 
-        collectEnergy: true 
-      })
+        direction: 'north',
+        collectEnergy: true,
+      }),
     })
-  } catch(e) {
+  } catch (e) {
     console.error(e)
   } finally {
     isSavingEnergy.value = false
@@ -119,9 +134,8 @@ function startCooldownTimer() {
   setTimeout(() => {
     // Erst hier hört die Animation auf und der Button wird wieder klickbar
     isBusy.value = false
-  }, cooldownSeconds.value * 1000) 
+  }, cooldownSeconds.value * 1000)
 }
-
 </script>
 
 <template>
@@ -133,28 +147,38 @@ function startCooldownTimer() {
 
     <!-- Popup конца игры -->
     <PopupSpielende />
+    <PauseMenu />
 
-    <div class="steps-remaining">
-            <div>
-              <span>Gesamt:</span>
-              <span>{{ gameStore.gameData.totalSteps }}</span>
-            </div>
-            <div>
-              <span>Gegangen:</span>
-              <span>{{ gameStore.gameData.stepsTaken }}</span>
-            </div>
-            <div>
-              <span>Übrig:</span>
-              <span>{{ gameStore.gameData.remainingSteps }}</span>
-            </div>
+    <!-- Schritte box -->
+    <div class="steps-remaining-wood">
+      <div class="steps-title">Schritte</div>
+      <div class="steps-row">
+        <span>Gesamt:</span>
+        <span class="steps-value">{{ gameStore.gameData.totalSteps }}</span>
+      </div>
+      <div class="steps-row">
+        <span>Gegangen:</span>
+        <span class="steps-value">{{ gameStore.gameData.stepsTaken }}</span>
+      </div>
+      <div class="steps-row">
+        <span>Übrig:</span>
+        <span class="steps-value">{{ gameStore.gameData.remainingSteps }}</span>
+      </div>
+    </div>
+
+    <!-- DUEL / MINIGAME OVERLAY -->
+    <div v-if="gameStore.gameData.duelActive" class="minigame-overlay">
+      <div class="minigame-box">
+        <h2>DUELL STARTET!</h2>
+        <p>Bereite dich auf das Minispiel vor...</p>
+        <div class="loader"></div>
+      </div>
     </div>
 
     <!-- UI Overlay -->
     <div class="pointer-events-none absolute inset-0 flex items-start m-2 z-50">
       <div
-        class="pointer-events-auto flex w-96 flex-col gap-6 rounded-2xl
-               bg-black/40 p-4 backdrop-blur-sm border border-white/10"
-      >
+        class="pointer-events-auto flex w-80 flex-col gap-6 rounded-2xl bg-black/40 p-4 backdrop-blur-sm border border-white/10">
         <!-- Dice -->
         <div class="flex flex-col items-center gap-4">
           <div class="h-40 w-40 relative">
@@ -163,47 +187,39 @@ function startCooldownTimer() {
 
           <!-- Buttons -->
           <div class="flex flex-row gap-2 w-full justify-center">
-            <RollButton
-              :is-loading="isBusy"
-              @trigger="onRoll"
-            />
+            <RollButton :is-loading="isBusy" @trigger="onRoll" />
 
-            <CollectEnergyButton
-              :is-loading="isSavingEnergy"
-              @trigger="saveEnergy"
-            />
+            <CollectEnergyButton :is-loading="isSavingEnergy" @trigger="saveEnergy" />
           </div>
 
           <!-- Map button -->
-          <button
-            class="mt-2 rounded-xl bg-green-700 px-4 py-2 text-white font-bold"
-            @click="openCensoredMap"
-          >
+          <button class="mt-2 rounded-xl bg-green-700 px-4 py-2 text-white font-bold" @click="openCensoredMap">
             🗺️ Map öffnen
           </button>
         </div>
       </div>
     </div>
 
+    <div class="ui-panel-right">
+      <div class="hud-wrapper">
+        <HUDInfoView />
+      </div>
+    </div>
+    <div class="energy-bar-container pointer-events-none absolute m-2 z-50">
+      <EnergyBar :max-energy="maxEnergy" :current-energy="energy"></EnergyBar>
+    </div>
+
     <!-- Map Modal -->
-    <div
-      v-if="sichtbar"
-      class="modal-overlay"
-      @click.self="closeCensoredMap"
-    >
+    <div v-if="sichtbar" class="modal-overlay" @click.self="closeCensoredMap">
       <div class="map-modal">
         <button class="close-seal" @click="closeCensoredMap">✕</button>
         <div class="map-content">
-          <TheMapBarrierEditor
-            :grid="liveGrid"
-            :figures="liveFigures"
-          />
+          <TheMapBarrierEditor :board="liveBoard" :figures="figures" />
         </div>
       </div>
     </div>
   </div>
 </template>
-
 
 <style scoped>
 .game-scene {
@@ -211,9 +227,8 @@ function startCooldownTimer() {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background: #0a0f1a; 
+  background: #0a0f1a;
 }
-
 
 .ui-panel-left {
   position: absolute;
@@ -230,16 +245,21 @@ function startCooldownTimer() {
   align-items: center;
   gap: 20px;
   padding: 25px;
-  
- 
+
   background-color: #3d2b1f;
-  background-image: 
-    linear-gradient(to bottom, rgba(0,0,0,0.3), transparent),
-    repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(0,0,0,0.1) 39px, rgba(0,0,0,0.1) 40px);
-  
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.3), transparent),
+    repeating-linear-gradient(90deg,
+      transparent,
+      transparent 38px,
+      rgba(0, 0, 0, 0.1) 39px,
+      rgba(0, 0, 0, 0.1) 40px);
+
   border: 4px solid #2d1b0d;
   border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 0 15px rgba(0,0,0,0.5);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.6),
+    inset 0 0 15px rgba(0, 0, 0, 0.5);
 }
 
 .dice-container {
@@ -250,9 +270,8 @@ function startCooldownTimer() {
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
 }
-
 
 .ui-controls-bottom {
   position: absolute;
@@ -262,7 +281,7 @@ function startCooldownTimer() {
 }
 
 .map-btn {
-  background: #2d4d19; 
+  background: #2d4d19;
   color: #f0e2d0;
   border: 3px solid #1e3311;
   border-bottom-width: 6px;
@@ -277,7 +296,7 @@ function startCooldownTimer() {
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
 }
 
 .map-btn:hover {
@@ -290,7 +309,6 @@ function startCooldownTimer() {
   transform: translateY(2px);
   border-bottom-width: 3px;
 }
-
 
 .modal-overlay {
   position: fixed;
@@ -308,9 +326,9 @@ function startCooldownTimer() {
   width: 85vw;
   height: 85vh;
   background: #1a1a1a;
-  border: 8px solid #3d2b1f; 
+  border: 8px solid #3d2b1f;
   border-radius: 15px;
-  box-shadow: 0 0 50px rgba(0,0,0,1);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 1);
   overflow: hidden;
 }
 
@@ -327,7 +345,7 @@ function startCooldownTimer() {
   font-weight: bold;
   cursor: pointer;
   z-index: 110;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
   transition: transform 0.2s;
 }
 
@@ -342,27 +360,161 @@ function startCooldownTimer() {
   padding: 20px;
 }
 
-.steps-remaining {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 40;
-  background: rgba(45, 35, 10, 0.9);
-  border-radius: 10px;
-  display: inline-block;
-  padding: 10px 20px;
-  box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
-  transform: rotate(-1deg);
-  min-width: 180px;
-  color: #ffe7b0;
-  font-weight: bold;
+.energy-bar-container {
+  bottom: 2%;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
 }
 
-.step-item {
+.minigame-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.5s ease;
+}
+
+.minigame-box {
+  text-align: center;
+  color: white;
+  font-family: 'Kanit', sans-serif;
+  animation: scaleUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.minigame-box h2 {
+  font-size: 4rem;
+  color: #fbbf24;
+  text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+  margin-bottom: 1rem;
+}
+
+.minigame-box p {
+  font-size: 2rem;
+  color: #cbd5e1;
+}
+
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #fff;
+  border-bottom-color: #fbbf24;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+  margin-top: 2rem;
+}
+
+.ui-panel-right {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.hud-wrapper {
+  pointer-events: auto;
+  margin: 0;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    transform: scale(0.8);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+.steps-remaining-wood {
+  position: absolute;
+  top: 90px;
+  right: 24px;
+  z-index: 45;
+  min-width: 180px;
+  max-width: 200px;
+  background-color: #3d2b1f;
+  background-image:
+    linear-gradient(to bottom, rgba(0,0,0,0.12), transparent),
+    repeating-linear-gradient(90deg,
+      transparent,
+      transparent 38px,
+      rgba(0,0,0,0.08) 39px,
+      rgba(0,0,0,0.08) 40px);
+  border: 4px solid #2d1b0d;
+  border-radius: 18px;
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.45),
+    inset 0 0 10px rgba(0,0,0,0.25);
+  padding: 22px 28px 18px 28px;
+  color: #ffe7b0;
+  font-family: 'Kanit', 'Segoe UI', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+  transition: box-shadow 0.2s;
+}
+
+.steps-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 8px #0008;
+  text-align: center;
+}
+
+.steps-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 3px 0;
+  margin-bottom: 7px;
+  padding: 0 2px;
 }
 
+.steps-row:last-child {
+  margin-bottom: 0;
+}
+
+.steps-value {
+  color: #fffbe7;
+  font-weight: 700;
+  font-size: 1.1em;
+  text-shadow: 0 1px 4px #0006;
+}
+
+/* Xóa style cũ của steps-remaining */
+.steps-remaining {
+  display: none !important;
+}
 </style>

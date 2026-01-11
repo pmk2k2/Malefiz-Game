@@ -13,6 +13,7 @@ export interface IFrontendNachrichtEvent {
 
   // Felder fuer Movementupdates
   figureId: string
+  opponentId?: string // fuer duell
   bewegung: IBewegung
   step: IStep
 }

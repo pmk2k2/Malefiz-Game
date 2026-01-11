@@ -5,10 +5,8 @@ export function mapBackendPlayersToDTD(players: any[]): ISpielerDTD[] {
     id: p.playerId ?? p.id,
     name: p.name ?? p.playerName,
     isReady: p.isReady ?? p.ready ?? false,
-    spielfiguren: [
-      { icon: `/assets/icons/player${(index % 4) + 1}.png` }
-    ],
+    spielfiguren: [],
     isHost: p.isHost ?? p.host ?? false,
-
+    color: p.color ?? "red"
   }));
 }

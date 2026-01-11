@@ -11,6 +11,13 @@ public class FigureMoveResult {
         return r;
     }
 
+    public static FigureMoveResult ok(String msg) {
+        FigureMoveResult r = new FigureMoveResult();
+        r.success = true;
+        r.message = msg;
+        return r;
+    }
+
     public static FigureMoveResult fail(String msg) {
         FigureMoveResult r = new FigureMoveResult();
         r.success = false;

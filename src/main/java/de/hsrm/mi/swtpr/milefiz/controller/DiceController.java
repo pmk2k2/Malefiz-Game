@@ -7,12 +7,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.exception.CooldownException;
-import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
-import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent.Aktion;
+//import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
+//import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent.Aktion;
 import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.service.DiceService;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
-import jakarta.servlet.http.HttpSession;
+//import jakarta.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +55,7 @@ public class DiceController {
     // Speichert die gewuerfelte Zahl im backend
     // "gameCode"
     @PostMapping("/game/{gameCode}/roll")
-    public DiceResult roll(@PathVariable String gameCode, @RequestParam("playerId") String playerId) throws CooldownException {
+    public DiceResult roll(@PathVariable("gameCode") String gameCode, @RequestParam("playerId") String playerId) throws CooldownException {
 
         // Spiel laden
         Game game = gameService.getGame(gameCode);
