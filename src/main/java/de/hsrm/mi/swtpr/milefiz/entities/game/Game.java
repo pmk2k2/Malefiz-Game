@@ -15,6 +15,7 @@ import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
+import de.hsrm.mi.swtpr.milefiz.model.duel.Duel;
 
 public class Game {
     private final int numberOfPlayers = 4;
@@ -25,6 +26,8 @@ public class Game {
     private List<String> playerNumber; // Spieler1, Spieler2, 3, 4
     private GameState state = GameState.WAITING;
     private Instant countdownStartedAt;
+
+    private Duel activeDuel;
 
     // temporäres Feld
     private Board board;
@@ -251,4 +254,14 @@ public class Game {
     public void setMaxCollectableEnergy(int maxCollectableEnergy) {
         this.maxCollectableEnergy = maxCollectableEnergy;
     }
+
+
+    public Duel getActiveDuel() {
+        return activeDuel;
+    }
+
+    public void setActiveDuel(Duel duel) {
+        this.activeDuel = duel;
+    }
+
 }

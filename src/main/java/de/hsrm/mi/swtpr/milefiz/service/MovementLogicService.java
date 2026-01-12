@@ -24,11 +24,13 @@ import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
 import de.hsrm.mi.swtpr.milefiz.service.BoardNavigationService.MoveType;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
+import de.hsrm.mi.swtpr.milefiz.model.duel.Duel;
+import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
 
 @Service
 public class MovementLogicService {
     private Logger logger = LoggerFactory.getLogger(MovementLogicService.class);
-
+    private QuizService quizService;
     // Damit man Zwischenstaende an alle aus dem Spiel senden kann
     private ApplicationEventPublisher publisher;
     private BoardNavigationService navService;
@@ -475,6 +477,14 @@ public class MovementLogicService {
                         p1, // Id des player1 im duell
                         duelBew);
                 duelEvent.setOpponentId(p2);
+
+                QuizQuestion q = quizService.getRandomQuestion();
+                Duel duel = new Duel(gameCode, p1, p2, q);
+                duel.resetForNewQuestion(q);
+
+                game.setActiveDuel(duel);
+                game.setState(GameState.DUEL);
+
 
                 publisher.publishEvent(duelEvent);
             }

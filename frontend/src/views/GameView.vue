@@ -140,16 +140,13 @@ function startCooldownTimer() {
 
 <template>
   <div class="game-scene">
-    <!-- 3D поле -->
     <TresCanvas clear-color="#87CEEB" class="w-full h-full">
       <TheGrid ref="gridRef" />
     </TresCanvas>
 
-    <!-- Popup конца игры -->
     <PopupSpielende />
     <PauseMenu />
 
-    <!-- DUEL / MINIGAME OVERLAY -->
     <div v-if="gameStore.gameData.duelActive" class="minigame-overlay">
       <div class="minigame-box">
         <h2>DUELL STARTET!</h2>
