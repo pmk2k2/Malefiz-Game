@@ -20,14 +20,15 @@
         <img :src="infoIcon" alt="Info" />
       </button>
 
-      <button class="icon-btn" type="button" @click="toggleSettingsView">
+      <button class="icon-btn" type="button" @click="showBoardSelection = true">
         <img :src="einstellungIcon" alt="Einstellungen" />
       </button>
     </div>
 
     <main class="main-content-lobby">
       <InfoView v-if="showRules" @close="toggleRulesView" />
-      <EinstellungView v-if="showSettings" />
+      <EinstellungView :isVisible="showBoardSelection" @close="showBoardSelection = false" @openEditor="openBoardEditor"
+        @boardSelected="onBoardSelected" />
 
       <div class="spieler-liste-container">
         <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
@@ -36,11 +37,6 @@
       <div class="button-group-lobby">
         <button class="btn ready-btn small-btn" :class="{ 'is-ready': gameStore.gameData.isBereit }" @click="isReady">
           {{ gameStore.gameData.isBereit ? '✓ Bereit' : 'Bereit' }}
-        </button>
-
-        <!-- NEW: Board Selection Button (Host Only) -->
-        <button v-if="isHost" class="btn board-btn small-btn" @click="showBoardSelection = true">
-          📋 Choose Board
         </button>
 
         <button v-if="isHost" class="btn create small-btn" @click="gameStartenByAdmin">
@@ -55,8 +51,8 @@
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
 
     <!-- NEW: Board Selection Modal -->
-    <BoardSelectionModal :isVisible="showBoardSelection" @close="showBoardSelection = false"
-      @openEditor="openBoardEditor" @boardSelected="onBoardSelected" />
+    <EinstellungView :isVisible="showBoardSelection" @close="showBoardSelection = false" @openEditor="openBoardEditor"
+      @boardSelected="onBoardSelected" />
 
     <!-- NEW: Board Editor -->
     <BoardEditor :isVisible="showBoardEditor" @close="showBoardEditor = false" @boardSaved="onBoardSaved" />
@@ -69,14 +65,12 @@ import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
 import { computed, onUnmounted, ref } from 'vue'
 import SpielerListeView from './SpielerListeView.vue'
-import EinstellungView from '@/components/EinstellungView.vue'
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import { useGameStore } from '@/stores/gamestore'
-import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import Counter from '@/components/playingfield/models/Counter.vue'
 import { useInfo } from '@/composable/useInfo'
-import BoardSelectionModal from '@/components/BoardSelectionModal.vue'
+import EinstellungView from '@/components/EinstellungView.vue'
 import BoardEditor from '@/components/BoardEditor.vue'
 
 const { info, loescheInfo } = useInfo()
@@ -208,12 +202,7 @@ async function isReady() {
   }
 }
 
-const showSettings = ref(false)
 const showRules = ref(false)
-
-function toggleSettingsView() {
-  showSettings.value = !showSettings.value
-}
 
 function toggleRulesView() {
   showRules.value = !showRules.value
