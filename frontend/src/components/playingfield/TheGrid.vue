@@ -555,7 +555,11 @@ async function sendMoveDirection() {
     if (data.success === false) {
       gameStore.gameData.requireInput = true
       gameStore.gameData.moveChoiceAllowed = true
-      alert('Ueberprufe deine Richtungseingabe!')
+      if (data.message) {
+        alert(data.message)
+      } else {
+        alert('Ueberprufe deine Richtungseingabe!')
+      }
     }
   } catch (err) {
     console.error('Error sending move request:', err)

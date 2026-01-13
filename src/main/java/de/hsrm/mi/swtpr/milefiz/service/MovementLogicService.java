@@ -359,20 +359,26 @@ public class MovementLogicService {
 
             // Prüfe ob Ziel erreicht
             if (destField.getType() == CellType.GOAL) {
-                game.setWinnerId(request.playerId);
-                publisher.publishEvent(new FrontendNachrichtEvent(
-                        Nachrichtentyp.INGAME,
-                        request.playerId,
-                        Operation.GAME_OVER,
-                        gameCode,
-                        null));
-                Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
-                var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
-                        request.figureId,
-                        request.playerId, bew);
-                publisher.publishEvent(moveEv);
-                logger.info("ENDDDDDDDDD");
-                return FigureMoveResult.ok();
+                if (allowedDistance == 1) {
+                    game.setWinnerId(request.playerId);
+                    publisher.publishEvent(new FrontendNachrichtEvent(
+                            Nachrichtentyp.INGAME,
+                            request.playerId,
+                            Operation.GAME_OVER,
+                            gameCode,
+                            null));
+                    Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir,
+                            stepsCount);
+                    var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
+                            request.figureId,
+                            request.playerId, bew);
+                    publisher.publishEvent(moveEv);
+                    logger.info("ENDDDDDDDDD");
+                    return FigureMoveResult.ok();
+                } else {
+                    return FigureMoveResult
+                            .fail("Du kannst das Ziel nur mit genau der gewürfelten Schrittzahl erreichen.");
+                }
             }
 
             // gelaufenen Schritt abziehen
