@@ -16,6 +16,8 @@ import java.time.Duration;
 import de.hsrm.mi.swtpr.milefiz.controller.dto.DuelAnswerRequest;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
+import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
+import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 import de.hsrm.mi.swtpr.milefiz.model.duel.DuelAnswer;
 import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
@@ -78,7 +80,7 @@ public class DuelController {
         game.setActiveDuel(null);
         game.setState(GameState.RUNNING);
 
-        resetLoserFigure(game, loser);
+        resetLoserFigure(game, loser, gameCode);
         publishDuelResult(gameCode, winner, loser);
         return;
     }
@@ -105,17 +107,51 @@ public class DuelController {
         game.setActiveDuel(null);
         game.setState(GameState.RUNNING);
 
-        resetLoserFigure(game, loser);
+        resetLoserFigure(game, loser, gameCode);
+
         publishDuelResult(gameCode, winner, loser);
     }
 
 
 
-    private void resetLoserFigure(Game game, String loserId) {
+    private void resetLoserFigure(Game game, String loserId, String gameCode){
         game.getFigures().stream()
             .filter(f -> f.getOwnerPlayerId().equals(loserId))
-            .forEach(f -> f.setOnField(false));
+            .forEach(f -> {
+
+                int fromI = f.getGridI();
+                int fromJ = f.getGridJ();
+
+                int baseI = 0;
+                int baseJ = 0;
+
+                f.setGridI(baseI);
+                f.setGridJ(baseJ);
+
+                Bewegung bew = new Bewegung(
+                    fromI,
+                    fromJ,
+                    baseI,
+                    baseJ,
+                    Direction.SOUTH,
+                    0
+                );
+
+                FrontendNachrichtEvent moveEvent =
+                    new FrontendNachrichtEvent(
+                        FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+                        FrontendNachrichtEvent.Operation.MOVE,
+                        gameCode,
+                        f.getId(),
+                        loserId,
+                        bew
+                    );
+
+                publisher.publishEvent(moveEvent);
+            });
     }
+
+
 
     private void publishDuelResult(String gameCode, String winner, String loser) {
         FrontendNachrichtEvent event = new FrontendNachrichtEvent(
