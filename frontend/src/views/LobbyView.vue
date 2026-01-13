@@ -27,15 +27,23 @@
 
     <main class="main-content-lobby">
       <InfoView v-if="showRules" @close="toggleRulesView" />
-      <EinstellungView :isVisible="showBoardSelection" @close="showBoardSelection = false" @openEditor="openBoardEditor"
-        @boardSelected="onBoardSelected" />
+      <EinstellungView
+        :isVisible="showBoardSelection"
+        @close="showBoardSelection = false"
+        @openEditor="openBoardEditor"
+        @boardSelected="onBoardSelected"
+      />
 
       <div class="spieler-liste-container">
         <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
       </div>
 
       <div class="button-group-lobby">
-        <button class="btn ready-btn small-btn" :class="{ 'is-ready': gameStore.gameData.isBereit }" @click="isReady">
+        <button
+          class="btn ready-btn small-btn"
+          :class="{ 'is-ready': gameStore.gameData.isBereit }"
+          @click="isReady"
+        >
           {{ gameStore.gameData.isBereit ? '✓ Bereit' : 'Bereit' }}
         </button>
 
@@ -51,11 +59,19 @@
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
 
     <!-- NEW: Board Selection Modal -->
-    <EinstellungView :isVisible="showBoardSelection" @close="showBoardSelection = false" @openEditor="openBoardEditor"
-      @boardSelected="onBoardSelected" />
+    <EinstellungView
+      :isVisible="showBoardSelection"
+      @close="showBoardSelection = false"
+      @openEditor="openBoardEditor"
+      @boardSelected="onBoardSelected"
+    />
 
     <!-- NEW: Board Editor -->
-    <BoardEditor :isVisible="showBoardEditor" @close="showBoardEditor = false" @boardSaved="onBoardSaved" />
+    <BoardEditor
+      :isVisible="showBoardEditor"
+      @close="showBoardEditor = false"
+      @boardSaved="onBoardSaved"
+    />
   </div>
 </template>
 
@@ -82,9 +98,7 @@ const roll = ref<number | null>(null)
 const spielerListeRef = ref<InstanceType<typeof SpielerListeView> | null>(null)
 
 const showCounter = computed(
-  () =>
-    gameStore.gameData.players.length > 0 &&
-    gameStore.gameData.players.every((p) => p.isReady)
+  () => gameStore.gameData.players.length > 0 && gameStore.gameData.players.every((p) => p.isReady),
 )
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
@@ -111,7 +125,7 @@ onUnmounted(() => {
 function onDeleteZeile(playerId: string) {
   if (spielerListeRef.value) {
     spielerListeRef.value.spielerListe = spielerListeRef.value.spielerListe.filter(
-      (spieler) => spieler.id !== playerId
+      (spieler) => spieler.id !== playerId,
     )
 
     if (gameStore.countdown !== null) {
@@ -133,8 +147,8 @@ async function goBack() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         playerId,
-        code: gameCode
-      })
+        code: gameCode,
+      }),
     })
     gameStore.disconnect()
     gameStore.resetGameCode()
@@ -155,7 +169,7 @@ async function gameStartenByAdmin() {
     const res = await fetch(`${apiBase}/game/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: gameCode, playerId })
+      body: JSON.stringify({ code: gameCode, playerId }),
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
@@ -181,7 +195,7 @@ async function isReady() {
     const res = await fetch(`${apiBase}/game/setReady`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ playerId, code: gameCode, isReady: isCurrentlyReady })
+      body: JSON.stringify({ playerId, code: gameCode, isReady: isCurrentlyReady }),
     })
 
     if (!res.ok) {
@@ -271,8 +285,8 @@ function onBoardSaved() {
   width: 100vw;
   overflow: hidden;
   position: relative;
-  background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
-    url('@/assets/backg.jpg');
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('@/assets/backg.jpg');
   background-size: cover;
 }
 
@@ -296,17 +310,22 @@ function onBoardSaved() {
   display: flex;
   justify-content: center;
   background-color: #3d2b1f;
-  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, transparent 100%),
-    repeating-linear-gradient(90deg,
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, transparent 100%),
+    repeating-linear-gradient(
+      90deg,
       transparent,
       transparent 38px,
       rgba(0, 0, 0, 0.15) 39px,
-      rgba(0, 0, 0, 0.15) 40px);
+      rgba(0, 0, 0, 0.15) 40px
+    );
 
   padding: 15px;
   border: 5px solid #2d1b0d;
   border-radius: 15px;
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5), 0 10px 20px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.5),
+    0 10px 20px rgba(0, 0, 0, 0.4);
   overflow-y: auto;
 }
 
@@ -337,13 +356,12 @@ function onBoardSaved() {
   padding-bottom: 10px;
   justify-content: center;
   width: 100%;
-  flex-wrap: wrap;
 }
 
 .button-group-lobby .btn {
-  min-width: 180px;
+  width: 180px;
   font-size: 1.1rem;
-  padding: 10px 15px;
+  padding: 10px 0px;
 }
 
 .icon-nav {
@@ -442,15 +460,22 @@ function onBoardSaved() {
   border-radius: 12px;
 
   background-color: #4d3319;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, transparent 100%),
-    repeating-linear-gradient(90deg,
+    repeating-linear-gradient(
+      90deg,
       transparent,
       transparent 40px,
       rgba(0, 0, 0, 0.1) 41px,
-      rgba(0, 0, 0, 0.1) 42px);
-  background-size: 100% 100%, 100% 100%, 100% 100%, 50px 100%;
+      rgba(0, 0, 0, 0.1) 42px
+    );
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    50px 100%;
 
   border: 4px solid #3d2b1f;
   border-bottom-width: 8px;

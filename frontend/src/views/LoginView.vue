@@ -16,13 +16,15 @@
     </header>
 
     <main class="main-content">
-      <div class="login-card"> <div class="button-group">
-          <label class="input-label">Gib deinen Namen ein:</label>
-          <input 
-            class="input-name" 
-            v-model="name" 
-            placeholder="..." 
-            required 
+      <div class="login-card">
+        <div class="button-group">
+          <label for="loginname" class="input-label">Gib deinen Namen ein:</label>
+          <input
+            id="loginname"
+            class="input-name"
+            v-model="name"
+            placeholder="..."
+            required
             @keyup.enter="login"
           />
 
@@ -39,9 +41,9 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import hoverSoundFile from '../assets/button_hover.mp3'
-import { useGameStore } from '@/stores/gamestore';
+import { useGameStore } from '@/stores/gamestore'
 
-const gameStore = useGameStore();
+const gameStore = useGameStore()
 
 const router = useRouter()
 const name = ref('')
@@ -56,13 +58,12 @@ function login() {
     return
   }
 
-  gameStore.gameData.playerName = name.value;
+  gameStore.gameData.playerName = name.value
   router.push('/main')
 }
 </script>
 
 <style scoped>
-
 .login-card {
   background: rgba(20, 40, 20, 0.6);
   padding: 40px;
@@ -89,7 +90,7 @@ function login() {
   font-weight: 600;
   text-align: center;
   background-color: #f0e2d0;
-  background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.2), transparent);
+  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.2), transparent);
   border: 4px solid #3d2b1f;
   border-radius: 12px;
   color: #2d1b0d;
@@ -100,7 +101,9 @@ function login() {
 
 .input-name:focus {
   border-color: #4caf50;
-  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2), 0 0 15px rgba(76, 175, 80, 0.5);
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.2),
+    0 0 15px rgba(76, 175, 80, 0.5);
   transform: scale(1.02);
 }
 
