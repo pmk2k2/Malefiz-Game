@@ -5,5 +5,6 @@ public enum CellType {
     START,
     GOAL,
     BLOCKED,
-    BARRIER
+    BARRIER,
+    DUEL
 }

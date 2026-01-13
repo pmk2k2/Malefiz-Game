@@ -6,6 +6,7 @@ import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
 import TheGrass from './models/TheGrass.vue'
+import TheDuel from './models/TheDuel.vue'
 import Barrier from './models/Barrier.vue'
 import ThePlayerFigure from '@/components/playingfield/ThePlayerFigure.vue'
 import { useGameStore } from '@/stores/gamestore'
@@ -15,7 +16,7 @@ import { useAnimationQueue } from '@/composable/useAnimationQueue'
 import { storeToRefs } from 'pinia'
 
 // Zellentypen
-type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER'
+type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER' | 'DUEL'
 
 // Zellenkoordinten
 interface Field {
@@ -596,6 +597,10 @@ defineExpose({
       <template v-else-if="cell.type === 'BLOCKED'">
         <TheTree />
         <TheGrass />
+      </template>
+      <template v-else-if="cell.type === 'DUEL'">
+        <TheRock />
+        <TheDuel />
       </template>
       <template v-else-if="cell.type === 'GOAL'">
         <TheRock />
