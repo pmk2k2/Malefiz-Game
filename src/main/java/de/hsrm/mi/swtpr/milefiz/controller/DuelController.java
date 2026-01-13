@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
 import de.hsrm.mi.swtpr.milefiz.controller.dto.DuelAnswerRequest;
+import de.hsrm.mi.swtpr.milefiz.controller.dto.DuelMashingRequest;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
@@ -57,6 +58,50 @@ public class DuelController {
         );
 
         evaluateDuel(game, duel, req.gameCode());
+    }
+
+    // Endpunkt buttonMashing 
+    @PostMapping("/mashing")
+    public void mash(@RequestBody DuelMashingRequest req) {
+        Game game = gameService.getGame(req.gameCode());
+        Duel duel = game.getActiveDuel();
+        int limit = 20;
+
+        if (duel == null || duel.isFinished()) return;
+
+        // Pro Keydown wird um 1 erhöht oder erniedrigt, start von bar ist 0 (mitte)
+        if (req.playerId().equals(duel.getPlayer1Id())) {
+            duel.setMashScore(duel.getMashScore() + 1);
+        } else if (req.playerId().equals(duel.getPlayer2Id())) {
+            duel.setMashScore(duel.getMashScore() - 1);
+        }
+
+        // Wenn zuert 20 erreicht, ist winnerId, der andere dann loser
+        if (Math.abs(duel.getMashScore()) >= limit){
+            String winnerId = (duel.getMashScore() >= limit) ? duel.getPlayer1Id() : duel.getPlayer2Id(); 
+            String loserId = duel.getOpponent(winnerId);
+
+            duel.finish();
+            game.setActiveDuel(null);
+            game.setState(GameState.RUNNING);
+
+            resetLoserFigure(game, loserId, req.gameCode());
+            publishDuelResult(req.gameCode(), winnerId, loserId);
+        } else {
+            publishMashUpdate(req.gameCode(), duel.getMashScore());
+        }
+    }
+
+      private void publishMashUpdate(String gameCode, int score) {
+        FrontendNachrichtEvent event = new FrontendNachrichtEvent(
+            FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+            null,
+            FrontendNachrichtEvent.Operation.DUEL_MASH_UPDATE,
+            gameCode,
+            null
+        );
+        event.setCountdownDurationSeconds(score); 
+        publisher.publishEvent(event);
     }
 
     private void evaluateDuel(Game game, Duel duel, String gameCode) {

@@ -39,6 +39,7 @@ export const useGameStore = defineStore('gamestore', () => {
     forbiddenDir: string | null
     energy: number
     duelActive: boolean
+    mashScore: number
     duelTimeLeft: number
     duelAnswered: boolean
     duelQuestion: null | {
@@ -64,6 +65,7 @@ export const useGameStore = defineStore('gamestore', () => {
     forbiddenDir: null,
     energy: 0,
     duelActive: false,
+    mashScore: 0,
     duelTimeLeft: 10,
     duelAnswered: false,
     duelQuestion: null,
@@ -174,6 +176,7 @@ export const useGameStore = defineStore('gamestore', () => {
             else if (event.operation === 'DUEL') {
               console.log('DUEL Event empfangen!')
               gameData.duelActive = true
+              gameData.mashScore = 0
               gameData.duelQuestion = null
               gameData.duelAnswered = false
               gameData.duelTimeLeft = 10
@@ -188,6 +191,13 @@ export const useGameStore = defineStore('gamestore', () => {
                 gameData.duelActive = true
               }
             }
+
+            // mashingGame
+            else if (event.operation == 'DUEL_MASH_UPDATE') {
+              gameData.mashScore = event.countdownDurationSeconds
+              console.log("Mash Score Update:", gameData.mashScore)
+            }
+
           } else if (event.typ === 'LOBBY') {
             updatePlayerList(gameCode)
 
@@ -403,8 +413,8 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.ok = false
     gameData.gameOver = null
     gameData.duelActive = false
+    gameData.mashScore = 0
     stopCountdown()
-
     localStorage.removeItem('gameData')
   }
 

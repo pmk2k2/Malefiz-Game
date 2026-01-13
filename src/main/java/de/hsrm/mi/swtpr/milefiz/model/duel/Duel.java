@@ -14,6 +14,9 @@ public class Duel {
     private boolean finished = false;
     private Instant questionStartedAt;
 
+    // ButtonMashingGame Vairiablen
+    private int mashScore = 0;
+
     public Duel(String gameCode, String p1, String p2, QuizQuestion question) {
         this.gameCode = gameCode;
         this.player1Id = p1;
@@ -58,5 +61,11 @@ public class Duel {
         this.answers.clear();
         this.questionStartedAt = Instant.now();
     }
+
+    // buttonMashingGame Methoden
+    public int getMashScore() { return mashScore; }
+    public void setMashScore(int mashCore) { this.mashScore = mashCore; }
+    public String getPlayer1Id() { return player1Id; }
+    public String getPlayer2Id() { return player2Id; }
 
 }

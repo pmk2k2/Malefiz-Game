@@ -2,10 +2,10 @@
   <div v-if="gameData.duelActive" class="overlay">
     <div class="popup">
       <div class="top">
-        <div class="title">DUELL</div>
-        <div class="timer">{{ gameData.duelTimeLeft }}s</div>
+        <div class="title">DUELL</div> 
+        <!-- <div class="timer">{{ gameData.duelTimeLeft }}s</div> -->
       </div>
-
+      <!-- 
       <div v-if="gameData.duelQuestion" class="content">
         <div class="question">{{ gameData.duelQuestion.text }}</div>
 
@@ -24,18 +24,25 @@
         <div v-if="gameData.duelAnswered" class="status">Antwort gesendet…</div>
         <div v-else-if="gameData.duelTimeLeft <= 0" class="status">Zeit abgelaufen…</div>
       </div>
-
-      <div v-else class="content">
+  
+      <div v-else class="content"> 
         <div class="status">Frage wird geladen…</div>
       </div>
+      --> 
+
+      <div class="content">
+        <DuelMash />
+      </div>
+
     </div>
-  </div>
+  </div>  
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, watch } from 'vue'
 import { useGameStore } from '@/stores/gamestore'
 import { storeToRefs } from 'pinia'
+import DuelMash from './DuelMash.vue'
 
 const gameStore = useGameStore()
 const { gameData } = storeToRefs(gameStore)

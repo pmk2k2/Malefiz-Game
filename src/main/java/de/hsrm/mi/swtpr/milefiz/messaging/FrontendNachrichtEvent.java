@@ -34,7 +34,8 @@ public class FrontendNachrichtEvent {
         ENERGY_UPDATED,
         DUEL,
         DUEL_RESULT,
-        DUEL_NEW_QUESTION
+        DUEL_NEW_QUESTION,
+        DUEL_MASH_UPDATE
     }
 
     private Nachrichtentyp typ;
