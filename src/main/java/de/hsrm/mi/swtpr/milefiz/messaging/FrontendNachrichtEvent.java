@@ -4,6 +4,7 @@ import java.time.Instant;
 
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
+import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
 
 public class FrontendNachrichtEvent {
 
@@ -31,7 +32,9 @@ public class FrontendNachrichtEvent {
         GAME_OVER,
         MOVE,
         ENERGY_UPDATED,
-        DUEL_PREPARE
+        DUEL,
+        DUEL_RESULT,
+        DUEL_NEW_QUESTION
     }
 
     private Nachrichtentyp typ;
@@ -49,6 +52,10 @@ public class FrontendNachrichtEvent {
     private String opponentId; // ID des zweiten spieler im duell
     private Bewegung bewegung;
     private int newEnergyValue;
+
+    private QuizQuestion quizQuestion;
+
+    
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -125,6 +132,14 @@ public class FrontendNachrichtEvent {
 
     public void setPlayerName(String playerName) {
         this.playerName = playerName;
+    }
+
+    public QuizQuestion getQuizQuestion() {
+        return quizQuestion;
+    }
+
+    public void setQuizQuestion(QuizQuestion quizQuestion) {
+        this.quizQuestion = quizQuestion;
     }
 
     @Override

@@ -13,8 +13,8 @@ public class QuizService {
     private final List<QuizQuestion> questions = List.of(
         new QuizQuestion(
             "q1",
-            "Wie viele Standorte hat die HSRM?",
-            List.of("3", "4", "5"),
+            "Wie viele Fachbereiche hat die Hochschule RheinMain insgesamt?",
+            List.of("3", "5", "7"),
             1
         ),
         new QuizQuestion(
@@ -29,14 +29,14 @@ public class QuizService {
         ),
         new QuizQuestion(
             "q3",
-            "Wie heißt die Sekretärin?",
-            List.of("Anke", "Annette", "Ricarda"),
+            "Wie heißt die Sekretärin Frau Gehl mit Vornamen?",
+            List.of("Yvonne", "Anke", "Ricarda"),
             1
         ),
         new QuizQuestion(
             "q4",
-            "In welchem Jahr wurde die HSRM eröffnet?",
-            List.of("1954", "1985", "2002"),
+            "In welchem Jahr wurde die HSRM gegründet?",
+            List.of("1954", "1985", "1971"),
             0
         )
     );

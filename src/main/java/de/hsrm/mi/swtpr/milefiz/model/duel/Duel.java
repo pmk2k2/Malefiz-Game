@@ -19,6 +19,7 @@ public class Duel {
         this.player1Id = p1;
         this.player2Id = p2;
         this.question = question;
+        this.questionStartedAt = Instant.now();
     }
 
     public QuizQuestion getQuestion() {
@@ -48,6 +49,12 @@ public class Duel {
 
     public void resetForNewQuestion(QuizQuestion q) {
         this.question = q;
+        this.answers.clear();
+        this.questionStartedAt = Instant.now();
+    }
+
+    public void nextQuestion(QuizQuestion newQuestion) {
+        this.question = newQuestion;
         this.answers.clear();
         this.questionStartedAt = Instant.now();
     }

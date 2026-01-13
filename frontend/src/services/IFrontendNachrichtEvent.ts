@@ -14,4 +14,12 @@ export interface IFrontendNachrichtEvent {
   figureId: string
   opponentId?: string // fuer duell
   bewegung: IBewegung
+
+  // DUEL
+  quizQuestion?: {
+    id: string
+    text: string
+    answers: string[]
+    correctIndex?: number
+  }
 }

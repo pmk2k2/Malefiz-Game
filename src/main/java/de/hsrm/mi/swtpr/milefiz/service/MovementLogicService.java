@@ -35,9 +35,10 @@ public class MovementLogicService {
     private ApplicationEventPublisher publisher;
     private BoardNavigationService navService;
 
-    public MovementLogicService(ApplicationEventPublisher publisher, BoardNavigationService navService) {
+    public MovementLogicService(ApplicationEventPublisher publisher, BoardNavigationService navService, QuizService quizService) {
         this.publisher = publisher;
         this.navService = navService;
+        this.quizService = quizService;
     }
 
     public FigureMoveResult moveFigure(Game game, String gameCode, FigureMoveRequest request) {
@@ -454,7 +455,17 @@ public class MovementLogicService {
 
         // Event auslösen
         if (field.isDuelField()) {
+
+            if (game.getActiveDuel() != null) {
+                return FigureMoveResult.ok();
+            }
+
             List<Figure> figs = field.getFigures();
+            
+            if (figs.size() < 2) {
+                return FigureMoveResult.ok();
+            }
+            
             String p1 = figs.get(0).getOwnerPlayerId();
             String p2 = figs.get(1).getOwnerPlayerId();
 
@@ -471,7 +482,7 @@ public class MovementLogicService {
 
                 FrontendNachrichtEvent duelEvent = new FrontendNachrichtEvent(
                         FrontendNachrichtEvent.Nachrichtentyp.INGAME,
-                        FrontendNachrichtEvent.Operation.DUEL_PREPARE,
+                        FrontendNachrichtEvent.Operation.DUEL,
                         gameCode,
                         null,
                         p1, // Id des player1 im duell
@@ -485,7 +496,13 @@ public class MovementLogicService {
                 game.setActiveDuel(duel);
                 game.setState(GameState.DUEL);
 
-
+                FrontendNachrichtEvent questionEvent = new FrontendNachrichtEvent(
+                    FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+                    null,
+                    FrontendNachrichtEvent.Operation.DUEL_NEW_QUESTION,
+                    gameCode,
+                    null
+                );
                 publisher.publishEvent(duelEvent);
             }
         }

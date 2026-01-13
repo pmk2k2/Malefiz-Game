@@ -13,6 +13,8 @@ import { useGameStore } from '@/stores/gamestore'
 import PauseMenu from '@/components/PauseMenu.vue'
 import EnergyBar from '@/components/playingfield/EnergyBar.vue'
 import HUDInfoView from '@/components/hud/HUDInfoView.vue'
+import DuelPopup from '@/components/duel/DuelPopup.vue'
+
 
 const gameStore = useGameStore()
 const { figures } = storeToRefs(gameStore)
@@ -145,15 +147,16 @@ function startCooldownTimer() {
     </TresCanvas>
 
     <PopupSpielende />
+    <DuelPopup />
     <PauseMenu />
 
-    <div v-if="gameStore.gameData.duelActive" class="minigame-overlay">
+    <!--<div v-if="gameStore.gameData.duelActive" class="minigame-overlay">
       <div class="minigame-box">
         <h2>DUELL STARTET!</h2>
         <p>Bereite dich auf das Minispiel vor...</p>
         <div class="loader"></div>
       </div>
-    </div>
+    </div>-->
 
     <!-- UI Overlay -->
     <div class="pointer-events-none absolute inset-0 flex items-start m-2 z-50">

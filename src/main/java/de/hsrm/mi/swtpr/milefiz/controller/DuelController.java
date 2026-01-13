@@ -4,14 +4,18 @@ import java.time.Instant;
 import java.util.Comparator;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
 import de.hsrm.mi.swtpr.milefiz.controller.dto.DuelAnswerRequest;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
+import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 import de.hsrm.mi.swtpr.milefiz.model.duel.DuelAnswer;
 import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
@@ -26,6 +30,9 @@ public class DuelController {
 
     @Autowired
     private GameService gameService;
+
+    @Autowired
+    private ApplicationEventPublisher publisher;
 
     @Autowired
     private QuizService quizService;
@@ -47,19 +54,35 @@ public class DuelController {
             )
         );
 
-        evaluateDuel(game, duel);
+        evaluateDuel(game, duel, req.gameCode());
     }
 
-    private void evaluateDuel(Game game, Duel duel) {
+    private void evaluateDuel(Game game, Duel duel, String gameCode) {
+
+        if (duel.isFinished()) return;
+
+        if (isTimeout(duel)) {
 
         if (duel.getAnswers().isEmpty()) {
-            if (isTimeout(duel)) {
-                QuizQuestion newQ = quizService.getRandomQuestion();
-                duel.resetForNewQuestion(newQ);
-                publishNewQuestion(game, duel);
-            }
+            QuizQuestion newQ = quizService.getRandomQuestion();
+            duel.nextQuestion(newQ);
+            publishNewQuestion(gameCode, newQ);
+
             return;
         }
+
+        String loser = duel.getAnswers().keySet().iterator().next();
+        String winner = duel.getOpponent(loser);
+
+        duel.finish();
+        game.setActiveDuel(null);
+        game.setState(GameState.RUNNING);
+
+        resetLoserFigure(game, loser);
+        publishDuelResult(gameCode, winner, loser);
+        return;
+    }
+
 
 
         QuizQuestion q = duel.getQuestion();
@@ -73,8 +96,8 @@ public class DuelController {
         boolean correct = first.getAnswerIndex() == q.getCorrectIndex();
 
         String winner = correct
-                ? first.getPlayerId()
-                : duel.getOpponent(first.getPlayerId());
+            ? first.getPlayerId()
+            : duel.getOpponent(first.getPlayerId());
 
         String loser = duel.getOpponent(winner);
 
@@ -83,8 +106,9 @@ public class DuelController {
         game.setState(GameState.RUNNING);
 
         resetLoserFigure(game, loser);
-        publishDuelResult(game, winner, loser);
+        publishDuelResult(gameCode, winner, loser);
     }
+
 
 
     private void resetLoserFigure(Game game, String loserId) {
@@ -93,13 +117,46 @@ public class DuelController {
             .forEach(f -> f.setOnField(false));
     }
 
-    private void publishDuelResult(Game game, String winner, String loser) {
-        // zeitliche Schablone
+    private void publishDuelResult(String gameCode, String winner, String loser) {
+        FrontendNachrichtEvent event = new FrontendNachrichtEvent(
+            FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+            winner,
+            FrontendNachrichtEvent.Operation.DUEL_RESULT,
+            gameCode,
+            null
+        );
+        event.setOpponentId(loser);
+        publisher.publishEvent(event);
     }
 
-    private void publishNewQuestion(Game game, Duel duel) {
-        // TODO: STOMP-Event DUEL_NEW_QUESTION
+
+
+    private void publishNewQuestion(String gameCode, QuizQuestion q) {
+        FrontendNachrichtEvent event = new FrontendNachrichtEvent(
+            FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+            null,
+            FrontendNachrichtEvent.Operation.DUEL_NEW_QUESTION,
+            gameCode,
+            null
+        );
+        event.setQuizQuestion(q); 
+        publisher.publishEvent(event);
     }
+
+
+    @GetMapping("/start")
+    public void startDuel(@RequestParam String gameCode) {
+        Game game = gameService.getGame(gameCode);
+        Duel duel = game.getActiveDuel();
+
+        if (duel == null) return;
+
+        publishNewQuestion(gameCode, duel.getQuestion());
+    }
+
+
+
+
 
 
     private boolean isTimeout(Duel duel) {
