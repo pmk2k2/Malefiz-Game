@@ -120,6 +120,7 @@ public class BoardController {
         }
 
         // Save board to game
+        boardService.addStartFieldsToBoard(customBoard);
         game.setBoard(customBoard);
         logger.info("Custom board saved for game {}: {}x{}", code, customBoard.getCols(), customBoard.getRows());
 
