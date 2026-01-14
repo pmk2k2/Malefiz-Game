@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Duration;
 import de.hsrm.mi.swtpr.milefiz.controller.dto.DuelAnswerRequest;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
+import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
 import de.hsrm.mi.swtpr.milefiz.model.Direction;
@@ -24,6 +25,7 @@ import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
 import de.hsrm.mi.swtpr.milefiz.service.QuizService;
 import de.hsrm.mi.swtpr.milefiz.model.duel.Duel;
+import de.hsrm.mi.swtpr.milefiz.entities.board.Field;
 
 
 @RestController
@@ -150,6 +152,53 @@ public class DuelController {
                 publisher.publishEvent(moveEvent);
             });
     }
+    private void resetLoserFigure2(Game game, String loserId, String gameCode, Duel duel) {
+
+    game.getFigures().stream()
+        .filter(f -> f.getId().equals(loserId))
+        .findFirst()
+        .ifPresent(f -> {
+
+            int fromI = f.getGridI();
+            int fromJ = f.getGridJ();
+
+            // Startfeld holen
+            Player player = game.getPlayerById(f.getOwnerPlayerId());
+            int startIndex = game.getPlayerNumber().indexOf(player.getId());
+            Field startField = game.getBoard().getStartFieldByIndex(startIndex);
+
+            // Board korrekt aktualisieren
+            game.getBoard().get(fromI, fromJ).removeFigure(f);
+            startField.addFigure(f);
+
+            // Figur auf Startposition setzen
+            f.setPosition(startField.getI(), startField.getJ());
+
+            // Figur **ist jetzt auf dem Feld**
+            f.setOnField(true);
+
+            // Figur in Start-Richtung zurücksetzen
+            f.resetOrientation();
+
+            // Bewegung ans Frontend senden
+            Bewegung bew = new Bewegung(
+                fromI, fromJ,
+                startField.getI(), startField.getJ(),
+                Direction.valueOf(f.getOrientation().toUpperCase()),
+                0
+            );
+
+            publisher.publishEvent(new FrontendNachrichtEvent(
+                FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+                FrontendNachrichtEvent.Operation.MOVE,
+                gameCode,
+                f.getId(),
+                loserId,
+                bew
+            ));
+        });
+}
+
 
 
 

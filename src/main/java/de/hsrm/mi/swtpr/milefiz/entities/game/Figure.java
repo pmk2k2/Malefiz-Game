@@ -8,6 +8,8 @@ public class Figure {
     private int gridJ;
     private String orientation;
     private boolean isOnField;  // Ist Figur auf Feld oder im Haeusschen?
+    private String startOrientation;
+
 
     public Figure(String id, String ownerPlayerId, String color, int startI, int startJ) {
         this.id = id;
@@ -16,6 +18,15 @@ public class Figure {
         this.gridI = startI;
         this.gridJ = startJ;
         this.orientation = "north";
+        this.isOnField = false;
+    }
+        public Figure(String id, String ownerPlayerId, String color, int startI, int startJ, String startOrientation) {
+        this.id = id;
+        this.ownerPlayerId = ownerPlayerId;
+        this.color = color;
+        this.gridI = startI;
+        this.orientation = startOrientation;
+        this.startOrientation = startOrientation;
         this.isOnField = false;
     }
 
@@ -74,4 +85,12 @@ public class Figure {
     public void setOnField(boolean isOnField) {
         this.isOnField = isOnField;
     }
+    public String getStartOrientation() {
+    return startOrientation;
+}
+
+public void resetOrientation() {
+    this.orientation = startOrientation;
+}
+
 }
