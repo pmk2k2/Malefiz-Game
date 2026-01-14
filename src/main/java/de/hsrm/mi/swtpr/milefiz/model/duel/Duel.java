@@ -39,7 +39,8 @@ public class Duel {
     }
 
     public String getOpponent(String playerId) {
-        if (playerId.equals(player1Id)) return player2Id;
+        if (playerId.equals(player1Id))
+            return player2Id;
         return player1Id;
     }
 

@@ -13,19 +13,19 @@ import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
-import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
+import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent.Aktion;
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
 import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
-import de.hsrm.mi.swtpr.milefiz.service.BoardNavigationService.MoveType;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 import de.hsrm.mi.swtpr.milefiz.model.duel.Duel;
 import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
+import de.hsrm.mi.swtpr.milefiz.service.BoardNavigationService.MoveType;
 
 @Service
 public class MovementLogicService {
@@ -35,7 +35,8 @@ public class MovementLogicService {
     private ApplicationEventPublisher publisher;
     private BoardNavigationService navService;
 
-    public MovementLogicService(ApplicationEventPublisher publisher, BoardNavigationService navService, QuizService quizService) {
+    public MovementLogicService(ApplicationEventPublisher publisher, BoardNavigationService navService,
+            QuizService quizService) {
         this.publisher = publisher;
         this.navService = navService;
         this.quizService = quizService;
@@ -248,7 +249,7 @@ public class MovementLogicService {
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
                     return FigureMoveResult.ok();
-                } else if(allowedDistance == 1) {
+                } else if (allowedDistance == 1) {
                     // Auf Barriere gelandet: Spielstatus ändern und variable auf true setzen
                     destField.setBarrier(null);
                     destField.setType(CellType.PATH);
@@ -365,7 +366,8 @@ public class MovementLogicService {
             // Anzahl Schritte und Richtung fuer Event anpassen
             stepsCount++;
 
-            if(barrierHit) break;
+            if (barrierHit)
+                break;
 
             // Wenn Zug vorbei, direkt aus der Loop ausbrechen
             if (moveOver)
@@ -461,11 +463,11 @@ public class MovementLogicService {
             }
 
             List<Figure> figs = field.getFigures();
-            
+
             if (figs.size() < 2) {
                 return FigureMoveResult.ok();
             }
-            
+
             String p1 = figs.get(0).getOwnerPlayerId();
             String p2 = figs.get(1).getOwnerPlayerId();
 
@@ -497,17 +499,17 @@ public class MovementLogicService {
                 game.setState(GameState.DUEL);
 
                 FrontendNachrichtEvent questionEvent = new FrontendNachrichtEvent(
-                    FrontendNachrichtEvent.Nachrichtentyp.INGAME,
-                    null,
-                    FrontendNachrichtEvent.Operation.DUEL_NEW_QUESTION,
-                    gameCode,
-                    null
-                );
+                        FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+                        null,
+                        FrontendNachrichtEvent.Operation.DUEL_NEW_QUESTION,
+                        gameCode,
+                        null);
                 publisher.publishEvent(duelEvent);
             }
         }
 
-        // Eine Nachricht schicken, falls eine Barriere getroffen wurde, damit der Controller das automatische Öffnen des Maps triggern kann.
+        // Eine Nachricht schicken, falls eine Barriere getroffen wurde, damit der
+        // Controller das automatische Öffnen des Maps triggern kann.
         return barrierHit ? FigureMoveResult.ok("BARRIER_HIT") : FigureMoveResult.ok();
     }
 }
