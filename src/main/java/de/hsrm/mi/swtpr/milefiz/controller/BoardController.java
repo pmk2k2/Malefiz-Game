@@ -8,6 +8,7 @@ import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
 import de.hsrm.mi.swtpr.milefiz.service.BoardService;
+import de.hsrm.mi.swtpr.milefiz.service.BoardValidationService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,9 @@ public class BoardController {
 
     @Autowired
     private BoardService boardService;
+
+    @Autowired
+    private BoardValidationService boardValidationService;
 
     private Logger logger = LoggerFactory.getLogger(BoardController.class);
 
@@ -89,6 +93,12 @@ public class BoardController {
         }
     }
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     @PostMapping("/lobby/{code}/board")
     public ResponseEntity<Map<String, Object>> saveCustomBoard(
             @PathVariable String code,
@@ -112,11 +122,21 @@ public class BoardController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
         }
 
-        // Validate board basic structure
-        if (customBoard.getGrid() == null || customBoard.getGrid().length == 0) {
+        // Validate board using the specialized service
+        // RAMY
+        List<String> validationErrors = boardValidationService.validateBoard(customBoard);
+
+        if (!validationErrors.isEmpty()) {
             response.put("success", false);
-            response.put("error", "Invalid board: grid is empty");
+            // Alle Fehler zu einem String zusammenfügen
+            response.put("error", "Board ungültig: " + String.join(", ", validationErrors));
+            // Optional: Liste für detaillierte Anzeige im Frontend mitgeben
+            response.put("validationErrors", validationErrors);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+        if (customBoard.getGrid() == null) {
+
         }
 
         // Save board to game
@@ -127,6 +147,12 @@ public class BoardController {
         response.put("message", "Board saved successfully");
         return ResponseEntity.ok(response);
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // NEW: Select a preset board for the lobby
     @PostMapping("/lobby/{code}/board/select-preset")
