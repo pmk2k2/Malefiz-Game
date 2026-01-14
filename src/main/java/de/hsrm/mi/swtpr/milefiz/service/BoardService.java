@@ -102,7 +102,7 @@ public class BoardService {
 
     // unschoene Loesung, aber keine Ahnung wie ich das bei
     // dem vorhandenen Parser anders machen soll
-    private void addStartFieldsToBoard(Board board) {
+    public void addStartFieldsToBoard(Board board) {
         for (int j = 0; j < board.getHeight(); j++) {
             for (int i = 0; i < board.getWidth(); i++) {
                 Field field = board.get(i, j);
