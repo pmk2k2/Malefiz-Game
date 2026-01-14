@@ -2,6 +2,7 @@ package de.hsrm.mi.swtpr.milefiz.controller;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.http.HttpStatus;
 
 import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
@@ -15,8 +16,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Arrays;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api")
@@ -62,11 +67,7 @@ public class BoardController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
 
-        List<String> presets = Arrays.asList(
-                "DummyBoard.json",
-                "BiggerBoard.json",
-                "SmallerBoard.json",
-                "MuchBigger.json");
+        List<String> presets = boardService.getAllAvailableBoards();
         return ResponseEntity.ok(presets);
     }
 
@@ -186,4 +187,36 @@ public class BoardController {
 
         return ResponseEntity.ok(board);
     }
+
+    // Endpunkt nimmt zum Import eine Datei entgegen
+    // MultipartFile enthält sowohl den Inhalt, als auch die Metadaten der Datei. So
+    // bekommen wir der Name der Datei auch.
+    // Die Rohdaten der Datei(Nur .json erlaubt) werden in einem String umgewandelt
+    // und über boardService gespeichert
+    @PostMapping("/lobby/{code}/board/import")
+    public ResponseEntity<?> importBoard(@PathVariable String code, @RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "File is empty."));
+        }
+        String originalName = file.getOriginalFilename();
+        if (originalName == null || !originalName.toLowerCase().endsWith(".json")) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "Only .json-Files are allowed."));
+        }
+
+        try {
+            String fileName = StringUtils.cleanPath(originalName);
+            byte[] bytes = file.getBytes();
+            String content = new String(bytes, StandardCharsets.UTF_8);
+
+            boardService.saveImportedBoard(code, fileName, content);
+
+            return ResponseEntity
+                    .ok(Map.of("success", true, "message", "Board successfully imported: ", "fileName", fileName));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error while saving the file."));
+        }
+    }
+
 }
