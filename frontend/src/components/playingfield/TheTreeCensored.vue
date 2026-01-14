@@ -10,8 +10,8 @@ const { state } = useGLTF('/Pine Tree.glb', { draco: true })
 
 </script>
 
-<template>
-    <TresMesh :position="[0, 0, 0.05]">
+<template>  <
+    <TresMesh :position="[0, 0, 0.5]">    <!-- z position ändern wenn wir uns zu entscheiden, das zensierte barriere auf path liegen soll-->
         <TresCircleGeometry :args="[0.5, 64]" />
         <TresMeshStandardMaterial color="#000000"/>
     </TresMesh>

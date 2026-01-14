@@ -103,16 +103,17 @@ const camHeight = computed(() => (props.board?.rows || 1) * CELL_SIZE)
       :rotation="[-Math.PI / 2, 0, 0]"
       @click="onCellClick(cell)"
     >
+
+      <template v-if="cell.type === 'PATH' || cell.type === 'START' || cell.type === 'BARRIER'">
+        <TheRock />
+      </template>
+
       <template v-if="cell.type === 'BLOCKED' || cell.type === 'BARRIER'">
         <TheTreeCensored />
       </template>
 
-      <template v-else-if="cell.type === 'PATH' || cell.type === 'START'">
-        <TheRock />
-      </template>
-
-      <template v-else-if="cell.type === 'GOAL'">
-        <TheCrown />
+      <template v-if="cell.type === 'GOAL'">
+        <TheTreeCensored />
       </template>
     </TresMesh>
 
