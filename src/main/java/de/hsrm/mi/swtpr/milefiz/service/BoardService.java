@@ -100,6 +100,39 @@ public class BoardService {
         return allBoards;
     }
 
+    // Die Methode iteriert durch das Board(importierte .json-Datei) und prüft,
+    // ob 1 Zielfeld und 4 Startfelder gefunden sind
+    public void validateBoard(String content) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        Board board = mapper.readValue(content, Board.class);
+
+        boolean hasGoal = false;
+        int startFieldCounter = 0;
+
+        for (Field[] row : board.getGrid()) {
+            for (Field field : row) {
+                if (field.getType().equals(CellType.GOAL)) {
+                    hasGoal = true;
+                }
+                if (field.getType().equals(CellType.START)) {
+                    startFieldCounter++;
+                }
+            }
+        }
+
+        if (!hasGoal) {
+            throw new Exception("Map is not correct structured: No Goal-Field (GOAL) found.");
+        }
+
+        if (startFieldCounter != 4) {
+            throw new Exception(
+                    "Map is not correct structured: No Start-Field (START) found. The file must have 4 Start-Fields");
+        }
+
+        logger.info("Validation successful: Goal found, {} Start-Fields found.", startFieldCounter);
+    }
+
     // unschoene Loesung, aber keine Ahnung wie ich das bei
     // dem vorhandenen Parser anders machen soll
     public void addStartFieldsToBoard(Board board) {

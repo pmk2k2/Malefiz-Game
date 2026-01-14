@@ -193,7 +193,7 @@ public class BoardController {
     // MultipartFile enthält sowohl den Inhalt, als auch die Metadaten der Datei. So
     // bekommen wir der Name der Datei auch.
     // Die Rohdaten der Datei(Nur .json erlaubt) werden in einem String umgewandelt
-    // und über boardService gespeichert
+    // und über boardService validiert & gespeichert
     @PostMapping("/lobby/{code}/board/import")
     public ResponseEntity<?> importBoard(@PathVariable String code, @RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
@@ -206,14 +206,21 @@ public class BoardController {
         }
 
         try {
-            String fileName = StringUtils.cleanPath(originalName);
             byte[] bytes = file.getBytes();
             String content = new String(bytes, StandardCharsets.UTF_8);
 
+            try {
+                boardService.validateBoard(content);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", e.getMessage()));
+            }
+            String fileName = StringUtils.cleanPath(originalName);
             boardService.saveImportedBoard(code, fileName, content);
 
             return ResponseEntity
-                    .ok(Map.of("success", true, "message", "Board successfully imported: ", "fileName", fileName));
+                    .ok(Map.of("success", true, "message", "Board successfully validated and imported: ", "fileName",
+                            fileName));
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Error while saving the file."));
