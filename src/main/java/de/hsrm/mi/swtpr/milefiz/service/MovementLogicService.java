@@ -497,13 +497,6 @@ public class MovementLogicService {
 
                 game.setActiveDuel(duel);
                 game.setState(GameState.DUEL);
-
-                FrontendNachrichtEvent questionEvent = new FrontendNachrichtEvent(
-                        FrontendNachrichtEvent.Nachrichtentyp.INGAME,
-                        null,
-                        FrontendNachrichtEvent.Operation.DUEL_NEW_QUESTION,
-                        gameCode,
-                        null);
                 publisher.publishEvent(duelEvent);
             }
         }
