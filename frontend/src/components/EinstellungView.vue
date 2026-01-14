@@ -89,6 +89,13 @@
         <button class="btn cancel-btn" @click="close">Cancel</button>
       </div>
     </div>
+    <input
+      type="file"
+      ref="fileInput"
+      accept=".json"
+      style="display: none"
+      @change="handleFileImport"
+    />
   </div>
 </template>
 
@@ -109,6 +116,7 @@ const time = ref(1)
 const maxEnergy = ref(10)
 const loading = ref(false)
 let interval: number | null = null
+const fileInput = ref<HTMLInputElement | null>(null)
 
 onMounted(async () => {
   const gameCode = gameStore.gameData.gameCode
@@ -205,7 +213,43 @@ const confirmAll = async () => {
   }
 }
 
-const importMap = () => {}
+const importMap = () => fileInput.value?.click()
+
+const handleFileImport = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+
+  if (!file) return
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  loading.value = true
+  try {
+    const res = await fetch(`${apiBase}/lobby/${gameStore.gameData.gameCode}/board/import`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (res.ok) {
+      alert('Map erfolgreich importiert!')
+      // Die Liste mit dem neuen Map laden
+      const presetRes = await fetch(
+        `${apiBase}/lobby/${gameStore.gameData.gameCode}/boards/presets`,
+      )
+      if (presetRes.ok) presets.value = await presetRes.json()
+    } else {
+      const errorData = await res.json().catch(() => ({}))
+      alert('Fehler beim Import: ' + (errorData.message || 'Unbekkanter Fehler'))
+    }
+  } catch (err) {
+    console.error('Upload fehlgeschlafen', err)
+    alert('Verbindung zum Server fehlgeschlagen.')
+  } finally {
+    loading.value = false
+    target.value = '' // Das ermöglicht, die selbe Datei nochmal zu wählen
+  }
+}
 
 const close = () => emit('close')
 </script>
