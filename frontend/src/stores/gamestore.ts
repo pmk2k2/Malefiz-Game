@@ -42,6 +42,7 @@ export const useGameStore = defineStore('gamestore', () => {
     totalSteps: number
     energy: number
     duelActive: boolean
+    currentMinigame: string | null
   }>({
     ok: false,
     players: [],
@@ -63,6 +64,7 @@ export const useGameStore = defineStore('gamestore', () => {
     totalSteps: 0,
     energy: 0,
     duelActive: false,
+    currentMinigame: null,
   })
   const figures = ref<IPlayerFigure[]>([])
   const ingameMoveEvent = ref<IFrontendNachrichtEvent>()
@@ -163,6 +165,19 @@ export const useGameStore = defineStore('gamestore', () => {
                 (event.id === gameData.playerId || event.opponentId === gameData.playerId)
               ) {
                 gameData.duelActive = true
+              }
+            }
+            // <--- NEU: Reagieren auf Minigame Auswahl
+            else if (event.operation === 'MINIGAME_SELECTED') {
+              const { minigameType, id, opponentId } = event
+              
+              console.log(`!!! MINIGAME SELECTED: ${minigameType} !!!`)
+              
+              //HIER DIE DUELL Minigame anzeige einbinden bei 'gameData.currentMinigame'
+              gameData.currentMinigame = minigameType || null
+              
+              if (gameData.playerId === id || gameData.playerId === opponentId) {
+                console.log(`Spieler ${gameData.playerName} startet nun Minispiel UI für ${event.minigameType}`)
               }
             }
           }
@@ -387,11 +402,13 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.isHost = null
     gameData.players = []
     gameData.ok = false
+    gameData.isBereit = false
     gameData.gameOver = null
     gameData.stepsTaken=0
     gameData.remainingSteps=0
     gameData.totalSteps=0
     gameData.duelActive = false
+    gameData.currentMinigame = null
     stopCountdown()
 
     localStorage.removeItem('gameData')

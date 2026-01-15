@@ -16,4 +16,5 @@ export interface IFrontendNachrichtEvent {
   opponentId?: string // fuer duell
   bewegung: IBewegung
   step: IStep
+  minigameType?: string // Neu fuer Minigames
 }

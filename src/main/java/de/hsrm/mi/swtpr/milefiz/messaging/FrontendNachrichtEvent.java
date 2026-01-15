@@ -33,7 +33,8 @@ public class FrontendNachrichtEvent {
         MOVE,
         STEP_UPDATE,
         ENERGY_UPDATED,
-        DUEL_PREPARE
+        DUEL_PREPARE,
+        MINIGAME_SELECTED // <--- NEU: Operation für ausgewähltes Minispiel
     }
 
     private Nachrichtentyp typ;
@@ -52,6 +53,7 @@ public class FrontendNachrichtEvent {
     private Bewegung bewegung;
     private int newEnergyValue;
     private Step step;
+    private String minigameType; // für die Art des Minigames
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -202,5 +204,13 @@ public class FrontendNachrichtEvent {
 
     public void setNewEnergyValue(int newEnergyValue) {
         this.newEnergyValue = newEnergyValue;
+    }
+
+    public String getMinigameType() {
+        return minigameType;
+    }
+
+    public void setMinigameType(String minigameType) {
+        this.minigameType = minigameType;
     }
 }
