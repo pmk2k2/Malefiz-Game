@@ -395,6 +395,7 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.isHost = null
     gameData.players = []
     gameData.ok = false
+    gameData.isBereit = false
     gameData.gameOver = null
     gameData.stepsTaken=0
     gameData.remainingSteps=0
