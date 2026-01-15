@@ -241,7 +241,7 @@ function startCooldownTimer() {
 .top-right-controls {
   position: absolute;
   top: 20px;
-  right: 80px;
+  right: 200px;
   z-index: 60;
   display: flex;
   flex-direction: row;
@@ -489,17 +489,19 @@ function startCooldownTimer() {
   max-width: 200px;
   background-color: #3d2b1f;
   background-image:
-    linear-gradient(to bottom, rgba(0,0,0,0.12), transparent),
-    repeating-linear-gradient(90deg,
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.12), transparent),
+    repeating-linear-gradient(
+      90deg,
       transparent,
       transparent 38px,
-      rgba(0,0,0,0.08) 39px,
-      rgba(0,0,0,0.08) 40px);
+      rgba(0, 0, 0, 0.08) 39px,
+      rgba(0, 0, 0, 0.08) 40px
+    );
   border: 4px solid #2d1b0d;
   border-radius: 18px;
   box-shadow:
-    0 8px 24px rgba(0,0,0,0.45),
-    inset 0 0 10px rgba(0,0,0,0.25);
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    inset 0 0 10px rgba(0, 0, 0, 0.25);
   padding: 22px 28px 18px 28px;
   color: #ffe7b0;
   font-family: 'Kanit', 'Segoe UI', sans-serif;
