@@ -115,47 +115,10 @@ public class DuelController {
     }
 
 
-
-    private void resetLoserFigure(Game game, String loserId, String gameCode){
-        game.getFigures().stream()
-            .filter(f -> f.getOwnerPlayerId().equals(loserId))
-            .forEach(f -> {
-
-                int fromI = f.getGridI();
-                int fromJ = f.getGridJ();
-
-                int baseI = 0;
-                int baseJ = 0;
-
-                f.setGridI(baseI);
-                f.setGridJ(baseJ);
-
-                Bewegung bew = new Bewegung(
-                    fromI,
-                    fromJ,
-                    baseI,
-                    baseJ,
-                    Direction.SOUTH,
-                    0
-                );
-
-                FrontendNachrichtEvent moveEvent =
-                    new FrontendNachrichtEvent(
-                        FrontendNachrichtEvent.Nachrichtentyp.INGAME,
-                        FrontendNachrichtEvent.Operation.MOVE,
-                        gameCode,
-                        f.getId(),
-                        loserId,
-                        bew
-                    );
-
-                publisher.publishEvent(moveEvent);
-            });
-    }
-    private void resetLoserFigure2(Game game, String loserId, String gameCode, Duel duel) {
+    private void resetLoserFigure(Game game, String loserId, String gameCode) {
 
     game.getFigures().stream()
-        .filter(f -> f.getId().equals(loserId))
+        .filter(f -> f.getOwnerPlayerId().equals(loserId))
         .findFirst()
         .ifPresent(f -> {
 
@@ -167,24 +130,23 @@ public class DuelController {
             int startIndex = game.getPlayerNumber().indexOf(player.getId());
             Field startField = game.getBoard().getStartFieldByIndex(startIndex);
 
-            // Board korrekt aktualisieren
+            // Board aktualisieren
             game.getBoard().get(fromI, fromJ).removeFigure(f);
             startField.addFigure(f);
 
             // Figur auf Startposition setzen
             f.setPosition(startField.getI(), startField.getJ());
 
-            // Figur **ist jetzt auf dem Feld**
+            // Figur ist jetzt auf dem Feld
             f.setOnField(true);
 
-            // Figur in Start-Richtung zurücksetzen
-            f.resetOrientation();
-
-            // Bewegung ans Frontend senden
+ 
             Bewegung bew = new Bewegung(
-                fromI, fromJ,
-                startField.getI(), startField.getJ(),
-                Direction.valueOf(f.getOrientation().toUpperCase()),
+                fromI,
+                fromJ,
+                startField.getI(),
+                startField.getJ(),
+                Direction.SOUTH,
                 0
             );
 
