@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
+import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.exception.CooldownException;
 //import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
 //import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent.Aktion;
@@ -13,6 +14,8 @@ import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.service.DiceService;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
 //import jakarta.servlet.http.HttpSession;
+
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,11 +38,13 @@ public class DiceController {
     }
 
     /*
-    @GetMapping("/roll")
-    public DiceResult roll(@RequestParam(name = "playerName", defaultValue = "Player 1") String playerName)
-            throws CooldownException {
-        return diceService.rollDice(playerName);
-    } */
+     * @GetMapping("/roll")
+     * public DiceResult roll(@RequestParam(name = "playerName", defaultValue =
+     * "Player 1") String playerName)
+     * throws CooldownException {
+     * return diceService.rollDice(playerName);
+     * }
+     */
 
     @PostMapping("/cooldown")
     public void setCooldown(@RequestParam("seconds") long seconds) {
@@ -55,14 +60,24 @@ public class DiceController {
     // Speichert die gewuerfelte Zahl im backend
     // "gameCode"
     @PostMapping("/game/{gameCode}/roll")
-    public DiceResult roll(@PathVariable("gameCode") String gameCode, @RequestParam("playerId") String playerId) throws CooldownException {
+    public DiceResult roll(@PathVariable("gameCode") String gameCode, @RequestParam("playerId") String playerId)
+            throws CooldownException {
 
         // Spiel laden
         Game game = gameService.getGame(gameCode);
         if (game == null)
             throw new RuntimeException("Spiel nicht gefunden!");
 
-        String playerName = game.getPlayerById(playerId).getName();
+        logger.info("current playerid in game: {}",
+                game.getPlayers().stream().map(Player::getId).collect(Collectors.joining(",")));
+        logger.info("IDDDDD", playerId);
+
+        Player player = game.getPlayerById(playerId);
+        if (player == null) {
+            logger.info(game.getPlayers().stream().map(Player::getName).collect(Collectors.joining(",")));
+            throw new RuntimeException("Spieler nicht gefunden oder nicht mehr im Spiel!");
+        }
+        String playerName = player.getName();
         logger.info("Spielername {}, Spielerid {}", playerName, playerId);
 
         // Validierung:Prüfen, ob schon gewuerfelt wurde
@@ -80,7 +95,7 @@ public class DiceController {
         game.updateDiceResult(playerName, result);
 
         // Ergebnis für den Spieler speichern
-        //game.setRollForPlayer(playerId, result.getValue()); noetig??
+        // game.setRollForPlayer(playerId, result.getValue()); noetig??
 
         return result;
     }

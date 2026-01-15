@@ -41,8 +41,11 @@ public class GameRestController {
     @PostMapping("/create")
     public Map<String, Object> createGame(@RequestBody Map<String, String> body, HttpSession session) {
         String name = body.get("name");
+        // always use frontend-provided playerId if available, else use to session
+        // when from lobby-gameview, websocket disconnected and then reconneted so if
+        // sessionid is changed if playerid is session id, it change as well
+        String playerId = body.getOrDefault("playerId", session.getId());
         String code = service.createGame();
-        String playerId = session.getId();
 
         service.addPlayer(code, playerId, name, true);
         Game game = service.getGame(code);
@@ -59,7 +62,9 @@ public class GameRestController {
     public Map<String, Object> joinGame(@RequestBody Map<String, String> body, HttpSession session) {
         String name = body.get("name");
         String code = body.get("code");
-        String playerId = session.getId();
+        // Always use frontend-provided playerId if available, else use to
+        // session(reason above)
+        String playerId = body.getOrDefault("playerId", session.getId());
 
         boolean success = service.addPlayer(code, playerId, name, false);
         if (!success) {
@@ -142,25 +147,28 @@ public class GameRestController {
     }
 
     @PostMapping("/updateSettings")
-    public ResponseEntity<Map<String, Object>> updateSettings(@RequestBody Map<String, Object> body, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> updateSettings(@RequestBody Map<String, Object> body,
+            HttpSession session) {
         String gameCode = (String) body.get("code");
         String playerId = (String) body.get("playerId");
-        
-        //Validierung ob alle Daten vorhanden sind 
+
+        // Validierung ob alle Daten vorhanden sind
         if (gameCode == null || playerId == null || body.get("maxEnergy") == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "Fehlende Daten (code, playerId, maxEnergy)"));
         }
 
         try {
-            //parse int aus Objekt und update Spieleinstellungen
+            // parse int aus Objekt und update Spieleinstellungen
             int maxEnergy = Integer.parseInt(body.get("maxEnergy").toString());
             service.updateGameSettings(gameCode, playerId, maxEnergy);
             return ResponseEntity.ok(Map.of("success", true, "maxEnergy", maxEnergy));
         } catch (NotHostException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Nur der Host darf Einstellungen ändern."));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Nur der Host darf Einstellungen ändern."));
         } catch (NumberFormatException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "maxEnergy muss eine Zahl sein."));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "maxEnergy muss eine Zahl sein."));
         }
     }
 
@@ -170,20 +178,23 @@ public class GameRestController {
         if (game == null)
             return Map.of("error", "Spiel nicht gefunden.");
 
-        //maxCollectableEnergy wird jetzt mit zurückgegeben
+        // maxCollectableEnergy wird jetzt mit zurückgegeben
         return Map.of("players", game.getPlayers(),
-            "maxCollectableEnergy", game.getMaxCollectableEnergy()
-        );
+                "maxCollectableEnergy", game.getMaxCollectableEnergy());
     }
 
     @GetMapping("/{code}/figures")
     public List<FigureDto> getFigures(@PathVariable("code") String code) {
         logger.info("Request figures for game code: {}", code);
-        List<FigureDto> figures = service.getFiguresasDto(code);
-
-        if (figures.isEmpty() && service.getGame(code) == null) {
+        Game game = service.getGame(code);
+        if (game == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Spiel nicht gefunden.");
         }
+        // only allow figures if game is RUNNING
+        if (game.getState() != null && !game.getState().name().equals("RUNNING")) {
+            return List.of();
+        }
+        List<FigureDto> figures = service.getFiguresasDto(code);
         return figures;
     }
 

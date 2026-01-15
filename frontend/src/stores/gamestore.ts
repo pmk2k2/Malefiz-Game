@@ -108,6 +108,9 @@ export const useGameStore = defineStore('gamestore', () => {
       webSocketFactory: () => new SockJS(sockJsUrl),
       reconnectDelay: 5000,
       debug: (str) => console.log('[STOMP]', str),
+      connectHeaders: {
+        playerId: gameData.playerId ?? ''
+      }
     })
 
     stompClient.onConnect = () => {
@@ -175,6 +178,7 @@ export const useGameStore = defineStore('gamestore', () => {
 
             if (event.operation === 'LEFT' && event.playerName) {
               setzeInfo(`${event.playerName} hat die Lobby verlassen.`) //InfoBox setzen wenn Player die Lobby verlässt
+              console.log('LEEFFFTTT')
             }
             if (event.operation === 'KICKED') {
               stopCountdown()
@@ -238,6 +242,9 @@ export const useGameStore = defineStore('gamestore', () => {
       webSocketFactory: () => new SockJS(sockJsUrl),
       reconnectDelay: 5000,
       debug: (str) => console.log('[STOMP]', str),
+      connectHeaders: {
+        playerId: playerId ?? ''
+      }
     })
 
     persStompClient.onConnect = () => {

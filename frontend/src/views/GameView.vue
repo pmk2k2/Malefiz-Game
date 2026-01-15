@@ -70,6 +70,20 @@ onMounted(async () => {
   } catch (e) {
     console.error('Cooldown konnte nicht geladen werden', e)
   }
+
+  // rejoim to the game to cancel scheduled removal
+  const { gameCode, playerId, playerName } = gameStore.gameData
+  if (gameCode && playerId && playerName) {
+    await fetch(`${API_BASE_URL}/game/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: gameCode,
+        name: playerName,
+        playerId: playerId,
+      }),
+    })
+  }
 })
 
 async function onRoll(id: string) {
