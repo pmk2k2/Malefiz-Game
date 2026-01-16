@@ -43,6 +43,13 @@ export const useGameStore = defineStore('gamestore', () => {
     energy: number
     duelActive: boolean
     currentMinigame: string | null
+    duelTimeLeft: number
+    duelAnswered: boolean
+    duelQuestion: null | {
+      text: string
+      answers: string[]
+    }
+
   }>({
     ok: false,
     players: [],
@@ -65,6 +72,9 @@ export const useGameStore = defineStore('gamestore', () => {
     energy: 0,
     duelActive: false,
     currentMinigame: null,
+    duelTimeLeft: 10,
+    duelAnswered: false,
+    duelQuestion: null,
   })
   const figures = ref<IPlayerFigure[]>([])
   const ingameMoveEvent = ref<IFrontendNachrichtEvent>()
@@ -130,7 +140,26 @@ export const useGameStore = defineStore('gamestore', () => {
               gameData.gameOver = true
               gameData.winnerId = event.id
               disconnect()
+            } else if (event.operation === 'DUEL_NEW_QUESTION' && gameData.duelActive) {
+              const q = event.quizQuestion
+              if (!q) return
+
+              gameData.duelAnswered = false
+              gameData.duelTimeLeft = 10
+              gameData.duelQuestion = {
+                text: q.text,
+                answers: q.answers,
+              }
             }
+
+            else if (event.operation === 'DUEL_RESULT' && gameData.duelActive) {
+              gameData.duelActive = false
+              gameData.duelQuestion = null
+              gameData.duelAnswered = false
+              gameData.duelTimeLeft = 0
+            }
+
+
             //aktualisiert die energie des lokalen Spielers falls die Event und Player ID übereinstimmt
             else if (event.operation === 'ENERGY_UPDATED') {
               console.log('Energie Update empfangen:', event)
@@ -156,6 +185,17 @@ export const useGameStore = defineStore('gamestore', () => {
               // DUEL / MINIGAME START
             else if (event.operation === 'DUEL_PREPARE') {
               console.log('DUEL_PREPARE Event empfangen!')
+            }
+            // DUEL / MINIGAME START
+            else if (event.operation === 'DUEL') {
+              console.log('DUEL Event empfangen!')
+              gameData.duelActive = true
+              gameData.duelQuestion = null
+              gameData.duelAnswered = false
+              gameData.duelTimeLeft = 10
+
+              fetch(`/api/duel/start?gameCode=${gameData.gameCode}`)
+
               // Nur fuer beteiligte Spieler
               if (
                 gameData.playerId &&

@@ -4,5 +4,6 @@ public enum GameState {
     WAITING,     
     COUNTDOWN,   
     RUNNING,
-    BARRIER_PLACEMENT
+    BARRIER_PLACEMENT,
+    DUEL
 }

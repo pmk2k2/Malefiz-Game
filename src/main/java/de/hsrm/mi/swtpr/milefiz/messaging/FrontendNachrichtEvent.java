@@ -5,6 +5,7 @@ import java.time.Instant;
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 import de.hsrm.mi.swtpr.milefiz.model.Step;
+import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
 
 public class FrontendNachrichtEvent {
 
@@ -34,7 +35,10 @@ public class FrontendNachrichtEvent {
         STEP_UPDATE,
         ENERGY_UPDATED,
         DUEL_PREPARE,
-        MINIGAME_SELECTED // <--- NEU: Operation für ausgewähltes Minispiel
+        MINIGAME_SELECTED, // <--- NEU: Operation für ausgewähltes Minispiel
+        DUEL,
+        DUEL_RESULT,
+        DUEL_NEW_QUESTION
     }
 
     private Nachrichtentyp typ;
@@ -54,6 +58,10 @@ public class FrontendNachrichtEvent {
     private int newEnergyValue;
     private Step step;
     private String minigameType; // für die Art des Minigames
+
+    private QuizQuestion quizQuestion;
+
+    
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -143,6 +151,14 @@ public class FrontendNachrichtEvent {
 
     public void setPlayerName(String playerName) {
         this.playerName = playerName;
+    }
+
+    public QuizQuestion getQuizQuestion() {
+        return quizQuestion;
+    }
+
+    public void setQuizQuestion(QuizQuestion quizQuestion) {
+        this.quizQuestion = quizQuestion;
     }
 
     @Override
