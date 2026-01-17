@@ -7,15 +7,10 @@ import java.util.Random;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import ch.qos.logback.core.spi.ConfigurationEvent.EventType;
 import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 
 import de.hsrm.mi.swtpr.milefiz.exception.CooldownException;
-import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
-import de.hsrm.mi.swtpr.milefiz.messaging.IngameMoveEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
-import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
-import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
 import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent.Aktion;
 
 @Service
@@ -66,6 +61,8 @@ public class DiceService {
         // Zahl zwischen 1 und 6 wird erstellt und im Ergebnisobjekt gespeichert
         int result = random.nextInt(6) + 1;
         DiceResult diceResult = new DiceResult(result, playerName);
+
+        publisher.publishEvent(new IngameRequestEvent(Aktion.DICE_ROLL, playerId, gameCode, result));
 
         // Wurfzeitpunkt wird gespeichert
         playerCooldown.put(playerName, diceResult.getTimeStamp());

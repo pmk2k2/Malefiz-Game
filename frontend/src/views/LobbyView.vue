@@ -1,5 +1,6 @@
 <template>
-  <div class="menu-container"> <header class="header">
+  <div class="menu-container">
+    <header class="header">
       <h1><span>Lobby</span>Malefiz</h1>
       <div class="code-display">
         <span class="label">Lobby ID</span>
@@ -7,7 +8,7 @@
       </div>
     </header>
 
-    <div class="info-box-wrapper" v-if="info.inhalt"> 
+    <div class="info-box-wrapper" v-if="info.inhalt">
       <div class="info-box">
         <button @click="loescheInfo" class="cancel-button">✕</button>
         <span class="info-text">{{ info.inhalt }}</span>
@@ -16,32 +17,39 @@
 
     <div class="icon-nav">
       <button class="icon-btn" type="button" @click="toggleRulesView">
-        <img :src= "infoIcon" alt="Info" />
+        <img :src="infoIcon" alt="Info" />
       </button>
 
-      <button class="icon-btn" type="button" @click="toggleSettingsView">
-        <img :src= "einstellungIcon" alt="Einstellungen" />
+      <button class="icon-btn" type="button" @click="showBoardSelection = true">
+        <img :src="einstellungIcon" alt="Einstellungen" />
       </button>
     </div>
 
-   <main class="main-content-lobby">
+    <main class="main-content-lobby">
       <InfoView v-if="showRules" @close="toggleRulesView" />
-      <EinstellungView v-if="showSettings" />
+      <EinstellungView
+        :isVisible="showBoardSelection"
+        @close="showBoardSelection = false"
+        @openEditor="openBoardEditor"
+        @boardSelected="onBoardSelected"
+      />
 
       <div class="spieler-liste-container">
         <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
       </div>
 
       <div class="button-group-lobby">
-        <button 
-          class="btn ready-btn small-btn" 
-          :class="{ 'is-ready': gameStore.gameData.isBereit }" 
+        <button
+          class="btn ready-btn small-btn"
+          :class="{ 'is-ready': gameStore.gameData.isBereit }"
           @click="isReady"
-        > 
-          {{ gameStore.gameData.isBereit ? "✓ Bereit" : "Bereit" }}
+        >
+          {{ gameStore.gameData.isBereit ? '✓ Bereit' : 'Bereit' }}
         </button>
-        
-        <button v-if="isHost" class="btn create small-btn" @click="gameStartenByAdmin">Starten</button>
+
+        <button v-if="isHost" class="btn create small-btn" @click="gameStartenByAdmin">
+          Starten
+        </button>
       </div>
 
       <button class="btn logout exit-btn" @click="goBack">Verlassen</button>
@@ -49,6 +57,21 @@
 
     <Counter v-if="showCounter" />
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
+
+    <!-- NEW: Board Selection Modal -->
+    <EinstellungView
+      :isVisible="showBoardSelection"
+      @close="showBoardSelection = false"
+      @openEditor="openBoardEditor"
+      @boardSelected="onBoardSelected"
+    />
+
+    <!-- NEW: Board Editor -->
+    <BoardEditor
+      :isVisible="showBoardEditor"
+      @close="showBoardEditor = false"
+      @boardSaved="onBoardSaved"
+    />
   </div>
 </template>
 
@@ -56,16 +79,15 @@
 import InfoView from '@/components/InfoView.vue'
 import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import SpielerListeView from './SpielerListeView.vue'
-import EinstellungView from '@/components/EinstellungView.vue'
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import { useGameStore } from '@/stores/gamestore'
-import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import Counter from '@/components/playingfield/models/Counter.vue'
 import { useInfo } from '@/composable/useInfo'
-
+import EinstellungView from '@/components/EinstellungView.vue'
+import BoardEditor from '@/components/BoardEditor.vue'
 
 const { info, loescheInfo } = useInfo()
 const gameStore = useGameStore()
@@ -81,6 +103,9 @@ const showCounter = computed(
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
 
+// NEW: Board selection state
+const showBoardSelection = ref(false)
+const showBoardEditor = ref(false)
 
 onMounted(() => {
   const code = gameStore.gameData.gameCode
@@ -96,19 +121,20 @@ onMounted(() => {
 onUnmounted(() => {
   gameStore.disconnect()
 })
+
 function onDeleteZeile(playerId: string) {
   if (spielerListeRef.value) {
     spielerListeRef.value.spielerListe = spielerListeRef.value.spielerListe.filter(
       (spieler) => spieler.id !== playerId,
     )
-    
-    if(gameStore.countdown!== null){
-      gameStore.stopCountdown}
+
+    if (gameStore.countdown !== null) {
+      gameStore.stopCountdown
+    }
   }
 }
 
 function clearRoll() {
-  // Würfel zurücksetzen
   roll.value = null
 }
 
@@ -131,8 +157,6 @@ async function goBack() {
     router.push('/main')
   }
 }
-
-const props = defineProps<{ spieler: ISpielerDTD; meHost: boolean }>()
 
 async function gameStartenByAdmin() {
   const gameCode = gameStore.gameData.gameCode
@@ -157,15 +181,10 @@ async function gameStartenByAdmin() {
   }
 }
 
-const emit = defineEmits<{
-  (e: 'isReady', value: boolean): void
-}>()
-
-
 async function isReady() {
   const playerId = gameStore.gameData.playerId
   const gameCode = gameStore.gameData.gameCode
-   const isCurrentlyReady = !gameStore.gameData.isBereit
+  const isCurrentlyReady = !gameStore.gameData.isBereit
 
   if (!playerId || !gameCode) {
     console.warn('Keine playerId oder gameCode vorhanden')
@@ -173,7 +192,6 @@ async function isReady() {
   }
 
   try {
-    // Backend-Call
     const res = await fetch(`${apiBase}/game/setReady`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -186,36 +204,49 @@ async function isReady() {
       info.inhalt = errorMessage
       throw new Error(errorMessage)
     }
-    // Start or stop countdown basierend auf dem aktuellen Ready-Status
-    gameStore.gameData.isBereit= isCurrentlyReady 
-    if( isCurrentlyReady == true) {
-      gameStore.countdown
-    }else {gameStore.stopCountdown}
 
+    gameStore.gameData.isBereit = isCurrentlyReady
+    if (isCurrentlyReady == true) {
+      gameStore.countdown
+    } else {
+      gameStore.stopCountdown
+    }
   } catch (err) {
     console.error(err)
   }
 }
 
-const showSettings = ref(false)
-
 const showRules = ref(false)
-
-function toggleSettingsView() {
-  showSettings.value = !showSettings.value
-}
 
 function toggleRulesView() {
   showRules.value = !showRules.value
 }
+
+// NEW: Board selection handlers
+function openBoardEditor() {
+  showBoardSelection.value = false
+  showBoardEditor.value = true
+}
+
+function onBoardSelected(boardName: string) {
+  info.inhalt = `Board "${boardName.replace('.json', '')}" selected!`
+  setTimeout(() => loescheInfo(), 3000)
+}
+
+function onBoardSaved() {
+  info.inhalt = 'Custom board saved successfully!'
+  setTimeout(() => loescheInfo(), 3000)
+}
 </script>
 
 <style scoped>
+/* Keep all existing styles from LobbyView.vue */
+
 .header {
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center; 
+  align-items: center;
   text-align: center;
 }
 
@@ -254,19 +285,20 @@ function toggleRulesView() {
   width: 100vw;
   overflow: hidden;
   position: relative;
-  background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('@/assets/backg.jpg');
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('@/assets/backg.jpg');
   background-size: cover;
 }
 
 .main-content-lobby {
-  flex: 1; 
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start; 
+  justify-content: flex-start;
   gap: 10px;
   padding: 20px;
-  min-height: 0; 
+  min-height: 0;
 }
 
 .spieler-liste-container {
@@ -278,17 +310,24 @@ function toggleRulesView() {
   display: flex;
   justify-content: center;
   background-color: #3d2b1f;
-  background-image: 
-    linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%),
-    repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(0,0,0,0.15) 39px, rgba(0,0,0,0.15) 40px);
-  
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, transparent 100%),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 38px,
+      rgba(0, 0, 0, 0.15) 39px,
+      rgba(0, 0, 0, 0.15) 40px
+    );
+
   padding: 15px;
   border: 5px solid #2d1b0d;
   border-radius: 15px;
-  box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.4);
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.5),
+    0 10px 20px rgba(0, 0, 0, 0.4);
   overflow-y: auto;
 }
-
 
 .spieler-liste-container::-webkit-scrollbar {
   width: 10px;
@@ -300,7 +339,7 @@ function toggleRulesView() {
 }
 
 .spieler-liste-container::-webkit-scrollbar-thumb {
-  background: #4caf50; 
+  background: #4caf50;
   border: 2px solid #2d1b0d;
   border-radius: 10px;
 }
@@ -311,18 +350,18 @@ function toggleRulesView() {
 
 .button-group-lobby {
   display: flex;
-  flex-direction: row; 
+  flex-direction: row;
   gap: 15px;
-  flex-shrink: 0; 
+  flex-shrink: 0;
   padding-bottom: 10px;
   justify-content: center;
   width: 100%;
 }
 
 .button-group-lobby .btn {
-  width: 220px; 
-  font-size: 1.2rem;
-  padding: 10px 0;
+  width: 180px;
+  font-size: 1.1rem;
+  padding: 10px 0px;
 }
 
 .icon-nav {
@@ -330,19 +369,19 @@ function toggleRulesView() {
   top: 25px;
   right: 25px;
   display: flex;
-  flex-direction: row; 
+  flex-direction: row;
   gap: 20px;
-  z-index: 100; 
+  z-index: 100;
 }
 
 .icon-btn {
-  width: 65px; 
+  width: 65px;
   height: 65px;
-  border-radius: 15px; 
+  border-radius: 15px;
   background-color: #3d2b1f;
-  background-image: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
   border: 3px solid #2d1b0d;
-  border-bottom-width: 6px; 
+  border-bottom-width: 6px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -352,7 +391,7 @@ function toggleRulesView() {
 }
 
 .icon-btn img {
-  width: 60px; 
+  width: 60px;
   height: 60px;
   object-fit: contain;
   filter: sepia(1) saturate(5) hue-rotate(-10deg) drop-shadow(0 0 5px rgba(255, 193, 7, 0.5));
@@ -373,20 +412,12 @@ function toggleRulesView() {
   border-bottom-width: 2px;
 }
 
-.button-group-lobby {
-  display: flex;
-  gap: 20px;
-  margin-top: 20px;
-}
-
-
 .ready-btn.is-ready {
   background-color: #2d4d19;
   border-color: #a7ff83;
   color: #a7ff83;
   box-shadow: 0 0 20px rgba(167, 255, 131, 0.4);
 }
-
 
 .info-box {
   background: #6d2d2d;
@@ -409,68 +440,81 @@ function toggleRulesView() {
 }
 
 @keyframes slideIn {
-  from { transform: translateY(-20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
 
-.button-group {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  align-items: center;
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .btn {
-  width: 320px;
-  padding: 15px 0; 
-  font-size: 1.5rem; 
+  padding: 12px 20px;
+  font-size: 1.2rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  border-radius: 12px; 
-  
+  border-radius: 12px;
+
   background-color: #4d3319;
-  background-image: 
+  background-image:
     linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, transparent 100%),
-    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,0,0,0.1) 41px, rgba(0,0,0,0.1) 42px);
-  background-size: 100% 100%, 100% 100%, 100% 100%, 50px 100%;
-  
-  border: 4px solid #3d2b1f; 
-  border-bottom-width: 8px;   
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, transparent 100%),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 40px,
+      rgba(0, 0, 0, 0.1) 41px,
+      rgba(0, 0, 0, 0.1) 42px
+    );
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    50px 100%;
+
+  border: 4px solid #3d2b1f;
+  border-bottom-width: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #f0e2d0; 
+  color: #f0e2d0;
   text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.8);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
   position: relative;
 }
 
-
-.btn:not(.create):not(.logout) {
-  background-color: #2d4d19; 
+.btn:not(.create):not(.logout):not(.board-btn) {
+  background-color: #2d4d19;
   border-color: #1e3311;
   color: #e0f2d8;
 }
 
 .btn:hover {
-  transform: translateY(2px); 
-  border-bottom-width: 4px;   
+  transform: translateY(2px);
+  border-bottom-width: 4px;
   filter: brightness(1.1);
 }
 
 .create {
   background-color: #634121;
   border-color: #3d2b1f;
-  color: #ffcc66; 
+  color: #ffcc66;
 }
 
+/* NEW: Board button styling */
+.board-btn {
+  background-color: #4a4a2d;
+  border-color: #2d2d1b;
+  color: #ffd700;
+}
 
 .btn.logout {
   background-color: #6d2d2d;
   border-color: #421a1a;
-  width: 220px;
 }
 
 .exit-btn {

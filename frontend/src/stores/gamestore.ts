@@ -12,13 +12,14 @@ import type { IBewegung } from '@/services/IBewegung'
 import type { IPlayerFigure } from './IPlayerFigure'
 
 export const useGameStore = defineStore('gamestore', () => {
-
-  console.log("Erstelle Gamestore")
+  console.log('Erstelle Gamestore')
   const { setzeInfo } = useInfo()
   const router = useRouter()
   const countdown = ref<number | null>(null)
   const gameState = ref<string>('WAITING')
   let countdownInterval: any = null
+  // ID der aktuell ausgewählten Figur (für HUD)
+  const selectedFigureId = ref<string | null>(null)
 
   const gameData = reactive<{
     ok: boolean
@@ -36,6 +37,19 @@ export const useGameStore = defineStore('gamestore', () => {
     movingFigure: string | null
     requireInput: boolean
     forbiddenDir: string | null
+    stepsTaken: number
+    remainingSteps: number
+    totalSteps: number
+    energy: number
+    duelActive: boolean
+    currentMinigame: string | null
+    duelTimeLeft: number
+    duelAnswered: boolean
+    duelQuestion: null | {
+      text: string
+      answers: string[]
+    }
+
   }>({
     ok: false,
     players: [],
@@ -44,14 +58,23 @@ export const useGameStore = defineStore('gamestore', () => {
     playerName: null,
     isHost: null,
     counterWert: null,
-    isBereit: null,
+    isBereit: false,
     gameOver: null,
     winnerId: null,
     moveDone: true,
     moveChoiceAllowed: false,
     movingFigure: null,
     requireInput: false,
-    forbiddenDir: null
+    forbiddenDir: null,
+    stepsTaken: 0,
+    remainingSteps: 0,
+    totalSteps: 0,
+    energy: 0,
+    duelActive: false,
+    currentMinigame: null,
+    duelTimeLeft: 10,
+    duelAnswered: false,
+    duelQuestion: null,
   })
   const figures = ref<IPlayerFigure[]>([])
   const ingameMoveEvent = ref<IFrontendNachrichtEvent>()
@@ -66,7 +89,7 @@ export const useGameStore = defineStore('gamestore', () => {
       isHost: gameData.isHost,
       isBereit: gameData.isBereit,
       winnerId: gameData.winnerId,
-      gameOver: gameData.gameCode
+      gameOver: gameData.gameCode,
     }),
     saveToLocalStorage,
   )
@@ -76,8 +99,6 @@ export const useGameStore = defineStore('gamestore', () => {
 
   const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
   const stompEnv = (import.meta.env.VITE_STOMP_URL as string) || ''
-
-
 
   function computeSockJsUrl(target: string) {
     if (stompEnv && stompEnv.length) {
@@ -93,7 +114,7 @@ export const useGameStore = defineStore('gamestore', () => {
       return
     }
 
-    const sockJsUrl = computeSockJsUrl("stompbroker")
+    const sockJsUrl = computeSockJsUrl('stompbroker')
 
     stompClient = new Client({
       webSocketFactory: () => new SockJS(sockJsUrl),
@@ -110,19 +131,95 @@ export const useGameStore = defineStore('gamestore', () => {
           console.log('Empfangenes Event:', JSON.stringify(event))
 
           //  Ausschließlich Lobby updates (Joined, left, Countdown usw...)
-          if(event.typ === 'INGAME') {
-            if(event.operation === 'MOVE') {
-              console.log("DING DONG Figur bewegen")
+          if (event.typ === 'INGAME') {
+            if (event.operation === 'MOVE') {
+              console.log('DING DONG Figur bewegen')
               console.log(event)
               ingameMoveEvent.value = event
-            }
-            if (event.operation === 'GAME_OVER') {
+            } else if (event.operation === 'GAME_OVER') {
               gameData.gameOver = true
               gameData.winnerId = event.id
               disconnect()
+            } else if (event.operation === 'DUEL_NEW_QUESTION' && gameData.duelActive) {
+              const q = event.quizQuestion
+              if (!q) return
+
+              gameData.duelAnswered = false
+              gameData.duelTimeLeft = 10
+              gameData.duelQuestion = {
+                text: q.text,
+                answers: q.answers,
+              }
+            }
+
+            else if (event.operation === 'DUEL_RESULT' && gameData.duelActive) {
+              gameData.duelActive = false
+              gameData.duelQuestion = null
+              gameData.duelAnswered = false
+              gameData.duelTimeLeft = 0
+            }
+
+
+            //aktualisiert die energie des lokalen Spielers falls die Event und Player ID übereinstimmt
+            else if (event.operation === 'ENERGY_UPDATED') {
+              console.log('Energie Update empfangen:', event)
+              if (event.id === gameData.playerId) {
+                const newVal = (event as any).newEnergyValue
+                gameData.energy = newVal ?? 0
+                console.log(`Neue Sprungenergie gespeichert: ${gameData.energy}`)
+              }
+            } else if (event.operation === 'BARRIER_WAIT') {
+              if (event.id === gameData.playerId) {
+                gameState.value = 'BARRIER_PLACEMENT'
+              } else {
+                console.log('Aus GameStore: Ein anderer Spieler setzt gerade eine Barriere.')
+              }
+            } else if (event.operation === 'BARRIER_PLACED') {
+              gameState.value = 'RUNNING'
+              ingameMoveEvent.value = event
+            }
+            if (event.operation === 'STEP_UPDATE' && event.step && event.id === gameData.playerId) {
+                gameData.stepsTaken = event.step.totalSteps
+                gameData.remainingSteps = event.step.remainingSteps
+              }
+              // DUEL / MINIGAME START
+            else if (event.operation === 'DUEL_PREPARE') {
+              console.log('DUEL_PREPARE Event empfangen!')
+            }
+            // DUEL / MINIGAME START
+            else if (event.operation === 'DUEL') {
+              console.log('DUEL Event empfangen!')
+              gameData.duelActive = true
+              gameData.duelQuestion = null
+              gameData.duelAnswered = false
+              gameData.duelTimeLeft = 10
+
+              fetch(`/api/duel/start?gameCode=${gameData.gameCode}`)
+
+              // Nur fuer beteiligte Spieler
+              if (
+                gameData.playerId &&
+                (event.id === gameData.playerId || event.opponentId === gameData.playerId)
+              ) {
+                gameData.duelActive = true
+              }
+            }
+            // <--- NEU: Reagieren auf Minigame Auswahl
+            else if (event.operation === 'MINIGAME_SELECTED') {
+              const { minigameType, id, opponentId } = event
+              
+              console.log(`!!! MINIGAME SELECTED: ${minigameType} !!!`)
+              
+              //HIER DIE DUELL Minigame anzeige einbinden bei 'gameData.currentMinigame'
+              gameData.currentMinigame = minigameType || null
+              
+              if (gameData.playerId === id || gameData.playerId === opponentId) {
+                console.log(`Spieler ${gameData.playerName} startet nun Minispiel UI für ${event.minigameType}`)
+              }
             }
           }
           else if (event.typ === 'LOBBY') {
+            
             updatePlayerList(gameCode)
 
             //  Countdown starten
@@ -133,10 +230,9 @@ export const useGameStore = defineStore('gamestore', () => {
 
             if (event.operation === 'LEFT' && event.playerName) {
               setzeInfo(`${event.playerName} hat die Lobby verlassen.`) //InfoBox setzen wenn Player die Lobby verlässt
-
             }
-            if(event.operation==='KICKED'){
-              stopCountdown();
+            if (event.operation === 'KICKED') {
+              stopCountdown()
             }
 
             if (event.operation === 'COUNTDOWN_STARTED') {
@@ -159,10 +255,9 @@ export const useGameStore = defineStore('gamestore', () => {
                 }
               }, 500)
             }
-            if (event.operation ==='COUNTDOWN_ABORTED') {
-              stopCountdown();
+            if (event.operation === 'COUNTDOWN_ABORTED') {
+              stopCountdown()
             }
-
 
             // Admin oder Server startet Spiel → kein Countdown, direkt rein
             if (event.operation === 'GAME_RUNNING') {
@@ -192,7 +287,7 @@ export const useGameStore = defineStore('gamestore', () => {
       return
     }
 
-    const sockJsUrl = computeSockJsUrl("persstomp")
+    const sockJsUrl = computeSockJsUrl('persstomp')
 
     persStompClient = new Client({
       webSocketFactory: () => new SockJS(sockJsUrl),
@@ -210,16 +305,16 @@ export const useGameStore = defineStore('gamestore', () => {
           console.log('Empfangenes Event:', JSON.stringify(event))
 
           if (event.type === 'DIRECTION') {
-            console.log("DIRECTION Event empfangen")
+            console.log('DIRECTION Event empfangen')
             gameData.requireInput = true
             gameData.moveChoiceAllowed = true
-            if(event.figureId) {
+            if (event.figureId) {
               console.log(`Figur ${event.figureId} soll was machen`)
               console.log(`Aber nicht in Richtung ${event.forbiddenDir}`)
               gameData.movingFigure = event.figureId
               gameData.forbiddenDir = event.forbiddenDir
             } else {
-              console.log("Irgendeine Figur soll was machen")
+              console.log('Irgendeine Figur soll was machen')
               gameData.movingFigure = null
               gameData.forbiddenDir = null
             }
@@ -228,6 +323,9 @@ export const useGameStore = defineStore('gamestore', () => {
             gameData.requireInput = true
             gameData.moveChoiceAllowed = true
             // Wuerfel freigeben
+            gameData.stepsTaken = 0
+            gameData.remainingSteps = event.result
+            gameData.totalSteps = event.result
           }
         } catch (err) {
           console.error('WS Fehler:', err)
@@ -247,7 +345,8 @@ export const useGameStore = defineStore('gamestore', () => {
     }
 
     try {
-      const res = await fetch(`${apiBase}/game/start`, {        method: 'POST',
+      const res = await fetch(`${apiBase}/game/start`, {
+        method: 'POST',
         body: JSON.stringify({
           code: gameCode,
           playerId: playerId,
@@ -336,7 +435,13 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.isHost = null
     gameData.players = []
     gameData.ok = false
+    gameData.isBereit = false
     gameData.gameOver = null
+    gameData.stepsTaken=0
+    gameData.remainingSteps=0
+    gameData.totalSteps=0
+    gameData.duelActive = false
+    gameData.currentMinigame = null
     stopCountdown()
 
     localStorage.removeItem('gameData')
@@ -348,6 +453,9 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.playerId = null
     gameData.isBereit = false
     gameData.gameOver = null
+    gameData.stepsTaken=0
+    gameData.remainingSteps=0
+    gameData.totalSteps=0
 
     stopCountdown()
     console.log(JSON.stringify(gameData))
@@ -383,5 +491,6 @@ export const useGameStore = defineStore('gamestore', () => {
     resetGameCode,
     triggerGameStart,
     stopCountdown,
+    selectedFigureId,
   }
 })

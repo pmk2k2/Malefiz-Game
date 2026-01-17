@@ -15,12 +15,21 @@ public class IngameRequestEvent {
     private String figureId; // fuer welche Figur request ankam
     private String gameCode;
     private Direction forbiddenDir; // verbotene Richtung (bei Richtungsanfragen)
+    private int result;
 
     // Ohne bestimmte Figur (zb vor/nach Wuerfeln)
     public IngameRequestEvent(Aktion type, String playerId, String gameCode) {
         this.type = type;
         this.playerId = playerId;
         this.gameCode = gameCode;
+    }
+
+    // when dice rolled, send dice value
+    public IngameRequestEvent(Aktion type, String playerId, String gameCode, int result) {
+        this.type = type;
+        this.playerId = playerId;
+        this.gameCode = gameCode;
+        this.result = result;
     }
 
     // Fuer bestimmte Figur
@@ -62,5 +71,13 @@ public class IngameRequestEvent {
 
     public Direction getForbiddenDir() {
         return forbiddenDir;
+    }
+
+    public int getResult() {
+        return result;
+    }
+
+    public void setResult(int result) {
+        this.result = result;
     }
 }

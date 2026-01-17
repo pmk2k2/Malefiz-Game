@@ -3,8 +3,9 @@ package de.hsrm.mi.swtpr.milefiz.messaging;
 import java.time.Instant;
 
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
-import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
+import de.hsrm.mi.swtpr.milefiz.model.Step;
+import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
 
 public class FrontendNachrichtEvent {
 
@@ -26,10 +27,18 @@ public class FrontendNachrichtEvent {
         GAME_RUNNING,
         PLAYER_LIMIT_ERROR,
         COUNTDOWN_ABORTED,
-
+        BARRIER_WAIT,
+        BARRIER_PLACED,
         // Ingame-Operationen
         GAME_OVER,
-        MOVE
+        MOVE,
+        STEP_UPDATE,
+        ENERGY_UPDATED,
+        DUEL_PREPARE,
+        MINIGAME_SELECTED, // <--- NEU: Operation für ausgewähltes Minispiel
+        DUEL,
+        DUEL_RESULT,
+        DUEL_NEW_QUESTION
     }
 
     private Nachrichtentyp typ;
@@ -44,7 +53,15 @@ public class FrontendNachrichtEvent {
     // States fuer Movementupdates
     // private String playerId; // Unterschied playerId und playerName???
     private String figureId;
+    private String opponentId; // ID des zweiten spieler im duell
     private Bewegung bewegung;
+    private int newEnergyValue;
+    private Step step;
+    private String minigameType; // für die Art des Minigames
+
+    private QuizQuestion quizQuestion;
+
+    
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
             String playerName) {
@@ -53,6 +70,17 @@ public class FrontendNachrichtEvent {
         this.operation = operation;
         this.gameCode = gameCode;
         this.playerName = playerName;
+    }
+
+    // Konstruktor für Energeie Einstellung in der Lobby
+    public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
+            String playerName, int newEnergyValue) {
+        this.typ = typ;
+        this.id = id;
+        this.operation = operation;
+        this.gameCode = gameCode;
+        this.playerName = playerName;
+        this.newEnergyValue = newEnergyValue;
     }
 
     public FrontendNachrichtEvent(Nachrichtentyp typ, String id, Operation operation, String gameCode,
@@ -70,6 +98,19 @@ public class FrontendNachrichtEvent {
         this.figureId = fId;
         this.id = pId;
         this.bewegung = bew;
+    }
+
+    public FrontendNachrichtEvent(
+            Nachrichtentyp typ,
+            Operation operation,
+            String gameCode,
+            String playerId,
+            Step step) {
+        this.typ = typ;
+        this.operation = operation;
+        this.gameCode = gameCode;
+        this.id = playerId;
+        this.step = step;
     }
 
     public Nachrichtentyp getTyp() {
@@ -110,6 +151,14 @@ public class FrontendNachrichtEvent {
 
     public void setPlayerName(String playerName) {
         this.playerName = playerName;
+    }
+
+    public QuizQuestion getQuizQuestion() {
+        return quizQuestion;
+    }
+
+    public void setQuizQuestion(QuizQuestion quizQuestion) {
+        this.quizQuestion = quizQuestion;
     }
 
     @Override
@@ -153,7 +202,31 @@ public class FrontendNachrichtEvent {
         return figureId;
     }
 
+    public String getOpponentId() {
+        return opponentId;
+    }
+
+    public void setOpponentId(String opponentId) {
+        this.opponentId = opponentId;
+    }
+
     public Bewegung getBewegung() {
         return bewegung;
+    }
+
+    public int getNewEnergyValue() {
+        return newEnergyValue;
+    }
+
+    public void setNewEnergyValue(int newEnergyValue) {
+        this.newEnergyValue = newEnergyValue;
+    }
+
+    public String getMinigameType() {
+        return minigameType;
+    }
+
+    public void setMinigameType(String minigameType) {
+        this.minigameType = minigameType;
     }
 }
