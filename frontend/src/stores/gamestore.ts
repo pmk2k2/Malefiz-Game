@@ -159,6 +159,7 @@ export const useGameStore = defineStore('gamestore', () => {
               gameData.duelQuestion = null
               gameData.duelAnswered = false
               gameData.duelTimeLeft = 0
+              gameData.mashScore = 0
             }
 
 
@@ -184,19 +185,25 @@ export const useGameStore = defineStore('gamestore', () => {
                 gameData.stepsTaken = event.step.totalSteps
                 gameData.remainingSteps = event.step.remainingSteps
               }
+            // DUEL / MASHUPDATE  
+            else if (event.operation == 'DUEL_MASH_UPDATE') {
+              gameData.mashScore = event.countdownDurationSeconds || 0
+              console.log("Server Mashscore: ", gameData.mashScore)
+            }
               // DUEL / MINIGAME START
             else if (event.operation === 'DUEL_PREPARE') {
               console.log('DUEL_PREPARE Event empfangen!')
+              gameData.mashScore = 0
             }
             // DUEL / MINIGAME START
             else if (event.operation === 'DUEL') {
               console.log('DUEL Event empfangen!')
               gameData.duelActive = true
-              gameData.mashScore = 0
               gameData.duelQuestion = null
               gameData.duelAnswered = false
               gameData.duelTimeLeft = 10
-
+              gameData.mashScore = 0
+              
               fetch(`/api/duel/start?gameCode=${gameData.gameCode}`)
 
               // Nur fuer beteiligte Spieler
@@ -223,14 +230,6 @@ export const useGameStore = defineStore('gamestore', () => {
           }
           else if (event.typ === 'LOBBY') {
             
-
-            // mashingGame
-            else if (event.operation == 'DUEL_MASH_UPDATE') {
-              gameData.mashScore = event.countdownDurationSeconds
-              console.log("Mash Score Update:", gameData.mashScore)
-            }
-
-          } else if (event.typ === 'LOBBY') {
             updatePlayerList(gameCode)
 
             //  Countdown starten
@@ -453,8 +452,8 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.totalSteps=0
     gameData.duelActive = false
     gameData.currentMinigame = null
-    gameData.mashScore = 0
     stopCountdown()
+
     localStorage.removeItem('gameData')
   }
 
