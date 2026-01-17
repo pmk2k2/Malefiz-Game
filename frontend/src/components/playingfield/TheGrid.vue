@@ -215,15 +215,19 @@ async function fetchGameState() {
 
     const players = [...new Set(backendFigures.map((f) => f.playerId))].sort()
 
+    //map old positions by id
+    const oldPositions = new Map(figures.value.map(f => [f.id, f.position]))
+
     figures.value = backendFigures.map((fig) => {
       const playerIndex = players.indexOf(fig.playerId)
-      const [x, y, z] = calculateHomePosition(fig, playerIndex, players.length)
+      // try to keep old position if exists, else fallback to home position
+      const position = oldPositions.get(fig.id) ?? calculateHomePosition(fig, playerIndex, players.length)
 
       return {
         ...fig,
         currentAnim: null,
         animQueue: [],
-        position: [x, y, z],
+        position,
         viewDirRot: 0,
       } as IPlayerFigure
     })
@@ -581,6 +585,12 @@ defineExpose({
   board,
   figures
 })
+
+// Expose fetchGameState globally for store to call on figures update event
+if (typeof window !== 'undefined') {
+  // @ts-ignore
+  window.fetchGameState = fetchGameState
+}
 
 </script>
 

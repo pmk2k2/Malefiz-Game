@@ -13,6 +13,10 @@ import de.hsrm.mi.swtpr.milefiz.service.GameService;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class WebSocketEventListener {
@@ -24,6 +28,9 @@ public class WebSocketEventListener {
 
     // sessionId -> playerId
     private static final Map<String, String> sessionIdToPlayerId = new ConcurrentHashMap<>();
+    // scheduled remove
+    private static final Map<String, ScheduledFuture<?>> scheduledRemovals = new ConcurrentHashMap<>();
+    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectEvent event) {
@@ -36,6 +43,13 @@ public class WebSocketEventListener {
             playerId = headerAccessor.getNativeHeader("playerId").get(0);
             sessionIdToPlayerId.put(sessionId, playerId);
             logger.info("WebSocket connected, sessionId: {}, playerId: {}", sessionId, playerId);
+
+            // Cancel remove if exists
+            ScheduledFuture<?> scheduled = scheduledRemovals.remove(playerId);
+            if (scheduled != null) {
+                scheduled.cancel(false);
+                logger.info("Cancel remove {}", playerId);
+            }
         }
     }
 
@@ -49,13 +63,26 @@ public class WebSocketEventListener {
         if (playerId == null)
             return;
 
-        // Remove player from all games by playerId
-        for (String gameCode : gameService.getAllGameCodes()) {
-            boolean removed = gameService.removePlayer(gameCode, playerId);
-            if (removed) {
-                logger.info("Removed player {} from game {}", playerId, gameCode);
-                break;
+        // set remove after 5 seconds, but check if player has reconnected
+        ScheduledFuture<?> scheduled = scheduler.schedule(() -> {
+            // only remove if playerId is not present in sessionIdToPlayerId
+            if (!sessionIdToPlayerId.containsValue(playerId)) {
+                for (String gameCode : gameService.getAllGameCodes()) {
+                    boolean removed = gameService.removePlayer(gameCode, playerId);
+                    if (removed) {
+                        logger.info("Removed player {} from game {}", playerId, gameCode);
+                        break;
+                    }
+                }
+            } else {
+                logger.info("Player {} reconnected -> not removing.", playerId);
             }
+            scheduledRemovals.remove(playerId);
+        }, 5, TimeUnit.SECONDS);
+
+        ScheduledFuture<?> previous = scheduledRemovals.put(playerId, scheduled);
+        if (previous != null) {
+            previous.cancel(false);
         }
     }
 }

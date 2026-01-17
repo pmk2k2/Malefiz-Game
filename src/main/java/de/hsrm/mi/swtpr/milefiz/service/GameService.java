@@ -1,6 +1,7 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
 import java.time.Instant;
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,6 +22,7 @@ import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
+import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtService;
 
 @Service
 public class GameService {
@@ -74,8 +76,13 @@ public class GameService {
             return false;
         }
 
-        String assignedColor = PLAYER_COLORS.get(game.getPlayers().size());
+        // if player reconnect, cancel remove figure and timestamp
+        Timer t = scheduledFigureRemovals.remove(playerId);
+        if (t != null)
+            t.cancel();
+        playerRemovalTimestamps.remove(playerId);
 
+        String assignedColor = PLAYER_COLORS.get(game.getPlayers().size());
         Player player = new Player(name, playerId, isHost, assignedColor);
         player.setReady(false);
 
@@ -94,8 +101,14 @@ public class GameService {
         return true;
     }
 
-    // Map to track scheduled game removals
+    //schedule game remove
     private final Map<String, Timer> gameRemovalTimers = new HashMap<>();
+
+    // schedule player remove
+    private final Map<String, Long> playerRemovalTimestamps = new HashMap<>();
+    // schedule figure remove
+    private final Map<String, Timer> scheduledFigureRemovals = new HashMap<>();
+    private static final long FIGURE_REMOVAL_GRACE_PERIOD_MS = 5_000;
 
     public boolean removePlayer(String gameCode, String playerId) {
         Game game = games.get(gameCode);
@@ -113,6 +126,36 @@ public class GameService {
         if (!removed) {
             return false;
         }
+
+        // time when player removed to grace period for figure
+        playerRemovalTimestamps.put(playerId, System.currentTimeMillis());
+
+        // schedual remove figure after 5s if player nott reconnected
+        Timer figureTimer = new Timer();
+        scheduledFigureRemovals.put(playerId, figureTimer);
+        figureTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                // if player not reconneted after 5s-> remove figure
+                if (game.getPlayerById(playerId) == null) {
+                    int before = game.getFigures().size();
+                    game.getFigures().removeIf(f -> playerId.equals(f.getOwnerPlayerId()));
+                    int after = game.getFigures().size();
+                    logger.info("Removed {} figures of player {} from game {}", (before - after), playerId, gameCode);
+                    playerRemovalTimestamps.remove(playerId);
+                    // notify frontend to refetch figures
+                    publisher.publishEvent(
+                            new FrontendNachrichtEvent(
+                                    FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+                                    playerId,
+                                    FrontendNachrichtEvent.Operation.READY_UPDATED, // or define a new operation
+                                                                                    // FIGURES_UPDATED
+                                    gameCode,
+                                    null));
+                }
+                scheduledFigureRemovals.remove(playerId);
+            }
+        }, FIGURE_REMOVAL_GRACE_PERIOD_MS);
 
         // Stop countdown, wenn ein Spieler gekickt wurde während des Countdowns
         if (game.getState() == GameState.COUNTDOWN) {
@@ -409,7 +452,17 @@ public class GameService {
             return Collections.emptyList();
         }
 
+        // only return figure if player in game or disconnected < 5s
         return game.getFigures().stream()
+                .filter(f -> {
+                    String pid = f.getOwnerPlayerId();
+                    if (game.getPlayerById(pid) != null)
+                        return true;
+                    Long removedAt = playerRemovalTimestamps.get(pid);
+                    if (removedAt == null)
+                        return false;
+                    return (System.currentTimeMillis() - removedAt) < FIGURE_REMOVAL_GRACE_PERIOD_MS;
+                })
                 .map(f -> new FigureDto(f.getId(), f.getColor(), f.getOwnerPlayerId(), f.getOrientation(), f.getGridI(),
                         f.getGridJ()))
                 .collect(Collectors.toList());

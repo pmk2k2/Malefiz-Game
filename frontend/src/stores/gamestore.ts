@@ -11,6 +11,12 @@ import type { IIngameRequestEvent } from '@/services/IIngameRequestEvent'
 import type { IBewegung } from '@/services/IBewegung'
 import type { IPlayerFigure } from './IPlayerFigure'
 
+declare global {
+  interface Window {
+    fetchGameState?: () => void;
+  }
+}
+
 export const useGameStore = defineStore('gamestore', () => {
   console.log('Erstelle Gamestore')
   const { setzeInfo } = useInfo()
@@ -233,6 +239,15 @@ export const useGameStore = defineStore('gamestore', () => {
             //  Spielerlimit überschritten
             if (event.operation === 'PLAYER_LIMIT_ERROR') {
               alert('Lobby ist voll! Max 4 Spieler erlaubt.')
+            }
+          }
+          if (
+            event.typ === 'INGAME' &&
+            event.operation === 'READY_UPDATED'
+          ) {
+            // figures might have changed, re-fetch
+            if (typeof window !== 'undefined' && window.fetchGameState) {
+              window.fetchGameState()
             }
           }
         } catch (err) {
