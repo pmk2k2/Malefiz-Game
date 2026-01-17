@@ -101,7 +101,7 @@ public class GameService {
         return true;
     }
 
-    //schedule game remove
+    //  schedule game remove
     private final Map<String, Timer> gameRemovalTimers = new HashMap<>();
 
     // schedule player remove
@@ -332,9 +332,6 @@ public class GameService {
             return false;
         }
 
-        // Reset steps for all players before starting
-        resetPlayerSteps(game);
-
         boolean start = game.adminStart();
         if (!start)
             return false;
@@ -357,9 +354,6 @@ public class GameService {
             return false;
         }
 
-        // Reset steps for all players before starting
-        resetPlayerSteps(game);
-
         boolean start = game.counterStart(COUNTDOWN_DURATION_SECONDS);
         if (!start)
             return false;
@@ -370,15 +364,6 @@ public class GameService {
         game.setState(GameState.RUNNING);
         publishGameRunningEvent(gameCode);
         return true;
-    }
-
-    // Helper to reset steps for all players
-    private void resetPlayerSteps(Game game) {
-        for (Player p : game.getPlayers()) {
-            p.setStepsTaken(0);
-            p.setRemainingSteps(0);
-            p.setTotalSteps(0);
-        }
     }
 
     private boolean initialiatizeFigures(Game game) {
