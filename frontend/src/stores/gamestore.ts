@@ -43,6 +43,9 @@ export const useGameStore = defineStore('gamestore', () => {
     energy: number
     duelActive: boolean
     currentMinigame: string | null
+    boardName: string | null
+    maxCollectableEnergy: number
+    cooldown: number
   }>({
     ok: false,
     players: [],
@@ -65,6 +68,9 @@ export const useGameStore = defineStore('gamestore', () => {
     energy: 0,
     duelActive: false,
     currentMinigame: null,
+    boardName: 'DummyBoard.json',
+    maxCollectableEnergy: 10,
+    cooldown: 3,
   })
   const figures = ref<IPlayerFigure[]>([])
   const ingameMoveEvent = ref<IFrontendNachrichtEvent>()
@@ -150,10 +156,10 @@ export const useGameStore = defineStore('gamestore', () => {
               ingameMoveEvent.value = event
             }
             if (event.operation === 'STEP_UPDATE' && event.step && event.id === gameData.playerId) {
-                gameData.stepsTaken = event.step.totalSteps
-                gameData.remainingSteps = event.step.remainingSteps
-              }
-              // DUEL / MINIGAME START
+              gameData.stepsTaken = event.step.totalSteps
+              gameData.remainingSteps = event.step.remainingSteps
+            }
+            // DUEL / MINIGAME START
             else if (event.operation === 'DUEL_PREPARE') {
               console.log('DUEL_PREPARE Event empfangen!')
               // Nur fuer beteiligte Spieler
@@ -167,19 +173,19 @@ export const useGameStore = defineStore('gamestore', () => {
             // <--- NEU: Reagieren auf Minigame Auswahl
             else if (event.operation === 'MINIGAME_SELECTED') {
               const { minigameType, id, opponentId } = event
-              
+
               console.log(`!!! MINIGAME SELECTED: ${minigameType} !!!`)
-              
+
               //HIER DIE DUELL Minigame anzeige einbinden bei 'gameData.currentMinigame'
               gameData.currentMinigame = minigameType || null
-              
+
               if (gameData.playerId === id || gameData.playerId === opponentId) {
-                console.log(`Spieler ${gameData.playerName} startet nun Minispiel UI für ${event.minigameType}`)
+                console.log(
+                  `Spieler ${gameData.playerName} startet nun Minispiel UI für ${event.minigameType}`,
+                )
               }
             }
-          }
-          else if (event.typ === 'LOBBY') {
-            
+          } else if (event.typ === 'LOBBY') {
             updatePlayerList(gameCode)
 
             //  Countdown starten
@@ -342,6 +348,16 @@ export const useGameStore = defineStore('gamestore', () => {
       gameData.players = mapBackendPlayersToDTD(jsonData.players || [])
       gameData.ok = true
 
+      if (jsonData.boardName) {
+        gameData.boardName = jsonData.boardName
+      }
+      if (jsonData.maxCollectableEnergy) {
+        gameData.maxCollectableEnergy = jsonData.maxCollectableEnergy
+      }
+      if (jsonData.cooldown) {
+        gameData.cooldown = jsonData.cooldown
+      }
+
       if (gameData.playerId && !gameData.players.some((p) => p.id === gameData.playerId)) {
         console.warn('Du wurdest aus der Lobby entfernt')
         gameData.gameCode = null
@@ -397,9 +413,9 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.ok = false
     gameData.isBereit = false
     gameData.gameOver = null
-    gameData.stepsTaken=0
-    gameData.remainingSteps=0
-    gameData.totalSteps=0
+    gameData.stepsTaken = 0
+    gameData.remainingSteps = 0
+    gameData.totalSteps = 0
     gameData.duelActive = false
     gameData.currentMinigame = null
     stopCountdown()
@@ -413,9 +429,9 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.playerId = null
     gameData.isBereit = false
     gameData.gameOver = null
-    gameData.stepsTaken=0
-    gameData.remainingSteps=0
-    gameData.totalSteps=0
+    gameData.stepsTaken = 0
+    gameData.remainingSteps = 0
+    gameData.totalSteps = 0
 
     stopCountdown()
     console.log(JSON.stringify(gameData))

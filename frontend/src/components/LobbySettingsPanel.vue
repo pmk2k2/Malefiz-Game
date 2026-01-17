@@ -58,7 +58,17 @@ const stopTimer = (type: 'time' | 'energy') => {
   }
 }
 
-const syncTime = () => fetch(`${apiBase}/daten/cooldown?seconds=${time.value}`, { method: 'POST' })
+const syncTime = () =>
+  fetch(`${apiBase}/game/updateSettings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      code: gameStore.gameData.gameCode,
+      playerId: gameStore.gameData.playerId,
+      cooldown: time.value,
+    }),
+  })
+
 const syncEnergy = () => {
   fetch(`${apiBase}/game/updateSettings`, {
     method: 'POST',
@@ -66,7 +76,7 @@ const syncEnergy = () => {
     body: JSON.stringify({
       code: gameStore.gameData.gameCode,
       playerId: gameStore.gameData.playerId,
-      maxEnergy: maxEnergy.value,
+      maxCollectableEnergy: maxEnergy.value,
     }),
   })
 }
@@ -74,7 +84,7 @@ const syncEnergy = () => {
 
 <template>
   <div class="settigs-panel-wrapper">
-    <h3 class="panel-title">Spiel Regeln</h3>
+    <h3 class="panel-title">Spielregeln</h3>
     <div class="settings-section">
       <div class="setting-item">
         <span class="label">Dice Cooldown</span>

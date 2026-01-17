@@ -27,6 +27,14 @@
       <div class="lobby-selection-area">
         <div class="map-box-container">
           <MapAuswahl v-if="isHost" @openEditor="openBoardEditor" />
+
+          <div v-else class="map-selector-wrapper readonly-preview">
+            <div class="selection-row" style="justify-content: center">
+              <img :src="currentMapImage" alt="selected Map" />
+            </div>
+            <h3 class="map-name">Ausgewählt: {{ currentMapName }}</h3>
+            <p class="host-info-text">Warte auf Host-Auswahl...</p>
+          </div>
         </div>
 
         <div class="middle-column-wrapper">
@@ -37,6 +45,18 @@
 
         <div class="right-spacer">
           <LobbySettingsPanel v-if="isHost" />
+
+          <div v-else class="rules-display-readonly">
+            <h3 class="section-subtitle">Spielregeln</h3>
+            <div class="rule-item">
+              <span>Würfel Cooldown:</span>
+              <div class="value-badge">{{ gameStore.gameData.cooldown }}</div>
+            </div>
+            <div class="rule-item">
+              <span>Energie Limit:</span>
+              <div class="value-badge">{{ gameStore.gameData.maxCollectableEnergy }}</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -114,6 +134,19 @@ onMounted(() => {
 
 onUnmounted(() => {
   gameStore.disconnect()
+})
+
+const currentMapName = computed(() => {
+  const rawName = gameStore.gameData.boardName || 'DummyBoard.json'
+
+  return rawName
+    .replace('.json', '')
+    .replace(/([A-Z])/g, ' $1')
+    .trim()
+})
+
+const currentMapImage = computed(() => {
+  return new URL('@/assets/chooseMap.png', import.meta.url).href
 })
 
 function onDeleteZeile(playerId: string) {
@@ -546,5 +579,75 @@ function onBoardSaved() {
   font-size: 1rem !important;
   border-bottom-width: 4px !important;
   z-index: 10;
+}
+
+.readonly-preview,
+.rules-display-readonly {
+  width: 400px;
+  height: 300px;
+  background-color: #3d2b1f;
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, transparent 100%),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 38px,
+      rgba(0, 0, 0, 0.15) 39px,
+      rgba(0, 0, 0, 0.15) 40px
+    );
+  border: 5px solid #2d1b0d;
+  border-radius: 15px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: inset 0 0 20px rhba(0, 0, 0, 0.5);
+}
+
+.selection-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.host-info-text {
+  color: #ffc107;
+  font-size: 0.8rem;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.rule-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #f0e2d0;
+  margin: 15px 0;
+  padding: 0 20px;
+}
+
+.value-badge {
+  background: #f0e2d0;
+  color: #2d1b0d;
+  padding: 5px 15px;
+  border-radius: 8px;
+  font-weight: 900;
+  border: 2px solid #2d1b0d;
+}
+
+.section-subtitle {
+  color: #ffcc66;
+  text-transform: uppercase;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  text-shadow: 1px 1px 2px black;
+}
+
+img {
+  width: 220px;
+  height: 190px;
+  object-fit: cover;
+  border: 3px solid #2d1b0d;
+  border-radius: 8px;
+  background-color: #000;
 }
 </style>

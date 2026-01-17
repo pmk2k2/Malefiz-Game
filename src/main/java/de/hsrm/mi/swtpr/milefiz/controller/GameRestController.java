@@ -147,16 +147,23 @@ public class GameRestController {
         String playerId = (String) body.get("playerId");
         
         //Validierung ob alle Daten vorhanden sind 
-        if (gameCode == null || playerId == null || body.get("maxEnergy") == null) {
+        if (gameCode == null || playerId == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "Fehlende Daten (code, playerId, maxEnergy)"));
         }
 
         try {
-            //parse int aus Objekt und update Spieleinstellungen
-            int maxEnergy = Integer.parseInt(body.get("maxEnergy").toString());
-            service.updateGameSettings(gameCode, playerId, maxEnergy);
-            return ResponseEntity.ok(Map.of("success", true, "maxEnergy", maxEnergy));
+            if (body.containsKey("maxCollectableEnergy")) {
+                //parse int aus Objekt und update Spieleinstellungen
+                int maxEnergy = Integer.parseInt(body.get("maxCollectableEnergy").toString());
+                service.updateGameSettings(gameCode, playerId, maxEnergy);
+            }
+            if (body.containsKey("cooldown")) {
+                int cooldown = Integer.parseInt(body.get("cooldown").toString());
+                service.updateCooldown(gameCode, playerId, cooldown);
+            }
+            
+            return ResponseEntity.ok(Map.of("success", true));
         } catch (NotHostException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Nur der Host darf Einstellungen ändern."));
         } catch (NumberFormatException e) {
@@ -171,7 +178,10 @@ public class GameRestController {
             return Map.of("error", "Spiel nicht gefunden.");
 
         //maxCollectableEnergy wird jetzt mit zurückgegeben
-        return Map.of("players", game.getPlayers(),
+        return Map.of(
+            "players", game.getPlayers(),
+            "boardName", game.getBoardName(),
+            "cooldown", game.getCooldown(),
             "maxCollectableEnergy", game.getMaxCollectableEnergy()
         );
     }

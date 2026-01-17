@@ -183,6 +183,9 @@ public class BoardController {
         try {
             Board board = boardService.getBoardFromJson(presetName);
             game.setBoard(board);
+            game.setBoardName(presetName);
+
+            gameService.updateBoard(code, playerId);
             logger.info("Preset board '{}' selected for game {}", presetName, code);
 
             response.put("success", true);
