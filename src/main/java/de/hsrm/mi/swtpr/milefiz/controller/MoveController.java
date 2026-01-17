@@ -26,14 +26,17 @@ public class MoveController {
 
     @Autowired
     private MovementLogicService movementLogic;
-    // Methode reagiert auf das Ergebnis "BARRIER_HIT" von MovementLogicService und triggert das Event "BARRIER_WAIT" über GameService
+
+    // Methode reagiert auf das Ergebnis "BARRIER_HIT" von MovementLogicService und
+    // triggert das Event "BARRIER_WAIT" über GameService
     @PostMapping("/{gameCode}")
-    public FigureMoveResult move(@PathVariable String gameCode, @RequestBody FigureMoveRequest request) {
+    public FigureMoveResult move(@PathVariable("gameCode") String gameCode, @RequestBody FigureMoveRequest request) {
 
         Game game = gameService.getGame(gameCode);
         logger.info("Move-Request-Antwort erhalten: {}", request);
 
-        if (game == null) return FigureMoveResult.fail("Game nicht gefunden");
+        if (game == null)
+            return FigureMoveResult.fail("Game nicht gefunden");
 
         FigureMoveResult result = movementLogic.moveFigure(game, gameCode, request);
 
@@ -41,7 +44,7 @@ public class MoveController {
             logger.info("Barriere getroffen! Sende BARRIER_WAIT Event für Spiel {}", gameCode);
             gameService.publischBarrierWaitEvent(gameCode, request.playerId);
         }
-        
+
         return result;
     }
 }
