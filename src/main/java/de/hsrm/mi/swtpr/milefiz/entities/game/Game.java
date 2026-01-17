@@ -122,16 +122,16 @@ public class Game {
     }
 
     public boolean removePlayer(String playerId) {
-        // Spieler aus playerNumber rausnehmen
-        for (int i = 0; i < playerNumber.size(); i++) {
-            if (playerId.equals(playerNumber.get(i))) {
-                playerNumber.set(i, null);
-            }
-        }
-
         Player removed = playerList.remove(playerId);
         logger.info("The game now has players: "
                 + Arrays.toString(playerList.values().stream().map(Player::getName).toArray(String[]::new)));
+
+        // Spieler aus playerNumber rausnehmen
+        for (int i = 0; i < playerNumber.size(); i++) {
+            if (playerNumber.get(i) != null && playerNumber.get(i).equals(playerId)) {
+                playerNumber.set(i, null);
+            }
+        }
 
         return removed != null;
     }

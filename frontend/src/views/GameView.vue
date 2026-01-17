@@ -13,6 +13,7 @@ import { useGameStore } from '@/stores/gamestore'
 import PauseMenu from '@/components/PauseMenu.vue'
 import EnergyBar from '@/components/playingfield/EnergyBar.vue'
 import HUDInfoView from '@/components/hud/HUDInfoView.vue'
+import HUDKeyboardGuide from '@/components/hud/HUDKeyboardGuide.vue'
 import DuelPopup from '@/components/duel/DuelPopup.vue'
 
 
@@ -147,6 +148,27 @@ function startCooldownTimer() {
     </TresCanvas>
 
     <PopupSpielende />
+    <div class="top-right-controls">
+      <HUDKeyboardGuide />
+      <PauseMenu />
+    </div>
+
+    <!-- Schritte box -->
+    <div class="steps-remaining-wood">
+      <div class="steps-title">Schritte</div>
+      <div class="steps-row">
+        <span>Gesamt:</span>
+        <span class="steps-value">{{ gameStore.gameData.totalSteps }}</span>
+      </div>
+      <div class="steps-row">
+        <span>Gegangen:</span>
+        <span class="steps-value">{{ gameStore.gameData.stepsTaken }}</span>
+      </div>
+      <div class="steps-row">
+        <span>Übrig:</span>
+        <span class="steps-value">{{ gameStore.gameData.remainingSteps }}</span>
+      </div>
+    </div>
     <DuelPopup />
     <PauseMenu />
 
@@ -161,7 +183,8 @@ function startCooldownTimer() {
     <!-- UI Overlay -->
     <div class="pointer-events-none absolute inset-0 flex items-start m-2 z-50">
       <div
-        class="pointer-events-auto flex w-80 flex-col gap-6 rounded-2xl bg-black/40 p-4 backdrop-blur-sm border border-white/10">
+        class="pointer-events-auto flex w-80 flex-col gap-6 rounded-2xl bg-black/40 p-4 backdrop-blur-sm border border-white/10"
+      >
         <!-- Dice -->
         <div class="flex flex-col items-center gap-4">
           <div class="h-40 w-40 relative">
@@ -176,7 +199,10 @@ function startCooldownTimer() {
           </div>
 
           <!-- Map button -->
-          <button class="mt-2 rounded-xl bg-green-700 px-4 py-2 text-white font-bold" @click="openCensoredMap">
+          <button
+            class="mt-2 rounded-xl bg-green-700 px-4 py-2 text-white font-bold"
+            @click="openCensoredMap"
+          >
             🗺️ Map öffnen
           </button>
         </div>
@@ -213,6 +239,22 @@ function startCooldownTimer() {
   background: #0a0f1a;
 }
 
+.top-right-controls {
+  position: absolute;
+  top: 20px;
+  right: 200px;
+  z-index: 60;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 15px;
+  pointer-events: none;
+}
+
+.top-right-controls > * {
+  pointer-events: auto;
+}
+
 .ui-panel-left {
   position: absolute;
   top: 20px;
@@ -232,11 +274,13 @@ function startCooldownTimer() {
   background-color: #3d2b1f;
   background-image:
     linear-gradient(to bottom, rgba(0, 0, 0, 0.3), transparent),
-    repeating-linear-gradient(90deg,
+    repeating-linear-gradient(
+      90deg,
       transparent,
       transparent 38px,
       rgba(0, 0, 0, 0.1) 39px,
-      rgba(0, 0, 0, 0.1) 40px);
+      rgba(0, 0, 0, 0.1) 40px
+    );
 
   border: 4px solid #2d1b0d;
   border-radius: 20px;
@@ -435,5 +479,71 @@ function startCooldownTimer() {
   to {
     transform: scale(1);
   }
+}
+
+.steps-remaining-wood {
+  position: absolute;
+  top: 90px;
+  right: 24px;
+  z-index: 45;
+  min-width: 180px;
+  max-width: 200px;
+  background-color: #3d2b1f;
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.12), transparent),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 38px,
+      rgba(0, 0, 0, 0.08) 39px,
+      rgba(0, 0, 0, 0.08) 40px
+    );
+  border: 4px solid #2d1b0d;
+  border-radius: 18px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    inset 0 0 10px rgba(0, 0, 0, 0.25);
+  padding: 22px 28px 18px 28px;
+  color: #ffe7b0;
+  font-family: 'Kanit', 'Segoe UI', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+  transition: box-shadow 0.2s;
+}
+
+.steps-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 8px #0008;
+  text-align: center;
+}
+
+.steps-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 7px;
+  padding: 0 2px;
+}
+
+.steps-row:last-child {
+  margin-bottom: 0;
+}
+
+.steps-value {
+  color: #fffbe7;
+  font-weight: 700;
+  font-size: 1.1em;
+  text-shadow: 0 1px 4px #0006;
+}
+
+/* Alten Stil von "steps-remaining" löschen */
+.steps-remaining {
+  display: none !important;
 }
 </style>

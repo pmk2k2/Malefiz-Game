@@ -55,23 +55,16 @@ function startTimer() {
     if (!gameData.value.duelActive) return
 
     if (gameData.value.duelTimeLeft <= 0) {
-        stopTimer()
+      stopTimer()
+      gameData.value.duelAnswered = true
 
-        if (!gameData.value.duelAnswered) {
-        gameData.value.duelAnswered = true
-        fetch('/api/duel/answer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-            gameCode: gameData.value.gameCode,
-            playerId: gameData.value.playerId,
-            answerIndex: -1,
-            }),
-        })
-        }
+      fetch(`/api/duel/timeout-check?gameCode=${gameData.value.gameCode}`, {
+        method: 'POST',
+      })
 
-        return
+      return
     }
+
 
     gameData.value.duelTimeLeft -= 1
     }, 1000)

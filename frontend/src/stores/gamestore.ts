@@ -37,8 +37,12 @@ export const useGameStore = defineStore('gamestore', () => {
     movingFigure: string | null
     requireInput: boolean
     forbiddenDir: string | null
+    stepsTaken: number
+    remainingSteps: number
+    totalSteps: number
     energy: number
     duelActive: boolean
+    currentMinigame: string | null
     mashScore: number
     duelTimeLeft: number
     duelAnswered: boolean
@@ -63,8 +67,12 @@ export const useGameStore = defineStore('gamestore', () => {
     movingFigure: null,
     requireInput: false,
     forbiddenDir: null,
+    stepsTaken: 0,
+    remainingSteps: 0,
+    totalSteps: 0,
     energy: 0,
     duelActive: false,
+    currentMinigame: null,
     mashScore: 0,
     duelTimeLeft: 10,
     duelAnswered: false,
@@ -172,6 +180,14 @@ export const useGameStore = defineStore('gamestore', () => {
               gameState.value = 'RUNNING'
               ingameMoveEvent.value = event
             }
+            if (event.operation === 'STEP_UPDATE' && event.step && event.id === gameData.playerId) {
+                gameData.stepsTaken = event.step.totalSteps
+                gameData.remainingSteps = event.step.remainingSteps
+              }
+              // DUEL / MINIGAME START
+            else if (event.operation === 'DUEL_PREPARE') {
+              console.log('DUEL_PREPARE Event empfangen!')
+            }
             // DUEL / MINIGAME START
             else if (event.operation === 'DUEL') {
               console.log('DUEL Event empfangen!')
@@ -191,6 +207,22 @@ export const useGameStore = defineStore('gamestore', () => {
                 gameData.duelActive = true
               }
             }
+            // <--- NEU: Reagieren auf Minigame Auswahl
+            else if (event.operation === 'MINIGAME_SELECTED') {
+              const { minigameType, id, opponentId } = event
+              
+              console.log(`!!! MINIGAME SELECTED: ${minigameType} !!!`)
+              
+              //HIER DIE DUELL Minigame anzeige einbinden bei 'gameData.currentMinigame'
+              gameData.currentMinigame = minigameType || null
+              
+              if (gameData.playerId === id || gameData.playerId === opponentId) {
+                console.log(`Spieler ${gameData.playerName} startet nun Minispiel UI für ${event.minigameType}`)
+              }
+            }
+          }
+          else if (event.typ === 'LOBBY') {
+            
 
             // mashingGame
             else if (event.operation == 'DUEL_MASH_UPDATE') {
@@ -302,6 +334,9 @@ export const useGameStore = defineStore('gamestore', () => {
             gameData.requireInput = true
             gameData.moveChoiceAllowed = true
             // Wuerfel freigeben
+            gameData.stepsTaken = 0
+            gameData.remainingSteps = event.result
+            gameData.totalSteps = event.result
           }
         } catch (err) {
           console.error('WS Fehler:', err)
@@ -411,8 +446,13 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.isHost = null
     gameData.players = []
     gameData.ok = false
+    gameData.isBereit = false
     gameData.gameOver = null
+    gameData.stepsTaken=0
+    gameData.remainingSteps=0
+    gameData.totalSteps=0
     gameData.duelActive = false
+    gameData.currentMinigame = null
     gameData.mashScore = 0
     stopCountdown()
     localStorage.removeItem('gameData')
@@ -424,6 +464,9 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.playerId = null
     gameData.isBereit = false
     gameData.gameOver = null
+    gameData.stepsTaken=0
+    gameData.remainingSteps=0
+    gameData.totalSteps=0
 
     stopCountdown()
     console.log(JSON.stringify(gameData))
