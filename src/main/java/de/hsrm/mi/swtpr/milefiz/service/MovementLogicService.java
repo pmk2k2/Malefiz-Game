@@ -497,6 +497,11 @@ public class MovementLogicService {
 
             if (game.isMovementFinished(p1) && game.isMovementFinished(p2)) {
 
+                // Duell erstmal erstellen ohne Fragen
+                Duel duel = new Duel(gameCode, p1, p2, null);  
+                game.setActiveDuel(duel);
+                game.setState(GameState.DUEL);
+
                 // Bewegung NUR für Übergabe von Koordinaten
                 Bewegung duelBew = new Bewegung(
                         figure.getGridI(),
@@ -506,21 +511,26 @@ public class MovementLogicService {
                         null,
                         0);
 
-                FrontendNachrichtEvent duelEvent = new FrontendNachrichtEvent(
+                // Für Mnigame auswahl
+                FrontendNachrichtEvent prepareEvent = new FrontendNachrichtEvent(
                         FrontendNachrichtEvent.Nachrichtentyp.INGAME,
-                        FrontendNachrichtEvent.Operation.DUEL,
+                        FrontendNachrichtEvent.Operation.DUEL_PREPARE,
                         gameCode,
                         null,
                         p1, // Id des player1 im duell
                         duelBew);
+                prepareEvent.setOpponentId(p2);
+                publisher.publishEvent(prepareEvent);
+
+                FrontendNachrichtEvent duelEvent = new FrontendNachrichtEvent(
+                    FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+                    FrontendNachrichtEvent.Operation.DUEL,
+                    gameCode,
+                    null,
+                    p1,
+                    duelBew);
                 duelEvent.setOpponentId(p2);
 
-                QuizQuestion q = quizService.getRandomQuestion();
-                Duel duel = new Duel(gameCode, p1, p2, q);
-                duel.resetForNewQuestion(q);
-
-                game.setActiveDuel(duel);
-                game.setState(GameState.DUEL);
                 publisher.publishEvent(duelEvent);
             }
         }

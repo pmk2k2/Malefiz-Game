@@ -160,6 +160,7 @@ export const useGameStore = defineStore('gamestore', () => {
               gameData.duelAnswered = false
               gameData.duelTimeLeft = 0
               gameData.mashScore = 0
+              gameData.currentMinigame = null
             }
 
 

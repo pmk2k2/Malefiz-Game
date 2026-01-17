@@ -3,35 +3,40 @@
     <div class="popup">
       <div class="top">
         <div class="title">DUELL</div> 
-        <!-- <div class="timer">{{ gameData.duelTimeLeft }}s</div> -->
-      </div>
-      <!-- 
-      <div v-if="gameData.duelQuestion" class="content">
-        <div class="question">{{ gameData.duelQuestion.text }}</div>
-
-        <div class="answers">
-          <button
-            v-for="(a, i) in gameData.duelQuestion.answers"
-            :key="i"
-            class="answer"
-            :disabled="gameData.duelAnswered || gameData.duelTimeLeft <= 0"
-            @click="select(i)"
-          >
-            {{ a }}
-          </button>
+        <div v-if="gameData.currentMinigame === 'QUIZ'" class="timer">
+          {{ gameData.duelTimeLeft }}s
         </div>
-
-        <div v-if="gameData.duelAnswered" class="status">Antwort gesendet…</div>
-        <div v-else-if="gameData.duelTimeLeft <= 0" class="status">Zeit abgelaufen…</div>
       </div>
-  
-      <div v-else class="content"> 
-        <div class="status">Frage wird geladen…</div>
-      </div>
-      --> 
 
-      <div class="content">
-        <DuelMash />
+        <div class="content">
+          <!-- Wenn currentMinigame == BUTTON_MASHING -->
+          <DuelMash v-if="gameData.currentMinigame === 'BUTTON_MASHING'" />
+          
+          <!-- Wenn currentMinitGame == QUIZ  -->
+          <div v-else-if="gameData.currentMinigame === 'QUIZ'">
+            <div v-if="gameData.duelQuestion">
+              <div class="question">{{ gameData.duelQuestion.text }}</div>
+
+              <div class="answers">
+                <button
+                  v-for="(a, i) in gameData.duelQuestion.answers"
+                  :key="i"
+                  class="answer"
+                  :disabled="gameData.duelAnswered || gameData.duelTimeLeft <= 0"
+                  @click="select(i)"
+                >
+                  {{ a }}
+                </button>
+              </div>
+
+              <div v-if="gameData.duelAnswered" class="status">Antwort gesendet…</div>
+              <div v-else-if="gameData.duelTimeLeft <= 0" class="status">Zeit abgelaufen…</div>
+            </div>
+            
+            <div v-else class="status">Frage wird geladen…</div>
+          </div>
+
+        <div v-else class="status">Minigame wird ausgewählt...</div>
       </div>
 
     </div>

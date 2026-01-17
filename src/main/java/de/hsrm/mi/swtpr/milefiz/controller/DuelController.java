@@ -219,7 +219,12 @@ public class DuelController {
         if (duel == null)
             return;
 
-        publishNewQuestion(gameCode, duel.getQuestion());
+        // Wenn Quiz ausgewählt wurde und dadurch Question existiert, oder erstmal mashing, oder...
+        if (duel.getQuestion() != null) {
+            publishNewQuestion(gameCode, duel.getQuestion());
+        } else {
+            publishMashUpdate((gameCode), 0);
+        }
     }
 
     private boolean isTimeout(Duel duel) {
