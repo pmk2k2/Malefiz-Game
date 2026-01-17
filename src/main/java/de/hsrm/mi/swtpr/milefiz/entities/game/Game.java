@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.hsrm.mi.swtpr.milefiz.entities.board.Board;
+import de.hsrm.mi.swtpr.milefiz.entities.board.Field;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
@@ -255,13 +256,27 @@ public class Game {
         this.maxCollectableEnergy = maxCollectableEnergy;
     }
 
-
     public Duel getActiveDuel() {
         return activeDuel;
     }
 
     public void setActiveDuel(Duel duel) {
         this.activeDuel = duel;
+    }
+
+    public void removeFigure(Figure figure) {
+        figures.remove(figure);
+        try {
+            Board b = getBoard();
+            if (b != null) {
+                Field f = b.get(figure.getGridI(), figure.getGridJ());
+                if (f != null) {
+                    f.removeFigure(figure);
+                }
+            }
+        } catch (Exception e) {
+
+        }
     }
 
 }

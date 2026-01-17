@@ -139,7 +139,15 @@ public class GameService {
                 // if player not reconneted after 5s-> remove figure
                 if (game.getPlayerById(playerId) == null) {
                     int before = game.getFigures().size();
-                    game.getFigures().removeIf(f -> playerId.equals(f.getOwnerPlayerId()));
+                    List<Figure> toRemove = new ArrayList<>();
+                    for (Figure f : game.getFigures()) {
+                        if (playerId.equals(f.getOwnerPlayerId())) {
+                            toRemove.add(f);
+                        }
+                    }
+                    for (Figure f : toRemove) {
+                        game.removeFigure(f);
+                    }
                     int after = game.getFigures().size();
                     logger.info("Removed {} figures of player {} from game {}", (before - after), playerId, gameCode);
                     playerRemovalTimestamps.remove(playerId);
@@ -148,8 +156,7 @@ public class GameService {
                             new FrontendNachrichtEvent(
                                     FrontendNachrichtEvent.Nachrichtentyp.INGAME,
                                     playerId,
-                                    FrontendNachrichtEvent.Operation.READY_UPDATED, // or define a new operation
-                                                                                    // FIGURES_UPDATED
+                                    FrontendNachrichtEvent.Operation.READY_UPDATED,
                                     gameCode,
                                     null));
                 }
@@ -325,6 +332,9 @@ public class GameService {
             return false;
         }
 
+        // Reset steps for all players before starting
+        resetPlayerSteps(game);
+
         boolean start = game.adminStart();
         if (!start)
             return false;
@@ -347,6 +357,9 @@ public class GameService {
             return false;
         }
 
+        // Reset steps for all players before starting
+        resetPlayerSteps(game);
+
         boolean start = game.counterStart(COUNTDOWN_DURATION_SECONDS);
         if (!start)
             return false;
@@ -357,6 +370,15 @@ public class GameService {
         game.setState(GameState.RUNNING);
         publishGameRunningEvent(gameCode);
         return true;
+    }
+
+    // Helper to reset steps for all players
+    private void resetPlayerSteps(Game game) {
+        for (Player p : game.getPlayers()) {
+            p.setStepsTaken(0);
+            p.setRemainingSteps(0);
+            p.setTotalSteps(0);
+        }
     }
 
     private boolean initialiatizeFigures(Game game) {

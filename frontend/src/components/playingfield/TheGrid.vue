@@ -216,19 +216,27 @@ async function fetchGameState() {
     const players = [...new Set(backendFigures.map((f) => f.playerId))].sort()
 
     //map old positions by id
-    const oldPositions = new Map(figures.value.map(f => [f.id, f.position]))
+    const oldState = new Map(figures.value.map(f => [f.id, {
+      position: f.position,
+      orientation: f.orientation,
+      viewDirRot: f.viewDirRot
+    }]))
 
     figures.value = backendFigures.map((fig) => {
       const playerIndex = players.indexOf(fig.playerId)
+      const old = oldState.get(fig.id)
       // try to keep old position if exists, else fallback to home position
-      const position = oldPositions.get(fig.id) ?? calculateHomePosition(fig, playerIndex, players.length)
+      const position = old?.position ?? calculateHomePosition(fig, playerIndex, players.length)
+      const orientation = old?.orientation ?? fig.orientation
+      const viewDirRot = old?.viewDirRot ?? 0
 
       return {
         ...fig,
         currentAnim: null,
         animQueue: [],
         position,
-        viewDirRot: 0,
+        orientation,
+        viewDirRot,
       } as IPlayerFigure
     })
     console.log('Figure geladen und positioniert:', figures.value.length)
