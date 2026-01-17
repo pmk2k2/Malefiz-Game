@@ -14,6 +14,8 @@ import PauseMenu from '@/components/PauseMenu.vue'
 import EnergyBar from '@/components/playingfield/EnergyBar.vue'
 import HUDInfoView from '@/components/hud/HUDInfoView.vue'
 import HUDKeyboardGuide from '@/components/hud/HUDKeyboardGuide.vue'
+import DuelPopup from '@/components/duel/DuelPopup.vue'
+
 
 const gameStore = useGameStore()
 const { figures } = storeToRefs(gameStore)
@@ -155,12 +157,10 @@ function startCooldownTimer() {
 
 <template>
   <div class="game-scene">
-    <!-- 3D поле -->
     <TresCanvas clear-color="#87CEEB" class="w-full h-full">
       <TheGrid ref="gridRef" />
     </TresCanvas>
 
-    <!-- Popup конца игры -->
     <PopupSpielende />
     <div class="top-right-controls">
       <HUDKeyboardGuide />
@@ -183,15 +183,16 @@ function startCooldownTimer() {
         <span class="steps-value">{{ gameStore.gameData.remainingSteps }}</span>
       </div>
     </div>
+    <DuelPopup />
+    <PauseMenu />
 
-    <!-- DUEL / MINIGAME OVERLAY -->
-    <div v-if="gameStore.gameData.duelActive" class="minigame-overlay">
+    <!--<div v-if="gameStore.gameData.duelActive" class="minigame-overlay">
       <div class="minigame-box">
         <h2>DUELL STARTET!</h2>
         <p>Bereite dich auf das Minispiel vor...</p>
         <div class="loader"></div>
       </div>
-    </div>
+    </div>-->
 
     <!-- UI Overlay -->
     <div class="pointer-events-none absolute inset-0 flex items-start m-2 z-50">
@@ -555,7 +556,7 @@ function startCooldownTimer() {
   text-shadow: 0 1px 4px #0006;
 }
 
-/* Xóa style cũ của steps-remaining */
+/* Alten Stil von "steps-remaining" löschen */
 .steps-remaining {
   display: none !important;
 }

@@ -13,9 +13,9 @@ import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
-import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
+import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent.Aktion;
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
 import de.hsrm.mi.swtpr.milefiz.model.Step;
@@ -23,20 +23,24 @@ import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
-import de.hsrm.mi.swtpr.milefiz.service.BoardNavigationService.MoveType;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
+import de.hsrm.mi.swtpr.milefiz.model.duel.Duel;
+import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
+import de.hsrm.mi.swtpr.milefiz.service.BoardNavigationService.MoveType;
 
 @Service
 public class MovementLogicService {
     private Logger logger = LoggerFactory.getLogger(MovementLogicService.class);
-
+    private QuizService quizService;
     // Damit man Zwischenstaende an alle aus dem Spiel senden kann
     private ApplicationEventPublisher publisher;
     private BoardNavigationService navService;
 
-    public MovementLogicService(ApplicationEventPublisher publisher, BoardNavigationService navService) {
+    public MovementLogicService(ApplicationEventPublisher publisher, BoardNavigationService navService,
+            QuizService quizService) {
         this.publisher = publisher;
         this.navService = navService;
+        this.quizService = quizService;
     }
 
     private void sendStepUpdate(
@@ -483,7 +487,17 @@ public class MovementLogicService {
 
         // Event auslösen
         if (field.isDuelField()) {
+
+            if (game.getActiveDuel() != null) {
+                return FigureMoveResult.ok();
+            }
+
             List<Figure> figs = field.getFigures();
+
+            if (figs.size() < 2) {
+                return FigureMoveResult.ok();
+            }
+
             String p1 = figs.get(0).getOwnerPlayerId();
             String p2 = figs.get(1).getOwnerPlayerId();
 
@@ -500,13 +514,19 @@ public class MovementLogicService {
 
                 FrontendNachrichtEvent duelEvent = new FrontendNachrichtEvent(
                         FrontendNachrichtEvent.Nachrichtentyp.INGAME,
-                        FrontendNachrichtEvent.Operation.DUEL_PREPARE,
+                        FrontendNachrichtEvent.Operation.DUEL,
                         gameCode,
                         null,
                         p1, // Id des player1 im duell
                         duelBew);
                 duelEvent.setOpponentId(p2);
 
+                QuizQuestion q = quizService.getRandomQuestion();
+                Duel duel = new Duel(gameCode, p1, p2, q);
+                duel.resetForNewQuestion(q);
+
+                game.setActiveDuel(duel);
+                game.setState(GameState.DUEL);
                 publisher.publishEvent(duelEvent);
             }
         }

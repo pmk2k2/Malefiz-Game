@@ -17,4 +17,12 @@ export interface IFrontendNachrichtEvent {
   bewegung: IBewegung
   step: IStep
   minigameType?: string // Neu fuer Minigames
+
+  // DUEL
+  quizQuestion?: {
+    id: string
+    text: string
+    answers: string[]
+    correctIndex?: number
+  }
 }
