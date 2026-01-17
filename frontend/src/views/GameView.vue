@@ -86,23 +86,13 @@ const isCurrentlyJumping = computed(() => {
   )
 })
 
-const isCurrentlyJumping = computed(() => {
-  const playerId = gameStore.gameData.playerId
-  if (!playerId) return false
-
-  // Es wird in allen Figuren gesucht, ob eine Figur des Spielers gerade die Animation 'isJump' hat
-  return gameStore.figures.some(fig => 
-    fig.playerId === playerId && 
-    fig.currentAnim?.isJump === true
-  )
-})
 
 async function onRoll(id: string) {
   const { gameCode, playerId } = gameStore.gameData
 
   // Sicherheitscheck
   if (!gameCode || !playerId) return
-  if (isBusy.value || isCurrentlyJumping.value || isSavingEnergy.value) return  und nicht während energie gesammelt wird
+  if (isBusy.value || isCurrentlyJumping.value || isSavingEnergy.value) return
 
   isBusy.value = true
 
@@ -214,13 +204,17 @@ function startCooldownTimer() {
           </div>
 
           <!-- Buttons -->
-          <div class="flex flex-row gap-2 w-full justify-center">
-            <RollButton :is-loading="isBusy" @trigger="onRoll" />
+       <div class="flex flex-row gap-2 w-full justify-center">
+            
+            <RollButton 
+              :is-loading="isBusy" 
+              :is-jumping="isCurrentlyJumping"
+              @trigger="onRoll" 
+            />
 
             <CollectEnergyButton :is-loading="isSavingEnergy" @trigger="saveEnergy" />
           </div>
 
-          <!-- Map button -->
           <button
             class="mt-2 rounded-xl bg-green-700 px-4 py-2 text-white font-bold"
             @click="openCensoredMap"
@@ -228,13 +222,8 @@ function startCooldownTimer() {
             🗺️ Map öffnen
           </button>
         </div>
-        <RollButton 
-          :is-loading="isBusy" 
-          :is-jumping="isCurrentlyJumping"
-          @trigger="onRoll" 
-        />
-
-      </div>
+        
+        </div>
     </div>
 
     <div class="ui-panel-right">
