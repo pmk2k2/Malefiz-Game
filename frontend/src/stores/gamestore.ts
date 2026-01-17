@@ -238,7 +238,7 @@ export const useGameStore = defineStore('gamestore', () => {
             }
 
             if (event.operation === 'LEFT' && event.playerName) {
-              setzeInfo(`${event.playerName} hat die Lobby verlassen.`) //InfoBox setzen wenn Player die Lobby verlässt
+              setzeInfo(`${event.playerName} hat verlassen.`) //InfoBox setzen wenn Player die Lobby verlässt
               console.log('LEEFFFTTT')
             }
             if (event.operation === 'KICKED') {

@@ -15,12 +15,15 @@ import EnergyBar from '@/components/playingfield/EnergyBar.vue'
 import HUDInfoView from '@/components/hud/HUDInfoView.vue'
 import HUDKeyboardGuide from '@/components/hud/HUDKeyboardGuide.vue'
 import DuelPopup from '@/components/duel/DuelPopup.vue'
+import { useInfo } from '@/composable/useInfo'
 
 
 const gameStore = useGameStore()
 const { figures } = storeToRefs(gameStore)
 const gridRef = ref<any>(null)
 const sichtbar = ref(false)
+
+const { info, loescheInfo } = useInfo()
 
 const liveBoard = computed(() => {
   return gridRef.value?.board ?? null
@@ -65,6 +68,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 // Cooldown-Zeit beim Start laden
 onMounted(async () => {
+  gameStore.gameData.totalSteps = 0
+  gameStore.gameData.stepsTaken = 0
+  gameStore.gameData.remainingSteps = 0
+
   try {
     const res = await fetch(`${API_BASE_URL}/daten/cooldown`)
     if (res.ok) {
@@ -157,6 +164,13 @@ function startCooldownTimer() {
 
 <template>
   <div class="game-scene">
+    <div class="info-box-wrapper" v-if="info.inhalt">
+      <div class="info-box">
+        <button @click="loescheInfo" class="cancel-button">✕</button>
+        <span class="info-text">{{ info.inhalt }}</span>
+      </div>
+    </div>
+
     <TresCanvas clear-color="#87CEEB" class="w-full h-full">
       <TheGrid ref="gridRef" />
     </TresCanvas>
@@ -559,5 +573,46 @@ function startCooldownTimer() {
 /* Alten Stil von "steps-remaining" löschen */
 .steps-remaining {
   display: none !important;
+}
+
+.info-box-wrapper {
+  position: fixed;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  width: 100vw;
+  pointer-events: none;
+}
+.info-box {
+  background: #6d2d2d;
+  color: white;
+  padding: 15px 40px;
+  border-radius: 8px;
+  border: 2px solid #f44336;
+  position: relative;
+  animation: slideIn 0.3s ease-out;
+  pointer-events: auto;
+}
+.cancel-button {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 </style>

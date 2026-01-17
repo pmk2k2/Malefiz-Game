@@ -108,7 +108,7 @@ public class GameService {
     private final Map<String, Long> playerRemovalTimestamps = new HashMap<>();
     // schedule figure remove
     private final Map<String, Timer> scheduledFigureRemovals = new HashMap<>();
-    private static final long FIGURE_REMOVAL_GRACE_PERIOD_MS = 5_000;
+    private static final long FIGURE_REMOVAL_GRACE_PERIOD_MS = 3_000;
 
     public boolean removePlayer(String gameCode, String playerId) {
         Game game = games.get(gameCode);
@@ -130,13 +130,13 @@ public class GameService {
         // time when player removed to grace period for figure
         playerRemovalTimestamps.put(playerId, System.currentTimeMillis());
 
-        // schedual remove figure after 5s if player nott reconnected
+        // schedual remove figure after 3s if player nott reconnected
         Timer figureTimer = new Timer();
         scheduledFigureRemovals.put(playerId, figureTimer);
         figureTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                // if player not reconneted after 5s-> remove figure
+                // if player not reconneted after 3s-> remove figure
                 if (game.getPlayerById(playerId) == null) {
                     int before = game.getFigures().size();
                     List<Figure> toRemove = new ArrayList<>();

@@ -63,7 +63,7 @@ public class WebSocketEventListener {
         if (playerId == null)
             return;
 
-        // set remove after 5 seconds, but check if player has reconnected
+        // set remove after 3 seconds, but check if player has reconnected
         ScheduledFuture<?> scheduled = scheduler.schedule(() -> {
             // only remove if playerId is not present in sessionIdToPlayerId
             if (!sessionIdToPlayerId.containsValue(playerId)) {
@@ -78,7 +78,7 @@ public class WebSocketEventListener {
                 logger.info("Player {} reconnected -> not removing.", playerId);
             }
             scheduledRemovals.remove(playerId);
-        }, 5, TimeUnit.SECONDS);
+        }, 3, TimeUnit.SECONDS);
 
         ScheduledFuture<?> previous = scheduledRemovals.put(playerId, scheduled);
         if (previous != null) {
