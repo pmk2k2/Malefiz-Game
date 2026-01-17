@@ -19,23 +19,25 @@
       <button class="icon-btn" type="button" @click="toggleRulesView">
         <img :src="infoIcon" alt="Info" />
       </button>
-
-      <button class="icon-btn" type="button" @click="showBoardSelection = true">
-        <img :src="einstellungIcon" alt="Einstellungen" />
-      </button>
     </div>
 
     <main class="main-content-lobby">
       <InfoView v-if="showRules" @close="toggleRulesView" />
-      <EinstellungView
-        :isVisible="showBoardSelection"
-        @close="showBoardSelection = false"
-        @openEditor="openBoardEditor"
-        @boardSelected="onBoardSelected"
-      />
 
-      <div class="spieler-liste-container">
-        <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
+      <div class="lobby-selection-area">
+        <div class="map-box-container">
+          <MapAuswahl v-if="isHost" @openEditor="openBoardEditor" />
+        </div>
+
+        <div class="middle-column-wrapper">
+          <div class="spieler-liste-container">
+            <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
+          </div>
+        </div>
+
+        <div class="right-spacer">
+          <LobbySettingsPanel v-if="isHost" />
+        </div>
       </div>
 
       <div class="button-group-lobby">
@@ -58,14 +60,6 @@
     <Counter v-if="showCounter" />
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
 
-    <!-- NEW: Board Selection Modal -->
-    <EinstellungView
-      :isVisible="showBoardSelection"
-      @close="showBoardSelection = false"
-      @openEditor="openBoardEditor"
-      @boardSelected="onBoardSelected"
-    />
-
     <!-- NEW: Board Editor -->
     <BoardEditor
       :isVisible="showBoardEditor"
@@ -77,7 +71,6 @@
 
 <script setup lang="ts">
 import InfoView from '@/components/InfoView.vue'
-import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
 import { computed, onUnmounted, ref } from 'vue'
 import SpielerListeView from './SpielerListeView.vue'
@@ -86,8 +79,9 @@ import { onMounted } from 'vue'
 import { useGameStore } from '@/stores/gamestore'
 import Counter from '@/components/playingfield/models/Counter.vue'
 import { useInfo } from '@/composable/useInfo'
-import EinstellungView from '@/components/EinstellungView.vue'
 import BoardEditor from '@/components/BoardEditor.vue'
+import MapAuswahl from '@/components/MapAuswahl.vue'
+import LobbySettingsPanel from '@/components/LobbySettingsPanel.vue'
 
 const { info, loescheInfo } = useInfo()
 const gameStore = useGameStore()
@@ -299,6 +293,32 @@ function onBoardSaved() {
   gap: 10px;
   padding: 20px;
   min-height: 0;
+}
+
+.lobby-selection-area {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  margin: 20px auto;
+}
+
+.map-box-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.middle-column-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.right-spacer {
+  display: flex;
+  padding-left: 20px;
+  flex: 1;
 }
 
 .spieler-liste-container {
