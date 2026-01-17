@@ -529,4 +529,15 @@ public class MovementLogicService {
         // Controller das automatische Öffnen des Maps triggern kann.
         return barrierHit ? FigureMoveResult.ok("BARRIER_HIT") : FigureMoveResult.ok();
     }
+
+    public void resetPlayerEnergy(Game game, String playerId) {
+    Player player = game.getPlayerById(playerId);
+    
+    if (player != null) {
+        player.setEnergy(0);
+        
+        logger.info("Energie für Spieler {} wurde serverseitig auf 0 gesetzt.", playerId);
+    }
+}
+
 }

@@ -47,6 +47,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 const ANIMATION_DURATION = 300 
 const { queueMove, queueRotation, vertJump } = useAnimationQueue()
 
+// Maximale Energie
+const MAX_ENERGY = 10
+
 // Camera controls
 const camRef = shallowRef<TresObject | null>(null)
 const default_cam_pos: [number, number, number] = [0, 15, 18]
@@ -186,6 +189,33 @@ async function getBoardFromBackend(): Promise<Board | null> {
   }
 }
 
+// Funktion, um dem Server den Verbrauch zu melden
+async function consumeEnergy() {
+  const { gameCode, playerId } = gameStore.gameData
+  
+  if (!gameCode || !playerId) return
+
+  try {
+    // equest an den neuen Backend-Endpunkt senden
+    const response = await fetch(`${API_BASE_URL}/move/${gameCode}/consume-energy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerId: playerId }),
+    })
+
+    // Wenn der Server "OK" sagt (Status 200), setzen wir die Energie lokal auf 0
+    if (response.ok) {
+        console.log("Energieverbrauch bestätigt. Setze Anzeige auf 0.")
+        gameStore.gameData.energy = 0
+    } else {
+        console.warn("Fehler: Server hat Energieverbrauch abgelehnt.")
+    }
+
+  } catch (e) {
+    console.error("Netzwerkfehler beim Energieverbrauch:", e)
+  }
+}
+
 async function fetchGameState() {
   const gameCode = gameStore.gameData.gameCode
   if (!gameCode) return
@@ -303,14 +333,31 @@ function onKeyDown(event: KeyboardEvent) {
     }
   }
 
-  // 3. Sprung (Space)
+  // 3. Sprung 
   if (key === ' ') { 
     event.preventDefault() 
+    
+    // Prüfen, ob genug Energie da ist
+    // 0, falls undefined
+    const currentEnergy = gameStore.gameData.energy || 0 
+
+    if (currentEnergy < MAX_ENERGY) {
+      console.log(`Nicht genug Energie für Sprung (${currentEnergy}/${MAX_ENERGY})`)
+      return 
+    }
+
+    // Figur finden und Sprung auslösen
     const fig = ownFigures.value[figureControlInd.value]
     if (fig) {
       const globalIndex = figures.value.findIndex(f => f.id === fig.id)
       if (globalIndex !== -1) {
+        
+        // Animation starten
+        console.log("Energie voll - Sprung wird ausgeführt!")
         vertJump(globalIndex, 2000) 
+        
+        // Energie verbrauchen (Backend call + lokaler Reset)
+        consumeEnergy()
       }
     }
   }

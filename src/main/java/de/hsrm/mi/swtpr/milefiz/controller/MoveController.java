@@ -1,8 +1,11 @@
 package de.hsrm.mi.swtpr.milefiz.controller;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,4 +47,20 @@ public class MoveController {
         
         return result;
     }
+
+    // Energie verbrauchen (Sprung)
+    @PostMapping("/{gameCode}/consume-energy")
+    public ResponseEntity<?> consumeEnergy(@PathVariable String gameCode, @RequestBody Map<String, String> body) {
+        String playerId = body.get("playerId");
+        Game game = gameService.getGame(gameCode);
+        
+        if (game == null) return ResponseEntity.notFound().build();
+
+        // Setzt Energie auf 0
+        movementLogic.resetPlayerEnergy(game, playerId);
+
+        // Sendet einfach ein leeres "OK" zurück
+        return ResponseEntity.ok().build();
+    }
+
 }
