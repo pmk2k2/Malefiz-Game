@@ -217,7 +217,7 @@ public class DuelController {
     }
 
     @GetMapping("/start")
-    public void startDuel(@RequestParam String gameCode) {
+    public void startDuel(@RequestParam("gameCode") String gameCode) {
         Game game = gameService.getGame(gameCode);
         Duel duel = game.getActiveDuel();
 
@@ -239,7 +239,7 @@ public class DuelController {
     }
 
     @PostMapping("/timeout-check")
-    public void timeoutCheck(@RequestParam String gameCode) {
+    public void timeoutCheck(@RequestParam("gameCode") String gameCode) {
         Game game = gameService.getGame(gameCode);
         Duel duel = game.getActiveDuel();
 

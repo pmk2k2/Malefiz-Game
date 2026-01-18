@@ -11,6 +11,12 @@ import type { IIngameRequestEvent } from '@/services/IIngameRequestEvent'
 import type { IBewegung } from '@/services/IBewegung'
 import type { IPlayerFigure } from './IPlayerFigure'
 
+declare global {
+  interface Window {
+    fetchGameState?: () => void
+  }
+}
+
 export const useGameStore = defineStore('gamestore', () => {
   console.log('Erstelle Gamestore')
   const { setzeInfo } = useInfo()
@@ -52,7 +58,9 @@ export const useGameStore = defineStore('gamestore', () => {
       text: string
       answers: string[]
     }
-
+    boardName: string | null
+    maxCollectableEnergy: number
+    cooldown: number
   }>({
     ok: false,
     players: [],
@@ -81,6 +89,9 @@ export const useGameStore = defineStore('gamestore', () => {
     duelTimeLeft: 10,
     duelAnswered: false,
     duelQuestion: null,
+    boardName: 'DummyBoard.json',
+    maxCollectableEnergy: 10,
+    cooldown: 3,
   })
   const figures = ref<IPlayerFigure[]>([])
   const ingameMoveEvent = ref<IFrontendNachrichtEvent>()
@@ -126,6 +137,9 @@ export const useGameStore = defineStore('gamestore', () => {
       webSocketFactory: () => new SockJS(sockJsUrl),
       reconnectDelay: 5000,
       debug: (str) => console.log('[STOMP]', str),
+      connectHeaders: {
+        playerId: gameData.playerId ?? '',
+      },
     })
 
     stompClient.onConnect = () => {
@@ -156,9 +170,7 @@ export const useGameStore = defineStore('gamestore', () => {
                 text: q.text,
                 answers: q.answers,
               }
-            }
-
-            else if (event.operation === 'DUEL_RESULT' && gameData.duelActive) {
+            } else if (event.operation === 'DUEL_RESULT' && gameData.duelActive) {
               gameData.duelActive = false
               gameData.duelQuestion = null
               gameData.duelAnswered = false
@@ -166,7 +178,6 @@ export const useGameStore = defineStore('gamestore', () => {
               gameData.mashScore = 0
               gameData.currentMinigame = null
             }
-
 
             //aktualisiert die energie des lokalen Spielers falls die Event und Player ID übereinstimmt
             else if (event.operation === 'ENERGY_UPDATED') {
@@ -180,7 +191,7 @@ export const useGameStore = defineStore('gamestore', () => {
               if (event.id === gameData.playerId) {
                 gameState.value = 'BARRIER_PLACEMENT'
               } else {
-                console.log('Aus GameStore: Ein anderer Spieler setzt gerade eine Barriere.')
+                setzeInfo('Ein anderer Spieler positioniert gerade eine Barriere neu.', 'info')
               }
             } else if (event.operation === 'BARRIER_PLACED') {
               gameState.value = 'RUNNING'
@@ -224,29 +235,29 @@ export const useGameStore = defineStore('gamestore', () => {
             // <--- NEU: Reagieren auf Minigame Auswahl
             else if (event.operation === 'MINIGAME_SELECTED') {
               const { minigameType, id, opponentId } = event
-              
+
               console.log(`!!! MINIGAME SELECTED: ${minigameType} !!!`)
-              
+
               //HIER DIE DUELL Minigame anzeige einbinden bei 'gameData.currentMinigame'
               gameData.currentMinigame = minigameType || null
-              
+
               if (gameData.playerId === id || gameData.playerId === opponentId) {
-                console.log(`Spieler ${gameData.playerName} startet nun Minispiel UI für ${event.minigameType}`)
+                console.log(
+                  `Spieler ${gameData.playerName} startet nun Minispiel UI für ${event.minigameType}`,
+                )
               }
             }
-          }
-          else if (event.typ === 'LOBBY') {
-            
+          } else if (event.typ === 'LOBBY') {
             updatePlayerList(gameCode)
 
             //  Countdown starten
 
             if (event.operation === 'JOINED' && event.playerName) {
-              setzeInfo(`${event.playerName} ist der Lobby beigetreten.`) //InfoBox setzen wenn Player
+              setzeInfo(`${event.playerName} ist der Lobby beigetreten.`, 'info') //InfoBox setzen wenn Player
             }
 
             if (event.operation === 'LEFT' && event.playerName) {
-              setzeInfo(`${event.playerName} hat die Lobby verlassen.`) //InfoBox setzen wenn Player die Lobby verlässt
+              setzeInfo(`${event.playerName} hat das Lobby verlassen.`, 'info') //InfoBox setzen wenn Player die Lobby verlässt
             }
             if (event.operation === 'KICKED') {
               stopCountdown()
@@ -285,7 +296,13 @@ export const useGameStore = defineStore('gamestore', () => {
 
             //  Spielerlimit überschritten
             if (event.operation === 'PLAYER_LIMIT_ERROR') {
-              alert('Lobby ist voll! Max 4 Spieler erlaubt.')
+              setzeInfo('Lobby ist voll! Max 4 Spieler erlaubt.', 'error')
+            }
+          }
+          if (event.typ === 'INGAME' && event.operation === 'READY_UPDATED') {
+            // figures might have changed, re-fetch
+            if (typeof window !== 'undefined' && window.fetchGameState) {
+              window.fetchGameState()
             }
           }
         } catch (err) {
@@ -310,6 +327,9 @@ export const useGameStore = defineStore('gamestore', () => {
       webSocketFactory: () => new SockJS(sockJsUrl),
       reconnectDelay: 5000,
       debug: (str) => console.log('[STOMP]', str),
+      connectHeaders: {
+        playerId: playerId ?? '',
+      },
     })
 
     persStompClient.onConnect = () => {
@@ -399,6 +419,16 @@ export const useGameStore = defineStore('gamestore', () => {
       gameData.players = mapBackendPlayersToDTD(jsonData.players || [])
       gameData.ok = true
 
+      if (jsonData.boardName) {
+        gameData.boardName = jsonData.boardName
+      }
+      if (jsonData.maxCollectableEnergy) {
+        gameData.maxCollectableEnergy = jsonData.maxCollectableEnergy
+      }
+      if (jsonData.cooldown) {
+        gameData.cooldown = jsonData.cooldown
+      }
+
       if (gameData.playerId && !gameData.players.some((p) => p.id === gameData.playerId)) {
         console.warn('Du wurdest aus der Lobby entfernt')
         gameData.gameCode = null
@@ -418,7 +448,7 @@ export const useGameStore = defineStore('gamestore', () => {
     } catch (error) {
       console.error('[updatePlayerList] Fehler:', error)
       if (error instanceof Error) {
-        //setzeInfo(error.message);
+        setzeInfo(`Lobby-Fehler: ${error.message}`, 'error')
       } else {
         //setzeInfo("Unbekannter Fehler");
       }
@@ -454,9 +484,9 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.ok = false
     gameData.isBereit = false
     gameData.gameOver = null
-    gameData.stepsTaken=0
-    gameData.remainingSteps=0
-    gameData.totalSteps=0
+    gameData.stepsTaken = 0
+    gameData.remainingSteps = 0
+    gameData.totalSteps = 0
     gameData.duelActive = false
     gameData.duelP1Id = null
     gameData.duelP2Id = null
@@ -472,9 +502,9 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.playerId = null
     gameData.isBereit = false
     gameData.gameOver = null
-    gameData.stepsTaken=0
-    gameData.remainingSteps=0
-    gameData.totalSteps=0
+    gameData.stepsTaken = 0
+    gameData.remainingSteps = 0
+    gameData.totalSteps = 0
 
     stopCountdown()
     console.log(JSON.stringify(gameData))

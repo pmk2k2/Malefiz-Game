@@ -15,12 +15,14 @@ import EnergyBar from '@/components/playingfield/EnergyBar.vue'
 import HUDInfoView from '@/components/hud/HUDInfoView.vue'
 import HUDKeyboardGuide from '@/components/hud/HUDKeyboardGuide.vue'
 import DuelPopup from '@/components/duel/DuelPopup.vue'
-
+import { useInfo } from '@/composable/useInfo'
 
 const gameStore = useGameStore()
 const { figures } = storeToRefs(gameStore)
 const gridRef = ref<any>(null)
 const sichtbar = ref(false)
+
+const { nachrichten, loescheInfo, setzeInfo } = useInfo()
 
 const liveBoard = computed(() => {
   return gridRef.value?.board ?? null
@@ -50,24 +52,47 @@ function closeCensoredMap() {
 // Steuert alles: Button-Animation, Disabled-State und Logik
 const isBusy = ref(false)
 const isSavingEnergy = ref(false) // Nur für Energie
-const cooldownSeconds = ref(3) // Default 3s, wird überschrieben
+const cooldownSeconds = computed(() => gameStore.gameData.cooldown) // kommt aus dem Store
 
 // Energie aus Stores gameData aber reaktiv
 const energy = computed(() => gameStore.gameData.energy)
-const maxEnergy = 10 // !!! Max-Energie sollte eigentlich irgendwo anders herkommen
+const maxEnergy = computed(() => gameStore.gameData.maxCollectableEnergy) // kommt nun aus dem Store
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 // Cooldown-Zeit beim Start laden
 onMounted(async () => {
-  try {
-    const res = await fetch(`${API_BASE_URL}/daten/cooldown`)
-    if (res.ok) {
-      cooldownSeconds.value = await res.json()
-    }
-  } catch (e) {
-    console.error('Cooldown konnte nicht geladen werden', e)
+  gameStore.gameData.totalSteps = 0
+  gameStore.gameData.stepsTaken = 0
+  gameStore.gameData.remainingSteps = 0
+
+  // rejoim to the game to cancel scheduled removal
+  const { gameCode, playerId, playerName } = gameStore.gameData
+  if (gameCode && playerId && playerName) {
+    await fetch(`${API_BASE_URL}/game/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: gameCode,
+        name: playerName,
+        playerId: playerId,
+      }),
+    })
   }
+
+  if (gameCode && playerId) {
+    gameStore.startIngameLiveUpdate(gameCode, playerId)
+  }
+})
+
+const isCurrentlyJumping = computed(() => {
+  const playerId = gameStore.gameData.playerId
+  if (!playerId) return false
+
+  // Es wird in allen Figuren gesucht, ob eine Figur des Spielers gerade die Animation 'isJump' hat
+  return gameStore.figures.some(
+    (fig) => fig.playerId === playerId && fig.currentAnim?.isJump === true,
+  )
 })
 
 async function onRoll(id: string) {
@@ -75,7 +100,7 @@ async function onRoll(id: string) {
 
   // Sicherheitscheck
   if (!gameCode || !playerId) return
-  if (isBusy.value || isSavingEnergy.value) return // Kein Doppelklick möglich und nicht während energie gesammelt wird
+  if (isBusy.value || isCurrentlyJumping.value || isSavingEnergy.value) return
 
   isBusy.value = true
 
@@ -87,8 +112,8 @@ async function onRoll(id: string) {
     // Der Timer startet für den restlichen Cooldown
     // Die Animation im Button läuft weiter, weil isBusy true bleibt
     startCooldownTimer()
-  } catch (e) {
-    console.error('Fehler beim Würfeln', e)
+  } catch (e: any) {
+    setzeInfo('Fehler beim Würfeln: ' + (e.message || 'Serverfehler'), 'error')
     // Bei Fehler: Button sofort wieder freigeben oder Fehlermeldung zeigen
     isBusy.value = false
   }
@@ -120,8 +145,13 @@ async function saveEnergy() {
         collectEnergy: true,
       }),
     })
-  } catch (e) {
-    console.error(e)
+    /* if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.error || 'Energie sammeln nicht möglich')
+    } */
+    setzeInfo('Energie gesammelt!', 'success')
+  } catch (e: any) {
+    setzeInfo(e.message, 'error')
   } finally {
     isSavingEnergy.value = false
   }
@@ -138,6 +168,13 @@ function startCooldownTimer() {
 
 <template>
   <div class="game-scene">
+    <div class="notifications-container">
+      <div v-for="n in nachrichten" :key="n.id" class="info-box" :class="n.typ">
+        <button @click="loescheInfo(n.id)" class="cancel-button">✕</button>
+        <span class="info-text">{{ n.text }}</span>
+      </div>
+    </div>
+
     <TresCanvas clear-color="#87CEEB" class="w-full h-full">
       <TheGrid ref="gridRef" />
     </TresCanvas>
@@ -188,7 +225,7 @@ function startCooldownTimer() {
 
           <!-- Buttons -->
           <div class="flex flex-row gap-2 w-full justify-center">
-            <RollButton :is-loading="isBusy" @trigger="onRoll" />
+            <RollButton :is-loading="isBusy" :is-jumping="isCurrentlyJumping" @trigger="onRoll" />
 
             <CollectEnergyButton :is-loading="isSavingEnergy" @trigger="saveEnergy" />
           </div>
@@ -533,5 +570,59 @@ function startCooldownTimer() {
 /* Alten Stil von "steps-remaining" löschen */
 .steps-remaining {
   display: none !important;
+}
+
+.info-box {
+  background: #6d2d2d;
+  color: white;
+  padding: 15px 40px;
+  border-radius: 8px;
+  border: 2px solid #f44336;
+  position: relative;
+  animation: slideIn 0.3s ease-out;
+  pointer-events: auto;
+}
+.cancel-button {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.info-box.error {
+  background: #6d2d2d;
+  border-color: #f44336;
+}
+.info-box.success {
+  background: #2d4d19;
+  border-color: #a7ff83;
+}
+.info-box.info {
+  background: #3d2b1f;
+  border-color: #ffc107;
+}
+
+.notifications-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 </style>
