@@ -14,6 +14,7 @@ import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 import type { IFigureMoveRequest } from '@/services/IFigureMoveRequest'
 import { useAnimationQueue } from '@/composable/useAnimationQueue'
 import { storeToRefs } from 'pinia'
+import type { PerspectiveCamera } from 'three'
 
 // Zellentypen
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER' | 'DUEL'
@@ -49,7 +50,7 @@ const ANIMATION_DURATION = 300 // laenge der Animation in ms
 const { queueMove, queueRotation } = useAnimationQueue()
 
 // Camera controls
-const camRef = shallowRef<TresObject | null>(null)
+const camRef = shallowRef<PerspectiveCamera | null>(null)
 const default_cam_pos: [number, number, number] = [0, 15, 18]
 const camHeight = 1.2
 const figureControlInd = ref(0) //figureControlInd als ref geändert, um änderungen reacktiv für HUD und Store zu machen
@@ -596,11 +597,12 @@ defineExpose({
       </template>
       <template v-else-if="cell.type === 'BLOCKED'">
         <TheTree />
-        <TheGrass />
+        <!--TheGrass / -->
       </template>
       <template v-else-if="cell.type === 'DUEL'">
         <TheRock />
         <TheDuel />
+        <!-- TheDuel v-if="camRef" :sceneCam="camRef" /-->
       </template>
       <template v-else-if="cell.type === 'GOAL'">
         <TheRock />
