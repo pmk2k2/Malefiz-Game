@@ -1,7 +1,6 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
 import java.time.Instant;
-import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,7 +21,6 @@ import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
-import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtService;
 
 @Service
 public class GameService {
@@ -475,8 +473,8 @@ public class GameService {
                 .collect(Collectors.toList());
     }
 
-    // spieleinstwllungen aktualisieren
-    public void updateGameSettings(String gameCode, String playerId, int maxEnergy) throws NotHostException {
+    // spieleinstellungen(Energy) aktualisieren
+    public void updateGameSettings(String gameCode, String playerId, int maxCollectableEnergy) throws NotHostException {
         Game game = games.get(gameCode);
         if (game == null)
             return;
@@ -487,13 +485,57 @@ public class GameService {
             throw new NotHostException("Nur der Host kann Einstellungen ändern.");
         }
 
-        game.setMaxCollectableEnergy(maxEnergy);
-
-        // Informiere Frontend über die eingestellte Energie
+        game.setMaxCollectableEnergy(maxCollectableEnergy);
+        
+        //Informiere Frontend über die eingestellte Energie
         FrontendNachrichtEvent e = new FrontendNachrichtEvent(
                 Nachrichtentyp.LOBBY,
                 "server",
                 Operation.READY_UPDATED,
+                gameCode,
+                null);
+        publisher.publishEvent(e);
+    }
+
+    // spieleinstellungen(Cooldown) aktualisieren
+    public void updateCooldown(String gameCode, String playerId, int cooldown) throws NotHostException {
+        Game game = games.get(gameCode);
+        if (game == null) return;
+
+        //Nur der Host darf die Einstellungen ändern
+        Player player = game.getPlayerById(playerId);
+        if (player == null || !player.isHost()) {
+            throw new NotHostException("Nur der Host kann Einstellungen ändern.");
+        }
+
+        game.setCooldown(cooldown);
+        
+        //Informiere Frontend über den eingestellten Cooldown
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.READY_UPDATED, 
+                gameCode,
+                null);
+        publisher.publishEvent(e);
+    }
+
+    // spieleinstellungen(Map/Board) aktualisieren
+    public void updateBoard(String gameCode, String playerId) throws NotHostException {
+        Game game = games.get(gameCode);
+        if (game == null) return;
+
+        //Nur der Host darf die Einstellungen ändern
+        Player player = game.getPlayerById(playerId);
+        if (player == null || !player.isHost()) {
+            throw new NotHostException("Nur der Host kann Einstellungen ändern.");
+        }
+        
+        //Informiere Frontend über die eingestellte Map
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.READY_UPDATED, 
                 gameCode,
                 null);
         publisher.publishEvent(e);

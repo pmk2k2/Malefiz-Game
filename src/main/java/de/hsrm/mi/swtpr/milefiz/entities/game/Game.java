@@ -48,6 +48,9 @@ public class Game {
     // Standardwert für energie falls der Host nichts einstellt
     private int maxCollectableEnergy = 10;
 
+    private String boardName = "DummyBoard.json";
+    private int cooldown = 3;
+
     public Game() {
         playerList = new HashMap<>();
         this.board = new Board(); // Board direkt anlegen
@@ -279,4 +282,19 @@ public class Game {
         }
     }
 
+    public String getBoardName() {
+        return boardName;
+    }
+
+    public void setBoardName(String boardName) {
+        this.boardName = boardName;
+    }
+
+    public int getCooldown() {
+        return cooldown;
+    }
+
+    public void setCooldown(int cooldown) {
+        this.cooldown = cooldown;
+    }    
 }

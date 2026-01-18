@@ -64,7 +64,7 @@ public class BoardController {
         }
     }
 
-    @GetMapping("/lobby/{code}/boards/presets")
+    @GetMapping("/lobby/{gameCode}/boards/presets")
     public ResponseEntity<List<String>> getPresetBoards(@PathVariable("gameCode") String code) {
         Game game = gameService.getGame(code);
         if (game == null) {
@@ -183,6 +183,9 @@ public class BoardController {
         try {
             Board board = boardService.getBoardFromJson(presetName);
             game.setBoard(board);
+            game.setBoardName(presetName);
+
+            gameService.updateBoard(code, playerId);
             logger.info("Preset board '{}' selected for game {}", presetName, code);
 
             response.put("success", true);

@@ -1,15 +1,16 @@
 <template>
   <div class="keyboard-guide-container">
-    <h4 class="guide-title">Quick-Guide</h4>
+    <h4 class="guide-title">Kurzanleitung</h4>
     <ul class="guide-list">
       <li>
-        <span class="key-cap"><-</span> <span class="key-cap">-></span> : Switch between your pawns
+        <span class="key-cap"><-</span> <span class="key-cap">-></span> : Wechseln zwischen Figuren
       </li>
-      <li><span class="key-cap">w</span> : Move pawn forward</li>
+      <li><span class="key-cap">w</span> : Figur vorwärts bewegen</li>
       <li>
-        <span class="key-cap">a</span> <span class="key-cap">d</span> : Turn pawn perspective left
-        or right
+        <span class="key-cap">a</span> <span class="key-cap">d</span> : Figur nach links/rechts
+        drehen
       </li>
+      <li><span class="key-cap">Leertaste</span> : Mit Figur springen</li>
     </ul>
   </div>
 </template>
