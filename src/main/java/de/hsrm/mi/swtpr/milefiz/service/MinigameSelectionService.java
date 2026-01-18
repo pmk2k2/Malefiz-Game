@@ -18,20 +18,18 @@ public class MinigameSelectionService {
     private final ApplicationEventPublisher publisher;
     private final GameService gameService; 
     private final QuizService quizService; 
+    private final ArithmetikService arithmetikService;
     private final Random random = new Random();
     
-    //DAS SIND DEMO Spiele, Hier sollen dann die Richtigen Mini-Spiele eingebunden werden
-    private final List<String> games = List.of("QUIZ", "BUTTON_MASHING", "Minispiel 3");
+    private final List<String> games = List.of("QUIZ", "BUTTON_MASHING", "ARITHMETIC");
 
-    public MinigameSelectionService(ApplicationEventPublisher publisher, GameService gameService, QuizService quizService) {
+    public MinigameSelectionService(ApplicationEventPublisher publisher, GameService gameService, QuizService quizService, ArithmetikService arithmetikService) {
         this.publisher = publisher;
         this.gameService = gameService;
         this.quizService = quizService;
+        this.arithmetikService = arithmetikService;
     }
 
-    //Fragt ab ob es ein Duell ist
-    //Nimmt ein beliebiges game aus der Liste 
-    //Schickt die Info an das Frontend
     @EventListener
     public void onDuelPrepare(FrontendNachrichtEvent event) {
         if (event.getOperation() != Operation.DUEL_PREPARE) return;
@@ -39,17 +37,24 @@ public class MinigameSelectionService {
         String selectedGame = games.get(random.nextInt(games.size()));
         System.out.println("Minigame ausgewählt: " + selectedGame);
 
-        if ("QUIZ".equals(selectedGame)) {
         Game game = gameService.getGame(event.getGameCode());
         Duel duel = game.getActiveDuel();
-        
-        if (duel != null) {
-            // Eine zufällige Frage aus dem Service holen und dem Duel zuweisen
-            QuizQuestion q = quizService.getRandomQuestion();
-            duel.nextQuestion(q); 
-        }
-    }
 
+        QuizQuestion generatedQuestion = null;
+
+        if (duel != null) {
+            
+            if ("QUIZ".equals(selectedGame)) {
+                generatedQuestion = quizService.getRandomQuestion();
+                duel.nextQuestion(generatedQuestion);
+            } else if ("ARITHMETIC".equals(selectedGame)) {
+                generatedQuestion = arithmetikService.generateQuestion();
+                duel.nextQuestion(generatedQuestion);
+            }
+
+        }
+
+        //  Spielauswahl
         FrontendNachrichtEvent msg = new FrontendNachrichtEvent(
             Nachrichtentyp.INGAME, event.getId(), Operation.MINIGAME_SELECTED, event.getGameCode(), null
         );
@@ -57,5 +62,16 @@ public class MinigameSelectionService {
         msg.setMinigameType(selectedGame);
         publisher.publishEvent(msg);
 
+        if (generatedQuestion != null) {
+            FrontendNachrichtEvent questionEvent = new FrontendNachrichtEvent(
+                Nachrichtentyp.INGAME, 
+                null, 
+                Operation.DUEL_NEW_QUESTION, 
+                event.getGameCode(), 
+                null
+            );
+            questionEvent.setQuizQuestion(generatedQuestion);
+            publisher.publishEvent(questionEvent);
+        }
     }
 }

@@ -3,7 +3,7 @@
     <div class="popup">
       <div class="top">
         <div class="title">DUELL</div> 
-        <div v-if="gameData.currentMinigame === 'QUIZ'" class="timer">
+        <div v-if="gameData.currentMinigame === 'QUIZ' || gameData.currentMinigame === 'ARITHMETIC'" class="timer">
           {{ gameData.duelTimeLeft }}s
         </div>
       </div>
@@ -11,6 +11,9 @@
         <div class="content">
           <!-- Wenn currentMinigame == BUTTON_MASHING -->
           <DuelMash v-if="gameData.currentMinigame === 'BUTTON_MASHING'" />
+
+           <!-- Wenn currentMinigame == ARITHMETIC -->
+          <DuelArithmetic v-else-if="gameData.currentMinigame === 'ARITHMETIC'" />
           
           <!-- Wenn currentMinitGame == QUIZ  -->
           <div v-else-if="gameData.currentMinigame === 'QUIZ'">
@@ -48,6 +51,7 @@ import { onBeforeUnmount, watch } from 'vue'
 import { useGameStore } from '@/stores/gamestore'
 import { storeToRefs } from 'pinia'
 import DuelMash from './DuelMash.vue'
+import DuelArithmetic from './DuelArithmetic.vue'
 
 const gameStore = useGameStore()
 const { gameData } = storeToRefs(gameStore)

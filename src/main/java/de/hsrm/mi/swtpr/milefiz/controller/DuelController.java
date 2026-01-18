@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import de.hsrm.mi.swtpr.milefiz.controller.dto.DuelAnswerRequest;
+import de.hsrm.mi.swtpr.milefiz.controller.dto.DuelArithmeticAnswerRequest;
 import de.hsrm.mi.swtpr.milefiz.controller.dto.DuelMashingRequest;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
@@ -25,6 +26,7 @@ import de.hsrm.mi.swtpr.milefiz.model.duel.DuelAnswer;
 import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
 import de.hsrm.mi.swtpr.milefiz.service.QuizService;
+import de.hsrm.mi.swtpr.milefiz.service.ArithmetikService;
 
 @RestController
 @RequestMapping("/api/duel")
@@ -38,6 +40,9 @@ public class DuelController {
 
     @Autowired
     private QuizService quizService;
+
+    @Autowired
+    private ArithmetikService arithmetikService;
 
     @PostMapping("/answer")
     public void answer(@RequestBody DuelAnswerRequest req) {
@@ -260,6 +265,57 @@ public class DuelController {
 
         resetLoserFigure(game, loser, gameCode);
         publishDuelResult(gameCode, winner, loser);
+    }
+
+
+    public void startArithmeticDuel(String gameCode) {
+        QuizQuestion mathQuestion = arithmetikService.generateQuestion();
+        
+        publishNewQuestion(gameCode, mathQuestion);
+    }
+    
+    
+    @PostMapping("/arithmetic/answer")
+    public void answerArithmetic(@RequestBody DuelArithmeticAnswerRequest request) { 
+        
+        Game game = gameService.getGame(request.gameCode()); 
+        Duel duel = game.getActiveDuel();
+
+        if (duel == null || duel.isFinished()) return;
+
+        // Antwort prüfen
+        String correctAnswer = duel.getQuestion().getAnswers().get(duel.getQuestion().getCorrectIndex());
+        boolean isCorrect = correctAnswer.equals(request.answer());
+
+        String winnerId = null;
+        String loserId = null; // LoserID für den Reset
+
+        // Zugriff: request.playerId()
+        if (isCorrect) {
+            winnerId = request.playerId();
+            loserId = duel.getOpponent(winnerId);
+        } else {
+            loserId = request.playerId();
+            winnerId = duel.getOpponent(loserId);
+        }
+        
+        duel.finish();
+        game.setActiveDuel(null);
+        game.setState(GameState.RUNNING);
+
+        // Verlierer zurücksetzen
+        resetLoserFigure(game, loserId, request.gameCode());
+
+        publisher.publishEvent(new FrontendNachrichtEvent(
+            FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+            winnerId, // Winner ID als Target
+            FrontendNachrichtEvent.Operation.DUEL_RESULT,
+            request.gameCode(),
+            null
+        ));
+
+        // Ergebnis des Duells zurückgeben
+        publishDuelResult(request.gameCode(), winnerId, loserId);
     }
 
 }
