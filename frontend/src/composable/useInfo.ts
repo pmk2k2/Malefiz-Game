@@ -1,19 +1,28 @@
-import { ref, reactive, readonly } from 'vue'
+import type { string } from 'three/tsl'
+import { reactive } from 'vue'
 
-const info = reactive<{ inhalt: string }>({ inhalt: '' })
+export interface Nachricht {
+  id: number
+  text: string
+  typ: 'info' | 'error' | 'success'
+}
+
+const nachrichten = reactive<Nachricht[]>([])
 
 export function useInfo() {
-  function loescheInfo() {
-    info.inhalt = ''
+  function loescheInfo(id: number) {
+    const index = nachrichten.findIndex((n) => n.id === id)
+    if (index !== -1) nachrichten.splice(index, 1)
   }
 
-  function setzeInfo(nachricht: string) {
-    info.inhalt = nachricht
+  function setzeInfo(text: string, typ: 'info' | 'error' | 'success' = 'info') {
+    const id = Date.now()
+    nachrichten.push({ id, text, typ })
 
     setTimeout(() => {
-      info.inhalt = ''
-    }, 3000) //Infobox verschwindet nach 3 sekunden
+      loescheInfo(id)
+    }, 5000) //Infobox verschwindet nach 5 sekunden
   }
 
-  return { info: info, loescheInfo, setzeInfo }
+  return { nachrichten, loescheInfo, setzeInfo }
 }

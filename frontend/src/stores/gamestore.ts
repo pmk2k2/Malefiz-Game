@@ -183,7 +183,7 @@ export const useGameStore = defineStore('gamestore', () => {
               if (event.id === gameData.playerId) {
                 gameState.value = 'BARRIER_PLACEMENT'
               } else {
-                console.log('Aus GameStore: Ein anderer Spieler setzt gerade eine Barriere.')
+                setzeInfo('Ein anderer Spieler positioniert gerade eine Barriere neu.', 'info')
               }
             } else if (event.operation === 'BARRIER_PLACED') {
               gameState.value = 'RUNNING'
@@ -236,12 +236,11 @@ export const useGameStore = defineStore('gamestore', () => {
             //  Countdown starten
 
             if (event.operation === 'JOINED' && event.playerName) {
-              setzeInfo(`${event.playerName} ist der Lobby beigetreten.`) //InfoBox setzen wenn Player
+              setzeInfo(`${event.playerName} ist der Lobby beigetreten.`, 'info') //InfoBox setzen wenn Player
             }
 
             if (event.operation === 'LEFT' && event.playerName) {
-              setzeInfo(`${event.playerName} hat verlassen.`) //InfoBox setzen wenn Player die Lobby verlässt
-              console.log('LEEFFFTTT')
+              setzeInfo(`${event.playerName} hat das Lobby verlassen.`, 'info') //InfoBox setzen wenn Player die Lobby verlässt
             }
             if (event.operation === 'KICKED') {
               stopCountdown()
@@ -280,7 +279,7 @@ export const useGameStore = defineStore('gamestore', () => {
 
             //  Spielerlimit überschritten
             if (event.operation === 'PLAYER_LIMIT_ERROR') {
-              alert('Lobby ist voll! Max 4 Spieler erlaubt.')
+              setzeInfo('Lobby ist voll! Max 4 Spieler erlaubt.', 'error')
             }
           }
           if (event.typ === 'INGAME' && event.operation === 'READY_UPDATED') {
@@ -432,7 +431,7 @@ export const useGameStore = defineStore('gamestore', () => {
     } catch (error) {
       console.error('[updatePlayerList] Fehler:', error)
       if (error instanceof Error) {
-        //setzeInfo(error.message);
+        setzeInfo(`Lobby-Fehler: ${error.message}`, 'error')
       } else {
         //setzeInfo("Unbekannter Fehler");
       }

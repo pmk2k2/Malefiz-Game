@@ -5,6 +5,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,22 +34,26 @@ public class MoveController {
     // Methode reagiert auf das Ergebnis "BARRIER_HIT" von MovementLogicService und
     // triggert das Event "BARRIER_WAIT" über GameService
     @PostMapping("/{gameCode}")
-    public FigureMoveResult move(@PathVariable("gameCode") String gameCode, @RequestBody FigureMoveRequest request) {
+    public ResponseEntity<FigureMoveResult> move(@PathVariable("gameCode") String gameCode, @RequestBody FigureMoveRequest request) {
 
         Game game = gameService.getGame(gameCode);
         logger.info("Move-Request-Antwort erhalten: {}", request);
 
         if (game == null)
-            return FigureMoveResult.fail("Game nicht gefunden");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(FigureMoveResult.fail("Game nicht gefunden"));
 
         FigureMoveResult result = movementLogic.moveFigure(game, gameCode, request);
 
-        if (result.success && "BARRIER_HIT".equals(result.message)) {
+        if (!result.success) {
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        if ("BARRIER_HIT".equals(result.message)) {
             logger.info("Barriere getroffen! Sende BARRIER_WAIT Event für Spiel {}", gameCode);
             gameService.publischBarrierWaitEvent(gameCode, request.playerId);
         }
 
-        return result;
+        return ResponseEntity.ok(result);
     }
 
     // Energie verbrauchen (Sprung)

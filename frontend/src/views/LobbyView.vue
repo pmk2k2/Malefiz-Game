@@ -8,10 +8,10 @@
       </div>
     </header>
 
-    <div class="info-box-wrapper" v-if="info.inhalt">
-      <div class="info-box">
-        <button @click="loescheInfo" class="cancel-button">✕</button>
-        <span class="info-text">{{ info.inhalt }}</span>
+    <div class="notifications-container">
+      <div v-for="n in nachrichten" :key="n.id" class="info-box" :class="n.typ">
+        <button @click="loescheInfo(n.id)" class="cancel-button">✕</button>
+        <span class="info-text">{{ n.text }}</span>
       </div>
     </div>
 
@@ -103,7 +103,7 @@ import BoardEditor from '@/components/BoardEditor.vue'
 import MapAuswahl from '@/components/MapAuswahl.vue'
 import LobbySettingsPanel from '@/components/LobbySettingsPanel.vue'
 
-const { info, loescheInfo } = useInfo()
+const { nachrichten, loescheInfo, setzeInfo } = useInfo()
 const gameStore = useGameStore()
 const isHost = computed(() => gameStore.gameData.isHost)
 const router = useRouter()
@@ -203,7 +203,8 @@ async function gameStartenByAdmin() {
       throw new Error('Fehler beim Starten des Spiels: ' + (err.error || res.statusText))
     }
     router.push('/game')
-  } catch (err) {
+  } catch (err: any) {
+    setzeInfo(err.message, 'error')
     console.error(err)
   }
 }
@@ -228,7 +229,7 @@ async function isReady() {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       const errorMessage = err.error || res.statusText || 'Fehler beim Setzen des Ready-Status.'
-      info.inhalt = errorMessage
+      setzeInfo(errorMessage, 'error')
       throw new Error(errorMessage)
     }
 
@@ -256,13 +257,11 @@ function openBoardEditor() {
 }
 
 function onBoardSelected(boardName: string) {
-  info.inhalt = `Board "${boardName.replace('.json', '')}" selected!`
-  setTimeout(() => loescheInfo(), 3000)
+  setzeInfo(`Board "${boardName.replace('.json', '')}" selected!`, 'info')
 }
 
 function onBoardSaved() {
-  info.inhalt = 'Custom board saved successfully!'
-  setTimeout(() => loescheInfo(), 3000)
+  setzeInfo('Custom board saved successfully!', 'success')
 }
 </script>
 
@@ -649,5 +648,29 @@ img {
   border: 3px solid #2d1b0d;
   border-radius: 8px;
   background-color: #000;
+}
+
+.info-box.error {
+  background: #6d2d2d;
+  border-color: #f44336;
+}
+.info-box.success {
+  background: #2d4d19;
+  border-color: #a7ff83;
+}
+.info-box.info {
+  background: #3d2b1f;
+  border-color: #ffc107;
+}
+
+.notifications-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 </style>

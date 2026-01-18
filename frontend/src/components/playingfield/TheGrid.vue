@@ -13,6 +13,7 @@ import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 import type { IFigureMoveRequest } from '@/services/IFigureMoveRequest'
 import { useAnimationQueue } from '@/composable/useAnimationQueue'
 import { storeToRefs } from 'pinia'
+import { useInfo } from '@/composable/useInfo'
 
 // Zellentypen
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER'
@@ -37,6 +38,7 @@ const CELL_SIZE = 2
 const board = ref<Board | null>(null)
 const isLoading = ref(true)
 const gameCode = gameStore.gameData.gameCode
+const { setzeInfo } = useInfo()
 
 // Player figures
 const { figures } = storeToRefs(gameStore)
@@ -44,7 +46,7 @@ const currentPlayerId = gameStore.gameData.playerId
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 // Animationqueue
-const ANIMATION_DURATION = 300 
+const ANIMATION_DURATION = 300
 const { queueMove, queueRotation, vertJump } = useAnimationQueue()
 
 // Maximale Energie
@@ -54,7 +56,7 @@ const MAX_ENERGY = 10
 const camRef = shallowRef<TresObject | null>(null)
 const default_cam_pos: [number, number, number] = [0, 15, 18]
 const camHeight = 1.2
-const figureControlInd = ref(0) 
+const figureControlInd = ref(0)
 const egoPersp = ref(true)
 const figureViewDir = ref(-1)
 
@@ -136,7 +138,7 @@ watch(
     const index = figures.value.findIndex(
       (fig) => fig.id === newEv.figureId && fig.playerId === newEv.id,
     )
-  
+
     if (newEv.bewegung.startX == null || newEv.bewegung.startZ == null) return
     if (!(newEv.bewegung.startX < 0 || newEv.bewegung.startZ < 0)) {
       const startPosField = cellToField({ i: newEv.bewegung.startX, j: newEv.bewegung.startZ })
@@ -192,7 +194,7 @@ async function getBoardFromBackend(): Promise<Board | null> {
 // Funktion, um dem Server den Verbrauch zu melden
 async function consumeEnergy() {
   const { gameCode, playerId } = gameStore.gameData
-  
+
   if (!gameCode || !playerId) return
 
   try {
@@ -205,14 +207,13 @@ async function consumeEnergy() {
 
     // Wenn der Server "OK" sagt (Status 200), setzen wir die Energie lokal auf 0
     if (response.ok) {
-        console.log("Energieverbrauch bestätigt. Setze Anzeige auf 0.")
-        gameStore.gameData.energy = 0
+      console.log('Energieverbrauch bestätigt. Setze Anzeige auf 0.')
+      gameStore.gameData.energy = 0
     } else {
-        console.warn("Fehler: Server hat Energieverbrauch abgelehnt.")
+      console.warn('Fehler: Server hat Energieverbrauch abgelehnt.')
     }
-
   } catch (e) {
-    console.error("Netzwerkfehler beim Energieverbrauch:", e)
+    console.error('Netzwerkfehler beim Energieverbrauch:', e)
   }
 }
 
@@ -226,11 +227,16 @@ async function fetchGameState() {
     const players = [...new Set(backendFigures.map((f) => f.playerId))].sort()
 
     //map old positions by id
-    const oldState = new Map(figures.value.map(f => [f.id, {
-      position: f.position,
-      orientation: f.orientation,
-      viewDirRot: f.viewDirRot
-    }]))
+    const oldState = new Map(
+      figures.value.map((f) => [
+        f.id,
+        {
+          position: f.position,
+          orientation: f.orientation,
+          viewDirRot: f.viewDirRot,
+        },
+      ]),
+    )
 
     figures.value = backendFigures.map((fig) => {
       const playerIndex = players.indexOf(fig.playerId)
@@ -304,7 +310,7 @@ onBeforeRender(({ delta }) => {
     const fig = ownFigures.value[figureControlInd.value]
     if (!fig) return
     const [x, y, z] = fig.position
-    if(y == undefined) return
+    if (y == undefined) return
 
     cam.position.set(x, camHeight + (y - 0.2), z)
 
@@ -312,7 +318,7 @@ onBeforeRender(({ delta }) => {
     const isJumping = fig.currentAnim?.isJump === true
     if (!isJumping) {
       cam.rotation.set(0, Math.PI * fig.viewDirRot, 0)
-    } 
+    }
   } else {
     cam.position.set(default_cam_pos[0], default_cam_pos[1], default_cam_pos[2])
     cam.lookAt(0, 0, 0)
@@ -322,7 +328,7 @@ onBeforeRender(({ delta }) => {
 function onKeyDown(event: KeyboardEvent) {
   // 1. Wenn Sprung läuft: Blockieren
   if (isCurrentlyJumping.value) {
-    return 
+    return
   }
 
   const key = event.key
@@ -334,7 +340,7 @@ function onKeyDown(event: KeyboardEvent) {
 
     // Regelwerk-Check
     if (isFigureLocked.value) {
-      alert('Figurwechsel gesperrt – Zug läuft noch')
+      setzeInfo('Figurwechsel gesperrt – Zug läuft noch', 'info')
       return
     }
 
@@ -347,29 +353,28 @@ function onKeyDown(event: KeyboardEvent) {
     }
   }
 
-  // 3. Sprung 
-  if (key === ' ') { 
-    event.preventDefault() 
-    
+  // 3. Sprung
+  if (key === ' ') {
+    event.preventDefault()
+
     // Prüfen, ob genug Energie da ist
     // 0, falls undefined
-    const currentEnergy = gameStore.gameData.energy || 0 
+    const currentEnergy = gameStore.gameData.energy || 0
 
     if (currentEnergy < MAX_ENERGY) {
-      console.log(`Nicht genug Energie für Sprung (${currentEnergy}/${MAX_ENERGY})`)
-      return 
+      setzeInfo(`Nicht genug Energie für Sprung (${currentEnergy}/${MAX_ENERGY})`, 'info')
+      return
     }
 
     // Figur finden und Sprung auslösen
     const fig = ownFigures.value[figureControlInd.value]
     if (fig) {
-      const globalIndex = figures.value.findIndex(f => f.id === fig.id)
+      const globalIndex = figures.value.findIndex((f) => f.id === fig.id)
       if (globalIndex !== -1) {
-        
         // Animation starten
-        console.log("Energie voll - Sprung wird ausgeführt!")
-        vertJump(globalIndex, 2000) 
-        
+        console.log('Energie voll - Sprung wird ausgeführt!')
+        vertJump(globalIndex, 2000)
+
         // Energie verbrauchen (Backend call + lokaler Reset)
         consumeEnergy()
       }
@@ -386,7 +391,6 @@ function onKeyDown(event: KeyboardEvent) {
   // 6. Perspektive
   if (key === 'e' || key === 'E') {
     egoPersp.value = !egoPersp.value
-   
   }
 }
 
@@ -405,10 +409,18 @@ function cellToField(cell: Field): [number, number, number] {
 function getCurrentFigureRot() {
   if (!ownFigures.value[figureControlInd.value]) return
   switch (ownFigures.value[figureControlInd.value]?.orientation) {
-    case 'north': figureViewDir.value = 0; break;
-    case 'east': figureViewDir.value = 1; break;
-    case 'south': figureViewDir.value = 2; break;
-    case 'west': figureViewDir.value = 3; break;
+    case 'north':
+      figureViewDir.value = 0
+      break
+    case 'east':
+      figureViewDir.value = 1
+      break
+    case 'south':
+      figureViewDir.value = 2
+      break
+    case 'west':
+      figureViewDir.value = 3
+      break
   }
 }
 
@@ -425,10 +437,22 @@ function rotateCurrentFigure(rot: number) {
   const startRot = fig.viewDirRot
   let targetRot
   switch (figureViewDir.value) {
-    case 0: fig.orientation = 'north'; targetRot = 0; break
-    case 1: fig.orientation = 'east'; targetRot = -0.5; break
-    case 2: fig.orientation = 'south'; targetRot = 1; break
-    case 3: fig.orientation = 'west'; targetRot = 0.5; break
+    case 0:
+      fig.orientation = 'north'
+      targetRot = 0
+      break
+    case 1:
+      fig.orientation = 'east'
+      targetRot = -0.5
+      break
+    case 2:
+      fig.orientation = 'south'
+      targetRot = 1
+      break
+    case 3:
+      fig.orientation = 'west'
+      targetRot = 0.5
+      break
   }
   const index = figures.value.findIndex(
     (figInd) => figInd.id === fig.id && figInd.playerId === fig.playerId,
@@ -439,7 +463,7 @@ function rotateCurrentFigure(rot: number) {
 
 async function sendMoveDirection() {
   if (isCurrentlyJumping.value) {
-    console.log("Blockiert: Figur springt gerade.")
+    console.log('Blockiert: Figur springt gerade.')
     return
   }
 
@@ -450,7 +474,7 @@ async function sendMoveDirection() {
 
   if (gameStore.gameData.movingFigure) {
     if (gameStore.gameData.movingFigure !== ownFigures.value[figureControlInd.value]?.id) {
-      alert('Du musst deinen Zug mit der Figur beenden!')
+      setzeInfo('Du musst deinen Zug mit der Figur beenden!', 'info')
       return
     }
   }
@@ -460,7 +484,7 @@ async function sendMoveDirection() {
       gameStore.gameData.forbiddenDir.toLowerCase() ===
       ownFigures.value[figureControlInd.value]?.orientation
     ) {
-      alert('Du darfst nicht zurueck gehen!')
+      setzeInfo('Du darfst nicht zurueck gehen!', 'error')
       return
     }
   }
@@ -485,20 +509,21 @@ async function sendMoveDirection() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(moveReq),
     })
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}))
+      throw new Error(errData.message || 'Zug ungültig')
+    }
+
     const data = await response.json()
-    console.log('Move-Request sent successfully:', data)
+
     if (data.success === false) {
       gameStore.gameData.requireInput = true
       gameStore.gameData.moveChoiceAllowed = true
-      if (data.message) {
-        alert(data.message)
-      } else {
-        alert('Ueberprufe deine Richtungseingabe!')
-      }
+
+      setzeInfo(data.message || 'Überprüfe deine Richtungseingabe!', 'error')
     }
-  } catch (err) {
-    console.error('Error sending move request:', err)
+  } catch (err: any) {
+    setzeInfo(err.message, 'error')
   }
 }
 
@@ -516,7 +541,7 @@ watch(
 
 defineExpose({
   board,
-  figures
+  figures,
 })
 
 // Expose fetchGameState globally for store to call on figures update event
@@ -524,12 +549,11 @@ if (typeof window !== 'undefined') {
   // @ts-ignore
   window.fetchGameState = fetchGameState
 }
-
 </script>
 
 <template>
   <TresPerspectiveCamera ref="camRef" :position="default_cam_pos" :look-at="[0, 0, 0]" />
-  
+
   <OrbitControls
     ref="orbitRef"
     v-if="!egoPersp || (egoPersp && ownFigures[figureControlInd]?.currentAnim?.isJump)"

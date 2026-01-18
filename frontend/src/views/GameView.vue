@@ -17,13 +17,12 @@ import HUDKeyboardGuide from '@/components/hud/HUDKeyboardGuide.vue'
 import DuelPopup from '@/components/duel/DuelPopup.vue'
 import { useInfo } from '@/composable/useInfo'
 
-
 const gameStore = useGameStore()
 const { figures } = storeToRefs(gameStore)
 const gridRef = ref<any>(null)
 const sichtbar = ref(false)
 
-const { info, loescheInfo } = useInfo()
+const { nachrichten, loescheInfo, setzeInfo } = useInfo()
 
 const liveBoard = computed(() => {
   return gridRef.value?.board ?? null
@@ -58,11 +57,11 @@ function closeCensoredMap() {
 // Steuert alles: Button-Animation, Disabled-State und Logik
 const isBusy = ref(false)
 const isSavingEnergy = ref(false) // Nur für Energie
-const cooldownSeconds = ref(3) // Default 3s, wird überschrieben
+const cooldownSeconds = computed(() => gameStore.gameData.cooldown) // kommt aus dem Store
 
 // Energie aus Stores gameData aber reaktiv
 const energy = computed(() => gameStore.gameData.energy)
-const maxEnergy = 10 // !!! Max-Energie sollte eigentlich irgendwo anders herkommen
+const maxEnergy = computed(() => gameStore.gameData.maxCollectableEnergy) // kommt nun aus dem Store
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -71,15 +70,6 @@ onMounted(async () => {
   gameStore.gameData.totalSteps = 0
   gameStore.gameData.stepsTaken = 0
   gameStore.gameData.remainingSteps = 0
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/daten/cooldown`)
-    if (res.ok) {
-      cooldownSeconds.value = await res.json()
-    }
-  } catch (e) {
-    console.error('Cooldown konnte nicht geladen werden', e)
-  }
 
   // rejoim to the game to cancel scheduled removal
   const { gameCode, playerId, playerName } = gameStore.gameData
@@ -94,6 +84,10 @@ onMounted(async () => {
       }),
     })
   }
+
+  if (gameCode && playerId) {
+    gameStore.startIngameLiveUpdate(gameCode, playerId)
+  }
 })
 
 const isCurrentlyJumping = computed(() => {
@@ -101,12 +95,10 @@ const isCurrentlyJumping = computed(() => {
   if (!playerId) return false
 
   // Es wird in allen Figuren gesucht, ob eine Figur des Spielers gerade die Animation 'isJump' hat
-  return gameStore.figures.some(fig => 
-    fig.playerId === playerId && 
-    fig.currentAnim?.isJump === true
+  return gameStore.figures.some(
+    (fig) => fig.playerId === playerId && fig.currentAnim?.isJump === true,
   )
 })
-
 
 async function onRoll(id: string) {
   const { gameCode, playerId } = gameStore.gameData
@@ -125,8 +117,8 @@ async function onRoll(id: string) {
     // Der Timer startet für den restlichen Cooldown
     // Die Animation im Button läuft weiter, weil isBusy true bleibt
     startCooldownTimer()
-  } catch (e) {
-    console.error('Fehler beim Würfeln', e)
+  } catch (e: any) {
+    setzeInfo('Fehler beim Würfeln: ' + (e.message || 'Serverfehler'), 'error')
     // Bei Fehler: Button sofort wieder freigeben oder Fehlermeldung zeigen
     isBusy.value = false
   }
@@ -158,8 +150,13 @@ async function saveEnergy() {
         collectEnergy: true,
       }),
     })
-  } catch (e) {
-    console.error(e)
+    /* if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.error || 'Energie sammeln nicht möglich')
+    } */
+    setzeInfo('Energie gesammelt!', 'success')
+  } catch (e: any) {
+    setzeInfo(e.message, 'error')
   } finally {
     isSavingEnergy.value = false
   }
@@ -176,10 +173,10 @@ function startCooldownTimer() {
 
 <template>
   <div class="game-scene">
-    <div class="info-box-wrapper" v-if="info.inhalt">
-      <div class="info-box">
-        <button @click="loescheInfo" class="cancel-button">✕</button>
-        <span class="info-text">{{ info.inhalt }}</span>
+    <div class="notifications-container">
+      <div v-for="n in nachrichten" :key="n.id" class="info-box" :class="n.typ">
+        <button @click="loescheInfo(n.id)" class="cancel-button">✕</button>
+        <span class="info-text">{{ n.text }}</span>
       </div>
     </div>
 
@@ -232,13 +229,8 @@ function startCooldownTimer() {
           </div>
 
           <!-- Buttons -->
-       <div class="flex flex-row gap-2 w-full justify-center">
-            
-            <RollButton 
-              :is-loading="isBusy" 
-              :is-jumping="isCurrentlyJumping"
-              @trigger="onRoll" 
-            />
+          <div class="flex flex-row gap-2 w-full justify-center">
+            <RollButton :is-loading="isBusy" :is-jumping="isCurrentlyJumping" @trigger="onRoll" />
 
             <CollectEnergyButton :is-loading="isSavingEnergy" @trigger="saveEnergy" />
           </div>
@@ -250,8 +242,7 @@ function startCooldownTimer() {
             🗺️ Map öffnen
           </button>
         </div>
-        
-        </div>
+      </div>
     </div>
 
     <div class="ui-panel-right">
@@ -592,17 +583,6 @@ function startCooldownTimer() {
   display: none !important;
 }
 
-.info-box-wrapper {
-  position: fixed;
-  top: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2000;
-  display: flex;
-  justify-content: center;
-  width: 100vw;
-  pointer-events: none;
-}
 .info-box {
   background: #6d2d2d;
   color: white;
@@ -631,5 +611,29 @@ function startCooldownTimer() {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+.info-box.error {
+  background: #6d2d2d;
+  border-color: #f44336;
+}
+.info-box.success {
+  background: #2d4d19;
+  border-color: #a7ff83;
+}
+.info-box.info {
+  background: #3d2b1f;
+  border-color: #ffc107;
+}
+
+.notifications-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 </style>

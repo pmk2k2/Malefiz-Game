@@ -25,7 +25,9 @@
 <script setup lang="ts">
 import { useGameStore } from '@/stores/gamestore'
 import { ref, onMounted } from 'vue'
+import { useInfo } from '@/composable/useInfo'
 
+const { setzeInfo } = useInfo()
 const fileInput = ref<HTMLInputElement | null>(null)
 const maps = ref<Array<{ id: string; name: string; image: string }>>([])
 
@@ -98,7 +100,7 @@ const handleFileImport = async (event: Event) => {
     })
 
     if (res.ok) {
-      alert('Map erfolgreich importiert!')
+      setzeInfo('Map erfolgreich importiert und angewendet!', 'success')
       const data = await res.json()
       const newBoardName = data.fileName
 
@@ -122,11 +124,11 @@ const handleFileImport = async (event: Event) => {
       }
     } else {
       const errorData = await res.json().catch(() => ({}))
-      alert('Fehler beim Import: ' + (errorData.message || 'Unbekkanter Fehler'))
+      setzeInfo('Fehler beim Import: ' + (errorData.message || 'Unbekkanter Fehler'), 'error')
     }
   } catch (err) {
     console.error('Upload fehlgeschlafen', err)
-    alert('Verbindung zum Server fehlgeschlagen.')
+    setzeInfo('Verbindung zum Server fehlgeschlagen.', 'error')
   } finally {
     loading.value = false
     target.value = '' // Das ermöglicht, die selbe Datei nochmal zu wählen
