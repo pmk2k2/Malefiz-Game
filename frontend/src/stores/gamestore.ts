@@ -42,6 +42,8 @@ export const useGameStore = defineStore('gamestore', () => {
     totalSteps: number
     energy: number
     duelActive: boolean
+    duelP1Id: string | null
+    duelP2Id: string | null
     currentMinigame: string | null
     mashScore: number
     duelTimeLeft: number
@@ -72,6 +74,8 @@ export const useGameStore = defineStore('gamestore', () => {
     totalSteps: 0,
     energy: 0,
     duelActive: false,
+    duelP1Id: null,
+    duelP2Id: null,
     currentMinigame: null,
     mashScore: 0,
     duelTimeLeft: 10,
@@ -199,6 +203,8 @@ export const useGameStore = defineStore('gamestore', () => {
             // DUEL / MINIGAME START
             else if (event.operation === 'DUEL') {
               console.log('DUEL Event empfangen!')
+              gameData.duelP1Id = event.id || null;
+              gameData.duelP2Id = event.opponentId || null;
               gameData.duelActive = true
               gameData.duelQuestion = null
               gameData.duelAnswered = false
@@ -452,6 +458,8 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.remainingSteps=0
     gameData.totalSteps=0
     gameData.duelActive = false
+    gameData.duelP1Id = null
+    gameData.duelP2Id = null
     gameData.currentMinigame = null
     stopCountdown()
 

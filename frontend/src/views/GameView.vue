@@ -42,11 +42,6 @@ watch(
   },
 )
 
-function openCensoredMap() {
-  sichtbar.value = true
-  console.log('CensoredMap geöffnet')
-}
-
 function closeCensoredMap() {
   sichtbar.value = false
   console.log('CensoredMap geschlossen')
@@ -198,13 +193,6 @@ function startCooldownTimer() {
             <CollectEnergyButton :is-loading="isSavingEnergy" @trigger="saveEnergy" />
           </div>
 
-          <!-- Map button -->
-          <button
-            class="mt-2 rounded-xl bg-green-700 px-4 py-2 text-white font-bold"
-            @click="openCensoredMap"
-          >
-            🗺️ Map öffnen
-          </button>
         </div>
       </div>
     </div>
@@ -221,7 +209,7 @@ function startCooldownTimer() {
     <!-- Map Modal -->
     <div v-if="sichtbar" class="modal-overlay" @click.self="closeCensoredMap">
       <div class="map-modal">
-        <button class="close-seal" @click="closeCensoredMap">✕</button>
+        <button v-if="gameStore.gameState !== 'BARRIER_PLACEMENT'" class="close-seal" @click="closeCensoredMap">✕</button>
         <div class="map-content">
           <TheMapBarrierEditor :board="liveBoard" :figures="figures" />
         </div>
