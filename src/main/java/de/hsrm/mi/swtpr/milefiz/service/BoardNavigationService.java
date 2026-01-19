@@ -36,10 +36,10 @@ public class BoardNavigationService {
 
         // Maske: west, ost, norden, sueden
         int[][] mask = {
-            {-1, 0}, // west
-            { 1, 0}, // ost
-            { 0, 1}, // norden
-            { 0,-1}  // sueden 
+                { -1, 0 }, // west
+                { 1, 0 }, // ost
+                { 0, 1 }, // norden
+                { 0, -1 } // sueden
         };
 
         String[] names = { "west", "east", "north", "south" };
@@ -79,36 +79,46 @@ public class BoardNavigationService {
         int count = n.size();
 
         // Kreuzung wenn = 4 Richtungen, T-Kreuzung bei 3 Richtungen
-        if (count >= 4) return MoveType.CROSSING;
-        if (count == 3) return MoveType.T_CROSSING;
+        if (count >= 4)
+            return MoveType.CROSSING;
+        if (count == 3)
+            return MoveType.T_CROSSING;
 
         // Gerade Strecke
         boolean geradeNordSued = north && south && !west && !east;
-        if(geradeNordSued) return MoveType.STRAIGHT_NS;
+        if (geradeNordSued)
+            return MoveType.STRAIGHT_NS;
 
-        boolean geradeWestOst  = !north && !south && west && east;
-        if(geradeWestOst) return MoveType.STRAIGHT_WE;
+        boolean geradeWestOst = !north && !south && west && east;
+        if (geradeWestOst)
+            return MoveType.STRAIGHT_WE;
 
         // Kurven
         boolean curveWestSouth = !north && south && west && !east;
-        if(curveWestSouth)  return MoveType.CURVE_WS;
+        if (curveWestSouth)
+            return MoveType.CURVE_WS;
         boolean curveWestNorth = north && !south && west && !east;
-        if(curveWestNorth)  return MoveType.CURVE_WN;
+        if (curveWestNorth)
+            return MoveType.CURVE_WN;
         boolean curveEastNorth = north && !south && !west && east;
-        if(curveEastNorth)  return MoveType.CURVE_EN;
+        if (curveEastNorth)
+            return MoveType.CURVE_EN;
         boolean curveEastSouth = !north && south && !west && east;
-        if(curveEastSouth)  return MoveType.CURVE_ES;
+        if (curveEastSouth)
+            return MoveType.CURVE_ES;
 
         // Ansonsten -> Sackgasse
         return MoveType.DEADEND;
     }
 
-    // Statt zu gucken, welche Richtungen man darf, einfach schauen aus welcher man kommt (also nicht darf)
-    // in dem Fall ist lastDir die gelaufene Richtung, also darf man nicht in die entgegengesetzte
+    // Statt zu gucken, welche Richtungen man darf, einfach schauen aus welcher man
+    // kommt (also nicht darf)
+    // in dem Fall ist lastDir die gelaufene Richtung, also darf man nicht in die
+    // entgegengesetzte
     public Direction getForbiddenDirection(Direction lastDir) {
         Direction dir = null;
 
-        switch(lastDir) {
+        switch (lastDir) {
             case Direction.NORTH:
                 dir = Direction.SOUTH;
                 break;
@@ -129,9 +139,9 @@ public class BoardNavigationService {
     // Bei Kurven die richtige Richtung erhalten
     public Direction getNewDirection(MoveType mT, Direction dir) {
         Direction newDir;
-        
+
         // Erst gucken nach Typ von Kurve, dann aus welcher Richtung man kommt
-        switch(mT) {
+        switch (mT) {
             case MoveType.CURVE_WS:
                 newDir = (dir == Direction.EAST) ? Direction.SOUTH : Direction.WEST;
                 break;
