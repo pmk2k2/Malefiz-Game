@@ -1,5 +1,6 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -150,6 +151,17 @@ public class BoardService {
         for (int i = 0; i < board.getStartFields().size(); i++) {
             Field f = board.getStartFieldByIndex(i);
             logger.info("Gefundenes Startfeld {} : {} {}", i, f.getI(), f.getJ());
+        }
+    }
+
+    public void saveJSONFile(Board board) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            // Writing to a file
+            mapper.writeValue(new File("CustomBoard.json"), board);
+            logger.info("Board successfully saved! Where is it? IDK");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

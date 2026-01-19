@@ -15,6 +15,10 @@
                         Weiterspielen
                     </button>
 
+                    <button class="btn export-btn" @click="exportBoard">
+                        Board exportieren
+                    </button>
+
                     <button class="btn rules-btn" @click="toggleRules">
                         Spielregeln
                     </button>
@@ -64,6 +68,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '@/stores/gamestore'
 import InfoView from '@/components/InfoView.vue'
+import { useInfo } from '@/composable/useInfo'
 
 const router = useRouter()
 const gameStore = useGameStore()
@@ -71,6 +76,7 @@ const gameStore = useGameStore()
 const showPauseMenu = ref(false)
 const showRules = ref(false)
 const showLeaveConfirmation = ref(false)
+const { nachrichten, loescheInfo, setzeInfo } = useInfo()
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -98,6 +104,83 @@ function openLeaveConfirmation() {
 
 function closeLeaveConfirmation() {
     showLeaveConfirmation.value = false
+}
+
+async function exportBoard() {
+    const { gameCode } = gameStore.gameData
+
+    if (!gameCode) {
+        alert('Kein Spielcode gefunden')
+        return
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/board?code=${gameCode}`)
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch board')
+        }
+
+        const boardData = await response.json()
+
+        if (!boardData) {
+            alert('Kein Board gefunden')
+            return
+        }
+
+        // Format the board data to match the exact structure of SmallerBoard.json
+        const formattedBoard = {
+            cols: boardData.cols,
+            rows: boardData.rows,
+            grid: boardData.grid.map((row: any[]) =>
+                row.map((cell: any) => ({
+                    i: cell.i,
+                    j: cell.j,
+                    type: cell.type
+                }))
+            )
+        }
+
+
+        // Convert the formattedBoard object to a JSON string
+        const jsonString = JSON.stringify(formattedBoard, null, 2);
+
+        // Create blob from JSON string
+        const blob = new Blob([jsonString], { type: 'application/json' });
+
+        // Generate filename with incrementing number
+        const filename = getNextFilename()
+
+        // Create download link
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+
+        // Trigger download
+        document.body.appendChild(link)
+        link.click()
+
+        // Cleanup
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+
+        console.log(`Board exported as ${filename}`)
+    } catch (error) {
+        console.error('Error exporting board:', error)
+        alert('Fehler beim Exportieren des Boards')
+    }
+}
+
+function getNextFilename(): string {
+    // Check localStorage for last used number
+    const lastNumber = localStorage.getItem('lastExportNumber')
+    const nextNumber = lastNumber ? parseInt(lastNumber) + 1 : 1
+
+    // Save the new number
+    localStorage.setItem('lastExportNumber', nextNumber.toString())
+
+    return `CustomBoard${nextNumber}.json`
 }
 
 async function confirmLeave() {
@@ -263,6 +346,12 @@ onUnmounted(() => {
     background-color: #2d4d19;
     border-color: #1e3311;
     color: #a7ff83;
+}
+
+.export-btn {
+    background-color: #1a4d6d;
+    border-color: #0f2d3d;
+    color: #83d7ff;
 }
 
 .rules-btn {
