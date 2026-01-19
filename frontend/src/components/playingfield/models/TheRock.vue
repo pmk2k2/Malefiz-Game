@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useGLTF } from '@tresjs/cientos';
+import { watchEffect } from 'vue';
 
 // Etwas Variation in der Groesse, Skalierung und Platzierung des Weges
 const randomX = Math.random() * (0.1 - (-0.1)) + (-0.1)
@@ -14,6 +15,19 @@ const lift = -0.05
 const position: [number, number, number] = [randomX, randomY, lift]
 
 const { state } = useGLTF('/Rock Path Round Small.glb', { draco: true })
+
+watchEffect(() => {
+  if (!state.value?.scene) return
+
+  state.value.scene.traverse((child) => {
+    // @ts-expect-error three.js Mesh hat isMesh und material zur Laufzeit
+    if (child.isMesh) {
+      // Schatten empfangen aber NICHT werfen
+      child.castShadow = false
+      child.receiveShadow = true
+    }
+  })
+})
 
 </script>
 

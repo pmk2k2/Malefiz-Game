@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useGLTF } from '@tresjs/cientos';
+import { GLTFModel, useGLTF } from '@tresjs/cientos';
 
 // Etwas Variation in der Groesse, Skalierung und Platzierung der Baeume
 const randomX = Math.random() * (0.15 - (-0.15)) + (-0.15)
@@ -12,14 +12,22 @@ const rotation: [number, number, number] = [Math.PI / 2, Math.PI * randomRot, 0]
 const lift = 1.6
 const position: [number, number, number] = [randomX, randomY, lift]
 
-const { state } = useGLTF('/Pine Tree.glb', { draco: true })
+//const { state } = useGLTF('/Pine Tree.glb', { draco: true })
 
 </script>
 
 <template>
+<!-- TresMesh >
     <primitive v-if="state?.scene"
     :object="state?.scene.clone()"
-    :scale="scale"
-    :rotation="rotation"
-    :position="position" />
+    />
+</TresMesh -->
+<!-- Besser fuer den Schatten -->
+    <GLTFModel
+        path="/Pine Tree.glb"
+        receive-shadow
+        :scale="scale"
+        :rotation="rotation"
+        :position="position" 
+    />
 </template>

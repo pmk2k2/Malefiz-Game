@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Align, useGLTF } from '@tresjs/cientos';
+import { watchEffect } from 'vue';
 
 // Etwas Variation in der Groesse, Skalierung und Platzierung vom Gras
 const gras1RandX = Math.random() * (0.55 - (-0.55)) + (-0.55)
@@ -24,6 +25,18 @@ const lift = -0.04
 // grass green by Steve B [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/8q6D0D_SuBE)
 const { state } = useGLTF('/grass_green-opt.glb', { draco: true })
 
+watchEffect(() => {
+  if (!state.value?.scene) return
+
+  state.value.scene.traverse((child) => {
+    // @ts-expect-error three.js Mesh hat isMesh und material zur Laufzeit
+    if (child.isMesh) {
+      // Schatten empfangen aber NICHT werfen
+      child.castShadow = false
+      child.receiveShadow = false
+    }
+  })
+})
 </script>
 
 <template>

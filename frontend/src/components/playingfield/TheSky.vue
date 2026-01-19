@@ -20,7 +20,8 @@ watch(texture, (map) => {
         map.magFilter = LinearFilter 
         map.minFilter = LinearFilter
         scene.value.background = map
-        scene.value.backgroundBlurriness = 0.04
+        scene.value.environment = map
+        scene.value.backgroundBlurriness = 0.03
     }
 })
 /*

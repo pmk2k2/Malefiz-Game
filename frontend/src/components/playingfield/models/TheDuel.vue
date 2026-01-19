@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DoubleSide, SpriteMaterial } from 'three'
+import { FrontSide, SpriteMaterial } from 'three'
 // https://github.com/bandinopla/threejs-gif-texture
 import { THREE_GetGifTexture } from 'threejs-gif-texture'
 import { shallowRef } from 'vue'
@@ -13,7 +13,7 @@ THREE_GetGifTexture("/FightCloud.gif").then( texture => {
     {
       map: texture,
       transparent: true,
-      side: DoubleSide
+      side: FrontSide 
     }
   )
 })
@@ -21,7 +21,7 @@ THREE_GetGifTexture("/FightCloud.gif").then( texture => {
 
 <template>
   <!-- Sprite statt Mesh, damit Textur immer die Kamera anschaut -->
-  <TresSprite :position="[0,0,hoehe]" :scale="[scale, scale, 1]">
+  <TresSprite :position="[0,0,hoehe]" :scale="[scale, scale, 1]" :cast-shadow="false">
     <TresSpriteMaterial v-if="material" v-bind="material" />
   </TresSprite>
 </template>

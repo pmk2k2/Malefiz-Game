@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useLoop, type TresObject } from '@tresjs/core'
-import { Align, OrbitControls } from '@tresjs/cientos'
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { useLoop, useTres, type TresObject } from '@tresjs/core'
+import { Align, ContactShadows, OrbitControls } from '@tresjs/cientos'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
@@ -15,7 +15,7 @@ import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 import type { IFigureMoveRequest } from '@/services/IFigureMoveRequest'
 import { useAnimationQueue } from '@/composable/useAnimationQueue'
 import { storeToRefs } from 'pinia'
-import { type PerspectiveCamera } from 'three'
+import { DirectionalLight, type PerspectiveCamera } from 'three'
 import TheSky from './TheSky.vue'
 
 // Zellentypen
@@ -569,6 +569,11 @@ defineExpose({
   figures
 })
 
+// Sachen fuer Schatten
+const dynamLightRef = shallowRef<DirectionalLight>()
+const staticLightRef = shallowRef<DirectionalLight>()
+const { scene } = useTres()
+
 </script>
 
 <template>
@@ -576,15 +581,33 @@ defineExpose({
   <TresPerspectiveCamera ref="camRef" :position="default_cam_pos" :look-at="[0, 0, 0]" />
   <OrbitControls v-if="!egoPersp" />
 
-  <TresDirectionalLight :position="[20, 40, 10]" :intensity="1.5" />
   <TheSky />
+  <TresAmbientLight :intensity="0.5" />
+  <TresDirectionalLight
+    :ref="staticLightRef"
+    :position="[5,2,5]" 
+    :intensity="0.75" 
+    cast-shadow
+
+    :shadow-mapSize-width="1024"
+    :shadow-mapSize-height="1024"
+  />
+  <TresDirectionalLight
+    :ref="dynamLightRef"
+    :position="[5,2,5]" 
+    :intensity="0.75" 
+    cast-shadow
+
+    :shadow-mapSize-width="512"
+    :shadow-mapSize-height="512"
+  />
 
   <template v-if="board">
     <TheTable :scale="(board.cols > board.rows) ? board.cols * CELL_SIZE * 0.17 : board.rows * CELL_SIZE * 0.17"/>
     <Align bottom>
-      <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
+      <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]" receive-shadow>
         <TresBoxGeometry :args="[board.cols * CELL_SIZE * 1.3, board.rows * CELL_SIZE * 1.5, 0.1]" />
-        <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
+        <TresMeshStandardMaterial color="#b6e3a5" :roughness="0.13" :metalness="0.05" />
       </TresMesh>
     </Align>
 

@@ -141,7 +141,7 @@ function startCooldownTimer() {
 <template>
   <div class="game-scene">
     <!-- 3D поле -->
-    <TresCanvas clear-color="#87CEEB" class="w-full h-full">
+    <TresCanvas clear-color="#87CEEB" class="w-full h-full" shadows>
       <TheGrid ref="gridRef" />
     </TresCanvas>
 
