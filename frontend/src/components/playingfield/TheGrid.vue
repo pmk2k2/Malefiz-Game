@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useLoop, type TresObject } from '@tresjs/core'
-import { OrbitControls } from '@tresjs/cientos'
+import { Align, OrbitControls } from '@tresjs/cientos'
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
@@ -8,13 +8,15 @@ import TheCrown from './models/TheCrown.vue'
 import TheGrass from './models/TheGrass.vue'
 import TheDuel from './models/TheDuel.vue'
 import Barrier from './models/Barrier.vue'
+import TheTable from './models/TheTable.vue'
 import ThePlayerFigure from '@/components/playingfield/ThePlayerFigure.vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 import type { IFigureMoveRequest } from '@/services/IFigureMoveRequest'
 import { useAnimationQueue } from '@/composable/useAnimationQueue'
 import { storeToRefs } from 'pinia'
-import type { PerspectiveCamera } from 'three'
+import { type PerspectiveCamera } from 'three'
+import TheSky from './TheSky.vue'
 
 // Zellentypen
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER' | 'DUEL'
@@ -575,12 +577,16 @@ defineExpose({
   <OrbitControls v-if="!egoPersp" />
 
   <TresDirectionalLight :position="[20, 40, 10]" :intensity="1.5" />
+  <TheSky />
 
   <template v-if="board">
-    <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
-      <TresPlaneGeometry :args="[board.cols * CELL_SIZE * 5, board.rows * CELL_SIZE * 5]" />
-      <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
-    </TresMesh>
+    <TheTable :scale="(board.cols > board.rows) ? board.cols * CELL_SIZE * 0.17 : board.rows * CELL_SIZE * 0.17"/>
+    <Align bottom>
+      <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
+        <TresBoxGeometry :args="[board.cols * CELL_SIZE * 1.3, board.rows * CELL_SIZE * 1.5, 0.1]" />
+        <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
+      </TresMesh>
+    </Align>
 
     <TresMesh
       v-for="cell in allCells"
@@ -597,12 +603,11 @@ defineExpose({
       </template>
       <template v-else-if="cell.type === 'BLOCKED'">
         <TheTree />
-        <!--TheGrass / -->
+        <TheGrass />
       </template>
       <template v-else-if="cell.type === 'DUEL'">
         <TheRock />
         <TheDuel />
-        <!-- TheDuel v-if="camRef" :sceneCam="camRef" /-->
       </template>
       <template v-else-if="cell.type === 'GOAL'">
         <TheRock />

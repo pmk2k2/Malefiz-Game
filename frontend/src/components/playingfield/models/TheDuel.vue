@@ -3,7 +3,7 @@ import { DoubleSide, SpriteMaterial } from 'three'
 import { THREE_GetGifTexture } from 'threejs-gif-texture'
 import { shallowRef } from 'vue'
 
-const scale = 2.5
+const scale = 2.75
 const hoehe = 1
 
 const material = shallowRef()
