@@ -23,6 +23,9 @@ import java.util.List;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api")
@@ -64,8 +67,8 @@ public class BoardController {
         }
     }
 
-    @GetMapping("/lobby/{code}/boards/presets")
-    public ResponseEntity<List<String>> getPresetBoards(@PathVariable String code) {
+    @GetMapping("/lobby/{gameCode}/boards/presets")
+    public ResponseEntity<List<String>> getPresetBoards(@PathVariable("gameCode") String code) {
         Game game = gameService.getGame(code);
         if (game == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -77,8 +80,8 @@ public class BoardController {
 
     @GetMapping("/lobby/{code}/boards/preset/{presetName}")
     public ResponseEntity<Board> getPresetBoard(
-            @PathVariable String code,
-            @PathVariable String presetName) {
+            @PathVariable("code") String code,
+            @PathVariable("presetName") String presetName) {
 
         Game game = gameService.getGame(code);
         if (game == null) {
@@ -102,8 +105,8 @@ public class BoardController {
 
     @PostMapping("/lobby/{code}/board")
     public ResponseEntity<Map<String, Object>> saveCustomBoard(
-            @PathVariable String code,
-            @RequestParam String playerId,
+            @PathVariable("code") String code,
+            @RequestParam("playerId") String playerId,
             @RequestBody Board customBoard) {
 
         Game game = gameService.getGame(code);
@@ -141,6 +144,7 @@ public class BoardController {
         }
 
         // Save board to game
+        boardService.saveJSONFile(customBoard);
         boardService.addStartFieldsToBoard(customBoard);
         game.setBoard(customBoard);
         logger.info("Custom board saved for game {}: {}x{}", code, customBoard.getCols(), customBoard.getRows());
@@ -159,9 +163,9 @@ public class BoardController {
     // NEW: Select a preset board for the lobby
     @PostMapping("/lobby/{code}/board/select-preset")
     public ResponseEntity<Map<String, Object>> selectPresetBoard(
-            @PathVariable String code,
-            @RequestParam String playerId,
-            @RequestParam String presetName) {
+            @PathVariable("code") String code,
+            @RequestParam("playerId") String playerId,
+            @RequestParam("presetName") String presetName) {
 
         Game game = gameService.getGame(code);
         Map<String, Object> response = new HashMap<>();
@@ -183,6 +187,9 @@ public class BoardController {
         try {
             Board board = boardService.getBoardFromJson(presetName);
             game.setBoard(board);
+            game.setBoardName(presetName);
+
+            gameService.updateBoard(code, playerId);
             logger.info("Preset board '{}' selected for game {}", presetName, code);
 
             response.put("success", true);
@@ -199,7 +206,7 @@ public class BoardController {
 
     // NEW: Get current board for lobby preview
     @GetMapping("/lobby/{code}/board")
-    public ResponseEntity<Board> getLobbyBoard(@PathVariable String code) {
+    public ResponseEntity<Board> getLobbyBoard(@PathVariable("code") String code) {
         Game game = gameService.getGame(code);
 
         if (game == null) {
@@ -221,7 +228,7 @@ public class BoardController {
     // Die Rohdaten der Datei(Nur .json erlaubt) werden in einem String umgewandelt
     // und über boardService validiert & gespeichert
     @PostMapping("/lobby/{code}/board/import")
-    public ResponseEntity<?> importBoard(@PathVariable String code, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> importBoard(@PathVariable("code") String code, @RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "File is empty."));
         }

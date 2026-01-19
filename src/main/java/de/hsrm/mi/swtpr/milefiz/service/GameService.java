@@ -68,8 +68,19 @@ public class GameService {
             return false;
         }
 
-        String assignedColor = PLAYER_COLORS.get(game.getPlayers().size());
+        // Prevent duplicate playerId
+        if (game.getPlayerById(playerId) != null) {
+            logger.warn("Player with id {} already exists in game {}", playerId, gameCode);
+            return false;
+        }
 
+        // if player reconnect, cancel remove figure and timestamp
+        Timer t = scheduledFigureRemovals.remove(playerId);
+        if (t != null)
+            t.cancel();
+        playerRemovalTimestamps.remove(playerId);
+
+        String assignedColor = PLAYER_COLORS.get(game.getPlayers().size());
         Player player = new Player(name, playerId, isHost, assignedColor);
         player.setReady(false);
 
@@ -88,6 +99,15 @@ public class GameService {
         return true;
     }
 
+    //  schedule game remove
+    private final Map<String, Timer> gameRemovalTimers = new HashMap<>();
+
+    // schedule player remove
+    private final Map<String, Long> playerRemovalTimestamps = new HashMap<>();
+    // schedule figure remove
+    private final Map<String, Timer> scheduledFigureRemovals = new HashMap<>();
+    private static final long FIGURE_REMOVAL_GRACE_PERIOD_MS = 3_000;
+
     public boolean removePlayer(String gameCode, String playerId) {
         Game game = games.get(gameCode);
         if (game == null) {
@@ -105,6 +125,43 @@ public class GameService {
             return false;
         }
 
+        // time when player removed to grace period for figure
+        playerRemovalTimestamps.put(playerId, System.currentTimeMillis());
+
+        // schedual remove figure after 3s if player nott reconnected
+        Timer figureTimer = new Timer();
+        scheduledFigureRemovals.put(playerId, figureTimer);
+        figureTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                // if player not reconneted after 3s-> remove figure
+                if (game.getPlayerById(playerId) == null) {
+                    int before = game.getFigures().size();
+                    List<Figure> toRemove = new ArrayList<>();
+                    for (Figure f : game.getFigures()) {
+                        if (playerId.equals(f.getOwnerPlayerId())) {
+                            toRemove.add(f);
+                        }
+                    }
+                    for (Figure f : toRemove) {
+                        game.removeFigure(f);
+                    }
+                    int after = game.getFigures().size();
+                    logger.info("Removed {} figures of player {} from game {}", (before - after), playerId, gameCode);
+                    playerRemovalTimestamps.remove(playerId);
+                    // notify frontend to refetch figures
+                    publisher.publishEvent(
+                            new FrontendNachrichtEvent(
+                                    FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+                                    playerId,
+                                    FrontendNachrichtEvent.Operation.READY_UPDATED,
+                                    gameCode,
+                                    null));
+                }
+                scheduledFigureRemovals.remove(playerId);
+            }
+        }, FIGURE_REMOVAL_GRACE_PERIOD_MS);
+
         // Stop countdown, wenn ein Spieler gekickt wurde während des Countdowns
         if (game.getState() == GameState.COUNTDOWN) {
             stopCountdown(gameCode);
@@ -113,23 +170,46 @@ public class GameService {
 
         // LOBBY EVENT
         publisher.publishEvent(new FrontendNachrichtEvent(
-                Nachrichtentyp.LOBBY,
+                FrontendNachrichtEvent.Nachrichtentyp.LOBBY,
                 playerId,
-                Operation.LEFT,
+                FrontendNachrichtEvent.Operation.LEFT,
                 gameCode,
                 removedPlayer.getName()));
 
         List<Player> players = game.getPlayers();
 
-        // Wenn niemand mehr da -> Spiel löschen
+        // Wenn niemand mehr da -> Spiel nach 20s löschen (nicht sofort)
+        // websocket disconnect when lobby-gameview -> remove player if disconnect make
+        // player list empty-> remove gamecode, so we have to wait about 20s till
+        // webcket reconnected and player rejoin
         if (players.isEmpty()) {
-            games.remove(gameCode);
-            logger.info("Game {} removed (no players left).", gameCode);
+            if (!gameRemovalTimers.containsKey(gameCode)) {
+                Timer timer = new Timer();
+                gameRemovalTimers.put(gameCode, timer);
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        Game g = games.get(gameCode);
+                        if (g != null && g.getPlayers().isEmpty()) {
+                            games.remove(gameCode);
+                            logger.info("Game {} removed (no players left) after 20s grace period.", gameCode);
+                        }
+                        gameRemovalTimers.remove(gameCode);
+                    }
+                }, 20_000);
+                logger.info("Scheduled removal for game {} in 20s (no players left).", gameCode);
+            }
             return true;
+        } else {
+            Timer t = gameRemovalTimers.remove(gameCode);
+            if (t != null) {
+                t.cancel();
+                logger.info("Cancelled scheduled removal for game {} (player rejoined).", gameCode);
+            }
         }
 
         // Host neu bestimmen
-        if (wasHost) {
+        if (wasHost && !players.isEmpty()) {
             players.get(0).setHost(true);
             logger.info("New host: {}", players.get(0).getName());
         }
@@ -377,14 +457,48 @@ public class GameService {
             return Collections.emptyList();
         }
 
+        // only return figure if player in game or disconnected < 5s
         return game.getFigures().stream()
+                .filter(f -> {
+                    String pid = f.getOwnerPlayerId();
+                    if (game.getPlayerById(pid) != null)
+                        return true;
+                    Long removedAt = playerRemovalTimestamps.get(pid);
+                    if (removedAt == null)
+                        return false;
+                    return (System.currentTimeMillis() - removedAt) < FIGURE_REMOVAL_GRACE_PERIOD_MS;
+                })
                 .map(f -> new FigureDto(f.getId(), f.getColor(), f.getOwnerPlayerId(), f.getOrientation(), f.getGridI(),
                         f.getGridJ()))
                 .collect(Collectors.toList());
     }
 
-    // spieleinstwllungen aktualisieren
-    public void updateGameSettings(String gameCode, String playerId, int maxEnergy) throws NotHostException {
+    // spieleinstellungen(Energy) aktualisieren
+    public void updateGameSettings(String gameCode, String playerId, int maxCollectableEnergy) throws NotHostException {
+        Game game = games.get(gameCode);
+        if (game == null)
+            return;
+
+        // Nur der Host darf die Einstellungen ändern
+        Player player = game.getPlayerById(playerId);
+        if (player == null || !player.isHost()) {
+            throw new NotHostException("Nur der Host kann Einstellungen ändern.");
+        }
+
+        game.setMaxCollectableEnergy(maxCollectableEnergy);
+        
+        //Informiere Frontend über die eingestellte Energie
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.READY_UPDATED,
+                gameCode,
+                null);
+        publisher.publishEvent(e);
+    }
+
+    // spieleinstellungen(Cooldown) aktualisieren
+    public void updateCooldown(String gameCode, String playerId, int cooldown) throws NotHostException {
         Game game = games.get(gameCode);
         if (game == null) return;
 
@@ -394,9 +508,30 @@ public class GameService {
             throw new NotHostException("Nur der Host kann Einstellungen ändern.");
         }
 
-        game.setMaxCollectableEnergy(maxEnergy);
+        game.setCooldown(cooldown);
         
-        //Informiere Frontend über die eingestellte Energie
+        //Informiere Frontend über den eingestellten Cooldown
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(
+                Nachrichtentyp.LOBBY,
+                "server",
+                Operation.READY_UPDATED, 
+                gameCode,
+                null);
+        publisher.publishEvent(e);
+    }
+
+    // spieleinstellungen(Map/Board) aktualisieren
+    public void updateBoard(String gameCode, String playerId) throws NotHostException {
+        Game game = games.get(gameCode);
+        if (game == null) return;
+
+        //Nur der Host darf die Einstellungen ändern
+        Player player = game.getPlayerById(playerId);
+        if (player == null || !player.isHost()) {
+            throw new NotHostException("Nur der Host kann Einstellungen ändern.");
+        }
+        
+        //Informiere Frontend über die eingestellte Map
         FrontendNachrichtEvent e = new FrontendNachrichtEvent(
                 Nachrichtentyp.LOBBY,
                 "server",
@@ -407,14 +542,20 @@ public class GameService {
     }
 
     public void publischBarrierWaitEvent(String gameCode, String playerId) {
-        FrontendNachrichtEvent e = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, playerId, Operation.BARRIER_WAIT, gameCode, null);
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, playerId, Operation.BARRIER_WAIT,
+                gameCode, null);
         e.setGameState(GameState.BARRIER_PLACEMENT);
         publisher.publishEvent(e);
     }
 
     public void publishBarrierPlacedEvent(String gameCode) {
-        FrontendNachrichtEvent e = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, "server", Operation.BARRIER_PLACED, gameCode, null);
+        FrontendNachrichtEvent e = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, "server", Operation.BARRIER_PLACED,
+                gameCode, null);
         e.setGameState(GameState.RUNNING);
         publisher.publishEvent(e);
+    }
+
+    public Set<String> getAllGameCodes() {
+        return games.keySet();
     }
 }

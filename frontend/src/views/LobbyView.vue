@@ -8,10 +8,10 @@
       </div>
     </header>
 
-    <div class="info-box-wrapper" v-if="info.inhalt">
-      <div class="info-box">
-        <button @click="loescheInfo" class="cancel-button">✕</button>
-        <span class="info-text">{{ info.inhalt }}</span>
+    <div class="notifications-container">
+      <div v-for="n in nachrichten" :key="n.id" class="info-box" :class="n.typ">
+        <button @click="loescheInfo(n.id)" class="cancel-button">✕</button>
+        <span class="info-text">{{ n.text }}</span>
       </div>
     </div>
 
@@ -19,31 +19,49 @@
       <button class="icon-btn" type="button" @click="toggleRulesView">
         <img :src="infoIcon" alt="Info" />
       </button>
-
-      <button class="icon-btn" type="button" @click="showBoardSelection = true">
-        <img :src="einstellungIcon" alt="Einstellungen" />
-      </button>
     </div>
 
     <main class="main-content-lobby">
       <InfoView v-if="showRules" @close="toggleRulesView" />
-      <EinstellungView
-        :isVisible="showBoardSelection"
-        @close="showBoardSelection = false"
-        @openEditor="openBoardEditor"
-        @boardSelected="onBoardSelected"
-      />
 
-      <div class="spieler-liste-container">
-        <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
+      <div class="lobby-selection-area">
+        <div class="map-box-container">
+          <MapAuswahl v-if="isHost" @openEditor="openBoardEditor" />
+
+          <div v-else class="map-selector-wrapper readonly-preview">
+            <div class="selection-row" style="justify-content: center">
+              <img :src="currentMapImage" alt="selected Map" />
+            </div>
+            <h3 class="map-name">Ausgewählt: {{ currentMapName }}</h3>
+            <p class="host-info-text">Warte auf Host-Auswahl...</p>
+          </div>
+        </div>
+
+        <div class="middle-column-wrapper">
+          <div class="spieler-liste-container">
+            <SpielerListeView ref="spielerListeRef" @deleteZeile="onDeleteZeile" />
+          </div>
+        </div>
+
+        <div class="right-spacer">
+          <LobbySettingsPanel v-if="isHost" />
+
+          <div v-else class="rules-display-readonly">
+            <h3 class="section-subtitle">Spielregeln</h3>
+            <div class="rule-item">
+              <span>Würfel Cooldown:</span>
+              <div class="value-badge">{{ gameStore.gameData.cooldown }}</div>
+            </div>
+            <div class="rule-item">
+              <span>Energie Limit:</span>
+              <div class="value-badge">{{ gameStore.gameData.maxCollectableEnergy }}</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="button-group-lobby">
-        <button
-          class="btn ready-btn small-btn"
-          :class="{ 'is-ready': gameStore.gameData.isBereit }"
-          @click="isReady"
-        >
+        <button class="btn ready-btn small-btn" :class="{ 'is-ready': gameStore.gameData.isBereit }" @click="isReady">
           {{ gameStore.gameData.isBereit ? '✓ Bereit' : 'Bereit' }}
         </button>
 
@@ -58,26 +76,13 @@
     <Counter v-if="showCounter" />
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
 
-    <!-- NEW: Board Selection Modal -->
-    <EinstellungView
-      :isVisible="showBoardSelection"
-      @close="showBoardSelection = false"
-      @openEditor="openBoardEditor"
-      @boardSelected="onBoardSelected"
-    />
-
     <!-- NEW: Board Editor -->
-    <BoardEditor
-      :isVisible="showBoardEditor"
-      @close="showBoardEditor = false"
-      @boardSaved="onBoardSaved"
-    />
+    <BoardEditor :isVisible="showBoardEditor" @close="handleEditorClose" @boardSaved="handleBoardSaved" />
   </div>
 </template>
 
 <script setup lang="ts">
 import InfoView from '@/components/InfoView.vue'
-import einstellungIcon from '@/assets/einsetllung.png'
 import infoIcon from '@/assets/info.png'
 import { computed, onUnmounted, ref } from 'vue'
 import SpielerListeView from './SpielerListeView.vue'
@@ -86,10 +91,11 @@ import { onMounted } from 'vue'
 import { useGameStore } from '@/stores/gamestore'
 import Counter from '@/components/playingfield/models/Counter.vue'
 import { useInfo } from '@/composable/useInfo'
-import EinstellungView from '@/components/EinstellungView.vue'
 import BoardEditor from '@/components/BoardEditor.vue'
+import MapAuswahl from '@/components/MapAuswahl.vue'
+import LobbySettingsPanel from '@/components/LobbySettingsPanel.vue'
 
-const { info, loescheInfo } = useInfo()
+const { nachrichten, loescheInfo, setzeInfo } = useInfo()
 const gameStore = useGameStore()
 const isHost = computed(() => gameStore.gameData.isHost)
 const router = useRouter()
@@ -120,6 +126,19 @@ onMounted(() => {
 
 onUnmounted(() => {
   gameStore.disconnect()
+})
+
+const currentMapName = computed(() => {
+  const rawName = gameStore.gameData.boardName || 'DummyBoard.json'
+
+  return rawName
+    .replace('.json', '')
+    .replace(/([A-Z])/g, ' $1')
+    .trim()
+})
+
+const currentMapImage = computed(() => {
+  return new URL('@/assets/chooseMap.png', import.meta.url).href
 })
 
 function onDeleteZeile(playerId: string) {
@@ -176,7 +195,8 @@ async function gameStartenByAdmin() {
       throw new Error('Fehler beim Starten des Spiels: ' + (err.error || res.statusText))
     }
     router.push('/game')
-  } catch (err) {
+  } catch (err: any) {
+    setzeInfo(err.message, 'error')
     console.error(err)
   }
 }
@@ -201,7 +221,7 @@ async function isReady() {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       const errorMessage = err.error || res.statusText || 'Fehler beim Setzen des Ready-Status.'
-      info.inhalt = errorMessage
+      setzeInfo(errorMessage, 'error')
       throw new Error(errorMessage)
     }
 
@@ -229,14 +249,25 @@ function openBoardEditor() {
 }
 
 function onBoardSelected(boardName: string) {
-  info.inhalt = `Board "${boardName.replace('.json', '')}" selected!`
-  setTimeout(() => loescheInfo(), 3000)
+  setzeInfo(`Board "${boardName.replace('.json', '')}" selected!`, 'info')
 }
 
 function onBoardSaved() {
-  info.inhalt = 'Custom board saved successfully!'
-  setTimeout(() => loescheInfo(), 3000)
+  setzeInfo('Custom board saved successfully!', 'success')
 }
+
+function handleEditorClose() {
+  showBoardEditor.value = false
+  showBoardSelection.value = true
+}
+
+function handleBoardSaved() {
+  showBoardEditor.value = false
+  showBoardSelection.value = true
+
+  setzeInfo("Spielfeld erfolgreich gespeichert!", "success")
+}
+
 </script>
 
 <style scoped>
@@ -301,6 +332,32 @@ function onBoardSaved() {
   min-height: 0;
 }
 
+.lobby-selection-area {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  margin: 20px auto;
+}
+
+.map-box-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.middle-column-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.right-spacer {
+  display: flex;
+  padding-left: 20px;
+  flex: 1;
+}
+
 .spieler-liste-container {
   width: 100%;
   max-width: 500px;
@@ -312,13 +369,11 @@ function onBoardSaved() {
   background-color: #3d2b1f;
   background-image:
     linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, transparent 100%),
-    repeating-linear-gradient(
-      90deg,
+    repeating-linear-gradient(90deg,
       transparent,
       transparent 38px,
       rgba(0, 0, 0, 0.15) 39px,
-      rgba(0, 0, 0, 0.15) 40px
-    );
+      rgba(0, 0, 0, 0.15) 40px);
 
   padding: 15px;
   border: 5px solid #2d1b0d;
@@ -464,13 +519,11 @@ function onBoardSaved() {
     linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, transparent 100%),
-    repeating-linear-gradient(
-      90deg,
+    repeating-linear-gradient(90deg,
       transparent,
       transparent 40px,
       rgba(0, 0, 0, 0.1) 41px,
-      rgba(0, 0, 0, 0.1) 42px
-    );
+      rgba(0, 0, 0, 0.1) 42px);
   background-size:
     100% 100%,
     100% 100%,
@@ -526,5 +579,99 @@ function onBoardSaved() {
   font-size: 1rem !important;
   border-bottom-width: 4px !important;
   z-index: 10;
+}
+
+.readonly-preview,
+.rules-display-readonly {
+  width: 400px;
+  height: 300px;
+  background-color: #3d2b1f;
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, transparent 100%),
+    repeating-linear-gradient(90deg,
+      transparent,
+      transparent 38px,
+      rgba(0, 0, 0, 0.15) 39px,
+      rgba(0, 0, 0, 0.15) 40px);
+  border: 5px solid #2d1b0d;
+  border-radius: 15px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: inset 0 0 20px rhba(0, 0, 0, 0.5);
+}
+
+.selection-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.host-info-text {
+  color: #ffc107;
+  font-size: 0.8rem;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.rule-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #f0e2d0;
+  margin: 15px 0;
+  padding: 0 20px;
+}
+
+.value-badge {
+  background: #f0e2d0;
+  color: #2d1b0d;
+  padding: 5px 15px;
+  border-radius: 8px;
+  font-weight: 900;
+  border: 2px solid #2d1b0d;
+}
+
+.section-subtitle {
+  color: #ffcc66;
+  text-transform: uppercase;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  text-shadow: 1px 1px 2px black;
+}
+
+img {
+  width: 220px;
+  height: 190px;
+  object-fit: cover;
+  border: 3px solid #2d1b0d;
+  border-radius: 8px;
+  background-color: #000;
+}
+
+.info-box.error {
+  background: #6d2d2d;
+  border-color: #f44336;
+}
+
+.info-box.success {
+  background: #2d4d19;
+  border-color: #a7ff83;
+}
+
+.info-box.info {
+  background: #3d2b1f;
+  border-color: #ffc107;
+}
+
+.notifications-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 </style>

@@ -169,6 +169,57 @@ function getCellEmoji(type: CellType): string {
     return emojis[type] || '?'
 }
 
+function getNextFilename(): string {
+    // Check localStorage for last used number
+    const lastNumber = localStorage.getItem('lastExportNumber')
+    const nextNumber = lastNumber ? parseInt(lastNumber) + 1 : 1
+
+    // Save the new number
+    localStorage.setItem('lastExportNumber', nextNumber.toString())
+
+    return `CustomBoard${nextNumber}.json`
+}
+
+function downloadBoard(boardData: Board) {
+    // Format the board data to match the exact structure
+    const formattedBoard = {
+        cols: boardData.cols,
+        rows: boardData.rows,
+        grid: boardData.grid.map((row: any[]) =>
+            row.map((cell: any) => ({
+                i: cell.i,
+                j: cell.j,
+                type: cell.type
+            }))
+        )
+    }
+
+    // Convert to JSON string
+    const jsonString = JSON.stringify(formattedBoard, null, 2)
+
+    // Create blob from JSON string
+    const blob = new Blob([jsonString], { type: 'application/json' })
+
+    // Generate filename with incrementing number
+    const filename = getNextFilename()
+
+    // Create download link
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+
+    // Trigger download
+    document.body.appendChild(link)
+    link.click()
+
+    // Cleanup
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    console.log(`Board exported as ${filename}`)
+}
+
 async function confirmBoard() {
     const gameCode = gameStore.gameData.gameCode
     const playerId = gameStore.gameData.playerId
@@ -210,6 +261,9 @@ async function confirmBoard() {
         )
 
         if (res.ok) {
+            // Download the board after successful save
+            downloadBoard(boardData)
+
             emit('boardSaved')
             emit('close')
         } else {
@@ -227,6 +281,7 @@ function cancel() {
         emit('close')
     }
 }
+
 </script>
 
 <style scoped>
