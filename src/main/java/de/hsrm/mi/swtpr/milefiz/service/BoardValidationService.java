@@ -126,7 +126,7 @@ public class BoardValidationService {
         boolean goalReached = false;
 
         // 3. Die Suche (Loop)
-        
+
         while (!queue.isEmpty()) {
             Field current = queue.poll();
 
