@@ -4,14 +4,23 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 
 import de.hsrm.mi.swtpr.milefiz.exception.CooldownException;
+import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
+import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent.Aktion;
 
 @Service
 public class DiceService {
+
+    private ApplicationEventPublisher publisher;
+
+    public DiceService(ApplicationEventPublisher publisher) {
+        this.publisher = publisher;
+    }
 
     private Random random = new Random();
 
@@ -30,7 +39,7 @@ public class DiceService {
     // Spieler mit ihrem letzten Zeitpunkt des Wurfs speichern
     private Map<String, Long> playerCooldown = new HashMap<>();
 
-    public DiceResult rollDice(String playerName) throws CooldownException {
+    public DiceResult rollDice(String playerName, String playerId, String gameCode) throws CooldownException {
 
         // aktuelle Zeit speichern
         long now = System.nanoTime();
@@ -53,8 +62,14 @@ public class DiceService {
         int result = random.nextInt(6) + 1;
         DiceResult diceResult = new DiceResult(result, playerName);
 
+        publisher.publishEvent(new IngameRequestEvent(Aktion.DICE_ROLL, playerId, gameCode, result));
+
         // Wurfzeitpunkt wird gespeichert
         playerCooldown.put(playerName, diceResult.getTimeStamp());
+
+        // Richtung vom Frontend anfragen um Bewegung einzuleiten
+        var event = new IngameRequestEvent(Aktion.DIRECTION, playerId, gameCode);
+        publisher.publishEvent(event);
 
         return diceResult;
     }

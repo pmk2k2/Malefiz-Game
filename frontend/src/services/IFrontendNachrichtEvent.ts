@@ -1,3 +1,6 @@
+import type { IBewegung } from "./IBewegung"
+import type { IStep } from "./IStep"
+
 export interface IFrontendNachrichtEvent {
   typ: string // Nachrichtentyp (z.B. LOBBY)
   operation: string // Operation (z.B. JOINED, LEFT, COUNTDOWN_STARTED, etc.)
@@ -7,4 +10,19 @@ export interface IFrontendNachrichtEvent {
   countdownStartedAt: string
   countdownDurationSeconds: number
   gameState: string
+
+  // Felder fuer Movementupdates
+  figureId: string
+  opponentId?: string // fuer duell
+  bewegung: IBewegung
+  step: IStep
+  minigameType?: string // Neu fuer Minigames
+
+  // DUEL
+  quizQuestion?: {
+    id: string
+    text: string
+    answers: string[]
+    correctIndex?: number
+  }
 }

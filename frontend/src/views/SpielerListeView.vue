@@ -24,8 +24,14 @@ watch(
     console.log('Updated host value:', newVal)
   },
 )
+const spielerListe = computed(() => {
+  return gameStore.gameData.players.map(player => {
+    return {
+      ...player
+    }
+  })
+})
 
-const spielerListe = computed(() => gameStore.gameData.players)
 const selectedPlayer = ref<string | null>(null)
 
 function handleDelete(id: string) {
@@ -40,9 +46,5 @@ defineExpose({ handleDelete, spielerListe })
   height: 300px;
   max-width: 800px;
   margin: 2rem auto;
-  background: rgba(0, 64, 0, 0.3);
-  padding: 2.5rem;
-  border-radius: 20px;
-  backdrop-filter: blur(8px);
 }
 </style>

@@ -1,11 +1,14 @@
 package de.hsrm.mi.swtpr.milefiz.entities.board;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Board {
     private int cols;
     private int rows;
     private Field[][] grid = {};
+    // Startfelder fuer Spieler
+    private ArrayList<Field> startFields = new ArrayList<Field>();
 
     public Board() {
 
@@ -56,6 +59,18 @@ public class Board {
 
     public void setGrid(Field[][] grid) {
         this.grid = grid;
+    }
+
+    public ArrayList<Field> getStartFields() {
+        return startFields;
+    }
+
+    public Field getStartFieldByIndex(int index) {
+        return startFields.get(index);
+    }
+
+    public void addStartField(Field startField) {
+        this.startFields.add(startField);
     }
 
 }

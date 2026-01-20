@@ -3,5 +3,7 @@ package de.hsrm.mi.swtpr.milefiz.model;
 public enum GameState {
     WAITING,     
     COUNTDOWN,   
-    RUNNING      
+    RUNNING,
+    BARRIER_PLACEMENT,
+    DUEL
 }

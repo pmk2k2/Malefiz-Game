@@ -1,14 +1,12 @@
 import type { ISpielerDTD } from "@/stores/ISpielerDTD";
 
 export function mapBackendPlayersToDTD(players: any[]): ISpielerDTD[] {
-  return players.map((p, index) => ({
-    id: p.playerId ?? p.id,
+  return players.map((p) => ({
+    id: p.id ?? p.playerId ?? p.playerID,
     name: p.name ?? p.playerName,
     isReady: p.isReady ?? p.ready ?? false,
-    spielfiguren: [
-      { icon: `/assets/icons/player${(index % 4) + 1}.png` }
-    ],
+    spielfiguren: [],
     isHost: p.isHost ?? p.host ?? false,
-
+    color: p.color ?? p.farbe ?? "#cccccc"
   }));
 }
