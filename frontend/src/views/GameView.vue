@@ -174,7 +174,7 @@ function startCooldownTimer() {
       </div>
     </div>
 
-    <TresCanvas clear-color="#87CEEB" class="w-full h-full">
+    <TresCanvas clear-color="#87CEEB" class="w-full h-full" shadows>
       <TheGrid ref="gridRef" />
     </TresCanvas>
 

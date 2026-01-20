@@ -144,7 +144,7 @@ public class MovementLogicService {
 
             startFeldState = game.getBoard().get(startFeld.getI(), startFeld.getJ());
             // alle noetigen checks setzen
-            if (startFeld.getType() == CellType.BLOCKED) { // sollte eigentlich nicht passieren
+            if (startFeld.getType() == CellType.BLOCKED || startFeld.getType() == CellType.DUEL) { // sollte eigentlich nicht passieren
                 return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
             }
             if (startFeld.getFigures().size() >= 2) {
@@ -240,7 +240,7 @@ public class MovementLogicService {
             // Faelle wo Bewegung nicht moeglich ist
             // potentiell wird man hier als Spieler softlocked?
             // Energie speichern oder einfach neue Richtungsanfrage?
-            if (destField.getType() == CellType.BLOCKED) {
+            if (destField.getType() == CellType.BLOCKED || destField.getType() == CellType.DUEL) {
                 logger.info("Feld {} {} ist blockiert", destI, destJ);
                 return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
             }
@@ -317,7 +317,7 @@ public class MovementLogicService {
 
                     Field landField = game.getBoard().get(landI, landJ);
 
-                    if (landField.getType() == CellType.BLOCKED || landField.getFigures().size() >= 2) {
+                    if (landField.getType() == CellType.BLOCKED || landField.getType() == CellType.DUEL) { //|| landField.getFigures().size() >= 2) {
                         allowedDistance = 0;
                         break;
                     }
@@ -502,6 +502,9 @@ public class MovementLogicService {
             String p2 = figs.get(1).getOwnerPlayerId();
 
             if (game.isMovementFinished(p1) && game.isMovementFinished(p2)) {
+                // Feld mit DUEL markieren
+                field.setType(CellType.DUEL);
+                // TODO: Event an alle Frontend schickens, dieses Feld upzudaten
 
                 // Duell erstmal erstellen ohne Fragen
                 Duel duel = new Duel(gameCode, p1, p2, null);  

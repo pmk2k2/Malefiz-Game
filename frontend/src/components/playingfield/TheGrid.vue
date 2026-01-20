@@ -1,22 +1,27 @@
 <script setup lang="ts">
-import { useLoop, type TresObject } from '@tresjs/core'
-import { OrbitControls } from '@tresjs/cientos'
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { useLoop } from '@tresjs/core'
+import { Align, OrbitControls } from '@tresjs/cientos'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
 import TheGrass from './models/TheGrass.vue'
-import Barrier from './models/Barrier.vue'
+import TheDuel from './models/TheDuel.vue'
+import Barrier from './models/TheBarrier.vue'
+import TheTable from './models/TheTable.vue'
 import ThePlayerFigure from '@/components/playingfield/ThePlayerFigure.vue'
 import { useGameStore } from '@/stores/gamestore'
 import type { IPlayerFigure } from '@/stores/IPlayerFigure'
 import type { IFigureMoveRequest } from '@/services/IFigureMoveRequest'
 import { useAnimationQueue } from '@/composable/useAnimationQueue'
 import { storeToRefs } from 'pinia'
+import { DirectionalLight, type PerspectiveCamera } from 'three'
+import TheSky from './TheSky.vue'
+import { useShadowLights } from '@/composable/useShadowLights'
 import { useInfo } from '@/composable/useInfo'
 
 // Zellentypen
-type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER'
+type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER' | 'DUEL'
 
 // Zellenkoordinten
 interface Field {
@@ -53,7 +58,7 @@ const { queueMove, queueRotation, vertJump } = useAnimationQueue()
 const MAX_ENERGY = 10
 
 // Camera controls
-const camRef = shallowRef<TresObject | null>(null)
+const camRef = shallowRef<PerspectiveCamera | null>(null)
 const default_cam_pos: [number, number, number] = [0, 15, 18]
 const camHeight = 1.2
 const figureControlInd = ref(0)
@@ -108,6 +113,11 @@ onMounted(async () => {
   if (gameCode != null && playerId != null) {
     gameStore.startIngameLiveUpdate(gameCode, playerId)
     gameStore.startLobbyLiveUpdate(gameCode)
+  }
+  // Layers der Kamera setzen
+  if(camRef.value) {
+    //camRef.value.layers.disable(1)
+    camRef.value.layers.enable(1)
   }
 })
 
@@ -303,7 +313,7 @@ function calculateHomeCenter(playerId: string) {
 }
 
 onBeforeRender(({ delta }) => {
-  const cam = camRef.value as any
+  const cam = camRef.value as PerspectiveCamera
   if (!cam) return
 
   if (egoPersp.value) {
@@ -544,6 +554,34 @@ defineExpose({
   figures,
 })
 
+// Schattensachen
+const { staticLightRef, dynamicLightRef } = useShadowLights()
+watchEffect(() => {
+  console.log("LICHT: Checke beide Lichter")
+  if(staticLightRef.value) {
+    console.log("LICHT: Setze statisches Licht auf Layer 0")
+    staticLightRef.value.layers.set(0)  // statisches licht auf layer 0 setze
+    staticLightRef.value.shadow.autoUpdate = false  // auto update ausschalten (fuer performance)
+  }
+  if(dynamicLightRef.value) {
+    dynamicLightRef.value.layers.set(1) // dynamisches licht auf layer 1
+  }
+})
+
+const lightPos = [3.5,12,8]
+const lightLookAt = [0,1,-2]
+const lightIntensity = 1
+const lightDistance = 40
+const lightShadowParam = {
+  width: 50,
+  height: 50,
+  near: 0.5,
+  far: 40,
+  zoom: 0.2,
+  blurRadius: 2.5
+}
+
+
 // Expose fetchGameState globally for store to call on figures update event
 if (typeof window !== 'undefined') {
   // @ts-ignore
@@ -553,7 +591,6 @@ if (typeof window !== 'undefined') {
 
 <template>
   <TresPerspectiveCamera ref="camRef" :position="default_cam_pos" :look-at="[0, 0, 0]" />
-
   <OrbitControls
     ref="orbitRef"
     v-if="!egoPersp || (egoPersp && ownFigures[figureControlInd]?.currentAnim?.isJump)"
@@ -565,13 +602,57 @@ if (typeof window !== 'undefined') {
     :rotateSpeed="0.6"
   />
 
-  <TresDirectionalLight :position="[20, 40, 10]" :intensity="1.5" />
+
+  <TheSky />
+  <TresAmbientLight :intensity="0.45" />
+  <!-- ungenutzte Params
+   
+    :distance="lightDistance"
+    :shadow-camera-zoom="lightShadowParam.zoom"
+  -->
+  <TresDirectionalLight
+    ref="staticLightRef"
+    cast-shadow
+    :layers="0"
+    :position="lightPos" 
+    :look-at="lightLookAt"
+    :intensity="lightIntensity" 
+
+    :shadow-mapSize-width="1024"
+    :shadow-mapSize-height="1024"
+    :shadow-auto-update="false"
+
+    :shadow-camera-width="lightShadowParam.width"
+    :shadow-camera-height="lightShadowParam.height"
+    :shadow-camera-near="lightShadowParam.near"
+    :shadow-camera-far="lightShadowParam.far"
+    :shadow-camera-zoom="lightShadowParam.zoom"
+  />
+  <!-- TresDirectionalLight
+    ref="dynamicLightRef"
+    cast-shadow
+    :layers="1"
+    :position="lightPos" 
+    :look-at="lightLookAt"
+    :intensity="lightIntensity" 
+
+    :shadow-mapSize-width="512"
+    :shadow-mapSize-height="512"
+
+    :shadow-camera-width="lightShadowParam.width"
+    :shadow-camera-height="lightShadowParam.height"
+    :shadow-camera-near="lightShadowParam.near"
+    :shadow-camera-far="lightShadowParam.far"
+  / -->
 
   <template v-if="board">
-    <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]">
-      <TresPlaneGeometry :args="[board.cols * CELL_SIZE * 5, board.rows * CELL_SIZE * 5]" />
-      <TresMeshStandardMaterial color="#b6e3a5" :roughness="1" :metalness="0" />
-    </TresMesh>
+    <TheTable :scale="(board.cols > board.rows) ? board.cols * CELL_SIZE * 0.17 : board.rows * CELL_SIZE * 0.17"/>
+    <Align bottom>
+      <TresMesh receive-shadow :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]" :layers="[0,1]" >
+        <TresBoxGeometry :args="[board.cols * CELL_SIZE * 1.3, board.rows * CELL_SIZE * 1.5, 0.1]" />
+        <TresMeshStandardMaterial color="#b6e3a5" :roughness="0.13" :metalness="0.05" />
+      </TresMesh>
+    </Align>
 
     <TresMesh
       v-for="cell in allCells"
@@ -589,6 +670,10 @@ if (typeof window !== 'undefined') {
       <template v-else-if="cell.type === 'BLOCKED'">
         <TheTree />
         <TheGrass />
+      </template>
+      <template v-else-if="cell.type === 'DUEL'">
+        <TheRock />
+        <TheDuel />
       </template>
       <template v-else-if="cell.type === 'GOAL'">
         <TheRock />

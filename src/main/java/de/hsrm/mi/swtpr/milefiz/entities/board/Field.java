@@ -64,6 +64,7 @@ public class Field {
         if (this.type == CellType.BLOCKED) return true;
         if (this.hasBarrier()) return true;
         if (!this.getFigures().isEmpty()) return true;
+        if (this.type == CellType.DUEL) return true;
 
         return false;
     }
