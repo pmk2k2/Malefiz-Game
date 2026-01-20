@@ -58,6 +58,7 @@ public class MovementLogicService {
     }
 
     public FigureMoveResult moveFigure(Game game, String gameCode, FigureMoveRequest request) {
+        String fehler = null;
         // Energie des Spielers
         Player player = game.getPlayerById(request.playerId);
         DiceResult result = game.getDiceResultById(request.playerId);
@@ -242,7 +243,24 @@ public class MovementLogicService {
             // Energie speichern oder einfach neue Richtungsanfrage?
             if (destField.getType() == CellType.BLOCKED || destField.getType() == CellType.DUEL) {
                 logger.info("Feld {} {} ist blockiert", destI, destJ);
-                return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
+                int remainingEnergy = allowedDistance;
+                // Energie hinzufügen anhand der voreingestellten Menge vom Host
+                player.addEnergy(remainingEnergy, game.getMaxCollectableEnergy());
+
+                publisher.publishEvent(new FrontendNachrichtEvent(
+                        Nachrichtentyp.INGAME,
+                        request.playerId,
+                        Operation.ENERGY_UPDATED,
+                        gameCode,
+                        player.getName(),
+                        player.getEnergy()));
+
+                allowedDistance = 0;
+                game.getDiceResultById(request.playerId).setValue(0);
+                sendStepUpdate(gameCode, request.playerId, gegangen, 0);
+                fehler = "Figur kann auf kein gesperrtes Feld";
+                break;
+                //return FigureMoveResult.fail("Figur kann auf kein gesperrtes Feld");
             }
 
             // Wenn Feld eine Barriere hat, schauen ob man AUF dieser landen kann
@@ -265,7 +283,8 @@ public class MovementLogicService {
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
                     sendStepUpdate(gameCode, request.playerId, gegangen, 0);
-                    return FigureMoveResult.ok();
+                    break;
+                    //return FigureMoveResult.ok();
                 } else if (allowedDistance == 1) {
                     // Auf Barriere gelandet: Spielstatus ändern und variable auf true setzen
                     destField.setBarrier(null);
@@ -380,8 +399,26 @@ public class MovementLogicService {
                     logger.info("ENDDDDDDDDD");
                     return FigureMoveResult.ok();
                 } else {
-                    return FigureMoveResult
-                            .fail("Du kannst das Ziel nur mit genau der gewürfelten Schrittzahl erreichen.");
+                    // Figur stoppen
+                    // Energie speichern (und spaeter weiterleiten)
+                    int remainingEnergy = allowedDistance;
+                    // Energie hinzufügen anhand der voreingestellten Menge vom Host
+                    player.addEnergy(remainingEnergy, game.getMaxCollectableEnergy());
+
+                    publisher.publishEvent(new FrontendNachrichtEvent(
+                            Nachrichtentyp.INGAME,
+                            request.playerId,
+                            Operation.ENERGY_UPDATED,
+                            gameCode,
+                            player.getName(),
+                            player.getEnergy()));
+
+                    allowedDistance = 0;
+                    game.getDiceResultById(request.playerId).setValue(0);
+                    sendStepUpdate(gameCode, request.playerId, gegangen, 0);
+                    fehler = "Du kannst das Ziel nur mit genau der gewürfelten Schrittzahl erreichen.";
+                    break;
+                    //return FigureMoveResult.fail("Du kannst das Ziel nur mit genau der gewürfelten Schrittzahl erreichen.");
                 }
             }
 
@@ -542,6 +579,10 @@ public class MovementLogicService {
 
                 publisher.publishEvent(duelEvent);
             }
+        }
+
+        if(fehler != null) {
+            return FigureMoveResult.fail(fehler);
         }
 
         // Eine Nachricht schicken, falls eine Barriere getroffen wurde, damit der

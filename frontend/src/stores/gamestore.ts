@@ -214,22 +214,34 @@ export const useGameStore = defineStore('gamestore', () => {
             // DUEL / MINIGAME START
             else if (event.operation === 'DUEL') {
               console.log('DUEL Event empfangen!')
-              gameData.duelP1Id = event.id || null;
-              gameData.duelP2Id = event.opponentId || null;
-              gameData.duelActive = true
-              gameData.duelQuestion = null
-              gameData.duelAnswered = false
-              gameData.duelTimeLeft = 10
-              gameData.mashScore = 0
               
-              fetch(`/api/duel/start?gameCode=${gameData.gameCode}`)
+              const p1 = event.id || null;
+              const p2 = event.opponentId || null;
+              const me = gameData.playerId;
 
-              // Nur fuer beteiligte Spieler
-              if (
-                gameData.playerId &&
-                (event.id === gameData.playerId || event.opponentId === gameData.playerId)
-              ) {
-                gameData.duelActive = true
+              // Speichere IDs für alle (z.B. für Spectator Anzeige später)
+              gameData.duelP1Id = p1;
+              gameData.duelP2Id = p2;
+
+              // Prüfen ob ich beteiligt bin
+              if (me && (p1 === me || p2 === me)) {
+                 // NUR DANN wird das Fenster geöffnet
+                 gameData.duelActive = true
+                 
+                 gameData.duelQuestion = null
+                 gameData.duelAnswered = false
+                 gameData.duelTimeLeft = 10
+                 gameData.mashScore = 0
+                 
+                 // Nur EINER der beiden sollte den API Call machen (oder der Host),
+                 // um Doppelanfragen zu vermeiden. Am besten macht das der Host.
+                 // Wenn unklar wer Host ist, können es beide machen (Backend muss Dopplung abfangen).
+                 fetch(`/api/duel/start?gameCode=${gameData.gameCode}`).catch(e => console.error(e))
+
+              } else {
+                // Für alle anderen: Sicherstellen, dass Minigame ZU ist
+                gameData.duelActive = false
+                console.log("Ich schaue beim Duell nur zu.")
               }
             }
             // <--- NEU: Reagieren auf Minigame Auswahl
@@ -504,6 +516,7 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.duelP2Id = null
     gameData.currentMinigame = null
     gameData.energy = 0
+    figures.value = []
     stopCountdown()
 
     localStorage.removeItem('gameData')
@@ -525,6 +538,7 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.forbiddenDir = null
     gameData.duelActive = false
     gameData.energy = 0
+    figures.value = []
 
     disconnect()
 
