@@ -1,4 +1,5 @@
 import type { IBewegung } from "./IBewegung"
+import type { IStep } from "./IStep"
 
 export interface IFrontendNachrichtEvent {
   typ: string // Nachrichtentyp (z.B. LOBBY)
@@ -14,6 +15,8 @@ export interface IFrontendNachrichtEvent {
   figureId: string
   opponentId?: string // fuer duell
   bewegung: IBewegung
+  step: IStep
+  minigameType?: string // Neu fuer Minigames
 
   // DUEL
   quizQuestion?: {

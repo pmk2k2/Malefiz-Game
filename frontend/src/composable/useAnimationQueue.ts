@@ -9,6 +9,8 @@ export type AnimationJob = {
   // Allgemein Animation
   duration: number
   progressTime: number
+  // Für vertikalen Sprung
+  isJump?: boolean
   // Bei Bewegung von Figuren
   bewegung?: IBewegung | undefined
   startPos?: number[] | undefined
@@ -112,6 +114,22 @@ export function useAnimationQueue() {
     figures.value[index].animQueue.push(newRot)
   }
 
+  function vertJump(index: number, duration = 500){
+    if (!figures.value[index]) return
+
+    // Aktuelle Position als Startpunkt für den Sprung nehmen
+    const startPos = [...figures.value[index].position]
+
+    const jumpJob: AnimationJob = {
+      duration: duration,
+      progressTime: -1,
+      isJump:true,
+      startPos: startPos
+    }
+    
+    figures.value[index].animQueue.push(jumpJob)
+  }
+
   // Loop zur Verarbeitung der Animationen
   console.log("Starte Animationloop")
   onBeforeRender(({ delta }) => {
@@ -152,19 +170,54 @@ export function useAnimationQueue() {
         const result = startRot + (targetRot - startRot) * time
         state.viewDirRot = (result === -1) ? 1 : result
       }
-      if(state.currentAnim.bewegung && state.currentAnim.startPos) {
+      if(state.currentAnim.startPos) {
         const time = rawtime
-        const newPos = [0,0,0]
-        const startPos = [state.currentAnim.startPos[0], state.currentAnim.startPos[1], state.currentAnim.startPos[2]]
-        const targetPos = [state.currentAnim.bewegung.endX, startPos[1], state.currentAnim.bewegung.endZ]
+        const startPos = state.currentAnim.startPos;
+        // Mit der aktuellen Startposition starten
+        const newPos: [number, number, number] = [startPos[0] as number, startPos[1] as number, startPos[2] as number];
 
-        if(startPos[0] == undefined || startPos[1] == undefined || startPos[2] == undefined)  return
-        if(targetPos[0] == undefined || targetPos[2] == undefined)  return
+        // FALL A: vertikaler Sprung
+        if(state.currentAnim.isJump){
+          const jumpHeight = 16;
+          const time = rawtime; // Geht von 0 bis 1
+          let yOffset = 0;
 
-        newPos[0] = startPos[0] + (targetPos[0] - startPos[0]) * time
-        newPos[1] = startPos[1] + Math.sin(Math.PI * time)
-        newPos[2] = startPos[2] + (targetPos[2] - startPos[2]) * time
-        state.position = newPos as [number, number, number]
+          // Zeitliche Aufteilung der Phasen
+          const peakStart = 0.3; // Bei 40% der Zeit oben ankommen
+          const peakEnd = 0.8;   // Bis 70% der Zeit oben bleiben
+
+          if (time < peakStart) {
+            // Phase 1: Aufstieg (0 bis 0.4)
+            // Zeit so skalieren, dass sie bei peakStart bereits 1.0 (Sinus-Peak) erreicht
+            const progress = time / peakStart; 
+            yOffset = Math.sin((Math.PI / 2) * progress) * jumpHeight;
+          } 
+          else if (time <= peakEnd) {
+            // Phase 2: In der Luft bleiben (0.4 bis 0.7)
+            yOffset = jumpHeight;
+          } 
+          else {
+            // Phase 3: Abstieg (0.7 bis 1.0)
+            // Rest der Zeit von 1.0 (oben) zurück auf 0.0 (unten) skalieren
+            const progress = (time - peakEnd) / (1 - peakEnd);
+            yOffset = Math.cos((Math.PI / 2) * progress) * jumpHeight;
+          }
+
+          state.position[1] = (startPos[1] as number) + yOffset;
+          state.position = [...state.position]; 
+
+        } else if(state.currentAnim.bewegung){ // FALL B: normale Lauf-Bewegung 
+            const targetPos = [state.currentAnim.bewegung.endX, startPos[1], state.currentAnim.bewegung.endZ];
+
+            if(startPos[0] == undefined || startPos[1] == undefined || startPos[2] == undefined)  return
+            if(targetPos[0] == undefined || targetPos[2] == undefined)  return
+    
+            newPos[0] = startPos[0] + (targetPos[0] - startPos[0]) * time
+            newPos[1] = startPos[1] + Math.sin(Math.PI * time)
+            newPos[2] = startPos[2] + (targetPos[2] - startPos[2]) * time
+            state.position = newPos as [number, number, number]
+        }
+
       }
 
 
@@ -174,6 +227,14 @@ export function useAnimationQueue() {
       // Job beenden
       if(rawtime >= 1) {
         console.log("Animation fertig, entferne aus currentAnim")
+        if (state.currentAnim?.bewegung) {
+          if (state.currentAnim.bewegung.steps > 0) {
+            if (gameStore.gameData.remainingSteps > 0) {
+              gameStore.gameData.remainingSteps--
+              gameStore.gameData.stepsTaken++
+            }
+          }
+        }
         state.currentAnim = null
       }
     })
@@ -225,7 +286,8 @@ export function useAnimationQueue() {
   return {
     //mountFigures,
     queueMove,
-    queueRotation
+    queueRotation,
+    vertJump
   }
 
 }

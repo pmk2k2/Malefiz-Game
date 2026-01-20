@@ -2,40 +2,56 @@
   <div v-if="gameData.duelActive" class="overlay">
     <div class="popup">
       <div class="top">
-        <div class="title">DUELL</div>
-        <div class="timer">{{ gameData.duelTimeLeft }}s</div>
-      </div>
-
-      <div v-if="gameData.duelQuestion" class="content">
-        <div class="question">{{ gameData.duelQuestion.text }}</div>
-
-        <div class="answers">
-          <button
-            v-for="(a, i) in gameData.duelQuestion.answers"
-            :key="i"
-            class="answer"
-            :disabled="gameData.duelAnswered || gameData.duelTimeLeft <= 0"
-            @click="select(i)"
-          >
-            {{ a }}
-          </button>
+        <div class="title">DUELL</div> 
+        <div v-if="gameData.currentMinigame === 'QUIZ' || gameData.currentMinigame === 'ARITHMETIC'" class="timer">
+          {{ gameData.duelTimeLeft }}s
         </div>
-
-        <div v-if="gameData.duelAnswered" class="status">Antwort gesendet…</div>
-        <div v-else-if="gameData.duelTimeLeft <= 0" class="status">Zeit abgelaufen…</div>
       </div>
 
-      <div v-else class="content">
-        <div class="status">Frage wird geladen…</div>
+        <div class="content">
+          <!-- Wenn currentMinigame == BUTTON_MASHING -->
+          <DuelMash v-if="gameData.currentMinigame === 'BUTTON_MASHING'" />
+
+           <!-- Wenn currentMinigame == ARITHMETIC -->
+          <DuelArithmetic v-else-if="gameData.currentMinigame === 'ARITHMETIC'" />
+          
+          <!-- Wenn currentMinitGame == QUIZ  -->
+          <div v-else-if="gameData.currentMinigame === 'QUIZ'">
+            <div v-if="gameData.duelQuestion">
+              <div class="question">{{ gameData.duelQuestion.text }}</div>
+
+              <div class="answers">
+                <button
+                  v-for="(a, i) in gameData.duelQuestion.answers"
+                  :key="i"
+                  class="answer"
+                  :disabled="gameData.duelAnswered || gameData.duelTimeLeft <= 0"
+                  @click="select(i)"
+                >
+                  {{ a }}
+                </button>
+              </div>
+
+              <div v-if="gameData.duelAnswered" class="status">Antwort gesendet…</div>
+              <div v-else-if="gameData.duelTimeLeft <= 0" class="status">Zeit abgelaufen…</div>
+            </div>
+            
+            <div v-else class="status">Frage wird geladen…</div>
+          </div>
+
+        <div v-else class="status">Minigame wird ausgewählt...</div>
       </div>
+
     </div>
-  </div>
+  </div>  
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, watch } from 'vue'
 import { useGameStore } from '@/stores/gamestore'
 import { storeToRefs } from 'pinia'
+import DuelMash from './DuelMash.vue'
+import DuelArithmetic from './DuelArithmetic.vue'
 
 const gameStore = useGameStore()
 const { gameData } = storeToRefs(gameStore)
@@ -48,23 +64,16 @@ function startTimer() {
     if (!gameData.value.duelActive) return
 
     if (gameData.value.duelTimeLeft <= 0) {
-        stopTimer()
+      stopTimer()
+      gameData.value.duelAnswered = true
 
-        if (!gameData.value.duelAnswered) {
-        gameData.value.duelAnswered = true
-        fetch('/api/duel/answer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-            gameCode: gameData.value.gameCode,
-            playerId: gameData.value.playerId,
-            answerIndex: -1,
-            }),
-        })
-        }
+      fetch(`/api/duel/timeout-check?gameCode=${gameData.value.gameCode}`, {
+        method: 'POST',
+      })
 
-        return
+      return
     }
+
 
     gameData.value.duelTimeLeft -= 1
     }, 1000)

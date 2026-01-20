@@ -13,19 +13,20 @@ import de.hsrm.mi.swtpr.milefiz.entities.game.Figure;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
 import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
-import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Nachrichtentyp;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent.Operation;
+import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent;
 import de.hsrm.mi.swtpr.milefiz.messaging.IngameRequestEvent.Aktion;
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
+import de.hsrm.mi.swtpr.milefiz.model.Step;
 import de.hsrm.mi.swtpr.milefiz.model.DiceResult;
 import de.hsrm.mi.swtpr.milefiz.model.Direction;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveRequest;
 import de.hsrm.mi.swtpr.milefiz.model.FigureMoveResult;
-import de.hsrm.mi.swtpr.milefiz.service.BoardNavigationService.MoveType;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
 import de.hsrm.mi.swtpr.milefiz.model.duel.Duel;
 import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
+import de.hsrm.mi.swtpr.milefiz.service.BoardNavigationService.MoveType;
 
 @Service
 public class MovementLogicService {
@@ -35,10 +36,25 @@ public class MovementLogicService {
     private ApplicationEventPublisher publisher;
     private BoardNavigationService navService;
 
-    public MovementLogicService(ApplicationEventPublisher publisher, BoardNavigationService navService, QuizService quizService) {
+    public MovementLogicService(ApplicationEventPublisher publisher, BoardNavigationService navService,
+            QuizService quizService) {
         this.publisher = publisher;
         this.navService = navService;
         this.quizService = quizService;
+    }
+
+    private void sendStepUpdate(
+            String gameCode,
+            String playerId,
+            int totalSteps,
+            int remainingSteps) {
+        publisher.publishEvent(
+                new FrontendNachrichtEvent(
+                        Nachrichtentyp.INGAME,
+                        Operation.STEP_UPDATE,
+                        gameCode,
+                        playerId,
+                        new Step(totalSteps, remainingSteps)));
     }
 
     public FigureMoveResult moveFigure(Game game, String gameCode, FigureMoveRequest request) {
@@ -52,6 +68,7 @@ public class MovementLogicService {
 
         // Hole die echte Zahl aus dem Backend-Speicher
         int allowedDistance = result.getValue();
+        int gegangen = 0;
 
         // Prüfungen ob gewuerfelt wurde
         if (allowedDistance <= 0) {
@@ -247,8 +264,9 @@ public class MovementLogicService {
 
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
+                    sendStepUpdate(gameCode, request.playerId, gegangen, 0);
                     return FigureMoveResult.ok();
-                } else if(allowedDistance == 1) {
+                } else if (allowedDistance == 1) {
                     // Auf Barriere gelandet: Spielstatus ändern und variable auf true setzen
                     destField.setBarrier(null);
                     destField.setType(CellType.PATH);
@@ -282,6 +300,7 @@ public class MovementLogicService {
                     allowedDistance = 0;
                     result.setValue(0);
                     game.setRollForPlayer(request.playerId, 0);
+                    sendStepUpdate(gameCode, request.playerId, gegangen, 0);
                     break;
                 }
 
@@ -328,6 +347,8 @@ public class MovementLogicService {
                     game.getDiceResultById(request.playerId).setValue(allowedDistance);
 
                     stepsCount++;
+                    gegangen++;
+                    sendStepUpdate(gameCode, request.playerId, gegangen, allowedDistance);
                     continue;
                 }
             }
@@ -342,20 +363,26 @@ public class MovementLogicService {
 
             // Prüfe ob Ziel erreicht
             if (destField.getType() == CellType.GOAL) {
-                game.setWinnerId(request.playerId);
-                publisher.publishEvent(new FrontendNachrichtEvent(
-                        Nachrichtentyp.INGAME,
-                        request.playerId,
-                        Operation.GAME_OVER,
-                        gameCode,
-                        null));
-                Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir, stepsCount);
-                var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
-                        request.figureId,
-                        request.playerId, bew);
-                publisher.publishEvent(moveEv);
-                logger.info("ENDDDDDDDDD");
-                return FigureMoveResult.ok();
+                if (allowedDistance == 1) {
+                    game.setWinnerId(request.playerId);
+                    publisher.publishEvent(new FrontendNachrichtEvent(
+                            Nachrichtentyp.INGAME,
+                            request.playerId,
+                            Operation.GAME_OVER,
+                            gameCode,
+                            null));
+                    Bewegung bew = new Bewegung(startI, startJ, figure.getGridI(), figure.getGridJ(), lastDir,
+                            stepsCount);
+                    var moveEv = new FrontendNachrichtEvent(Nachrichtentyp.INGAME, Operation.MOVE, gameCode,
+                            request.figureId,
+                            request.playerId, bew);
+                    publisher.publishEvent(moveEv);
+                    logger.info("ENDDDDDDDDD");
+                    return FigureMoveResult.ok();
+                } else {
+                    return FigureMoveResult
+                            .fail("Du kannst das Ziel nur mit genau der gewürfelten Schrittzahl erreichen.");
+                }
             }
 
             // gelaufenen Schritt abziehen
@@ -364,8 +391,11 @@ public class MovementLogicService {
 
             // Anzahl Schritte und Richtung fuer Event anpassen
             stepsCount++;
+            gegangen++;
+            sendStepUpdate(gameCode, request.playerId, gegangen, allowedDistance);
 
-            if(barrierHit) break;
+            if (barrierHit)
+                break;
 
             // Wenn Zug vorbei, direkt aus der Loop ausbrechen
             if (moveOver)
@@ -394,6 +424,8 @@ public class MovementLogicService {
 
                     allowedDistance = 0;
                     game.getDiceResultById(request.playerId).setValue(0);
+                    sendStepUpdate(gameCode, request.playerId, gegangen, 0);
+
                     break;
                 // return FigureMoveResult.ok();
 
@@ -461,15 +493,20 @@ public class MovementLogicService {
             }
 
             List<Figure> figs = field.getFigures();
-            
+
             if (figs.size() < 2) {
                 return FigureMoveResult.ok();
             }
-            
+
             String p1 = figs.get(0).getOwnerPlayerId();
             String p2 = figs.get(1).getOwnerPlayerId();
 
             if (game.isMovementFinished(p1) && game.isMovementFinished(p2)) {
+
+                // Duell erstmal erstellen ohne Fragen
+                Duel duel = new Duel(gameCode, p1, p2, null);  
+                game.setActiveDuel(duel);
+                game.setState(GameState.DUEL);
 
                 // Bewegung NUR für Übergabe von Koordinaten
                 Bewegung duelBew = new Bewegung(
@@ -480,34 +517,43 @@ public class MovementLogicService {
                         null,
                         0);
 
-                FrontendNachrichtEvent duelEvent = new FrontendNachrichtEvent(
+                // Für Mnigame auswahl
+                FrontendNachrichtEvent prepareEvent = new FrontendNachrichtEvent(
                         FrontendNachrichtEvent.Nachrichtentyp.INGAME,
-                        FrontendNachrichtEvent.Operation.DUEL,
+                        FrontendNachrichtEvent.Operation.DUEL_PREPARE,
                         gameCode,
                         null,
                         p1, // Id des player1 im duell
                         duelBew);
+                prepareEvent.setOpponentId(p2);
+                publisher.publishEvent(prepareEvent);
+
+                FrontendNachrichtEvent duelEvent = new FrontendNachrichtEvent(
+                    FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+                    FrontendNachrichtEvent.Operation.DUEL,
+                    gameCode,
+                    null,
+                    p1,
+                    duelBew);
                 duelEvent.setOpponentId(p2);
 
-                QuizQuestion q = quizService.getRandomQuestion();
-                Duel duel = new Duel(gameCode, p1, p2, q);
-                duel.resetForNewQuestion(q);
-
-                game.setActiveDuel(duel);
-                game.setState(GameState.DUEL);
-
-                FrontendNachrichtEvent questionEvent = new FrontendNachrichtEvent(
-                    FrontendNachrichtEvent.Nachrichtentyp.INGAME,
-                    null,
-                    FrontendNachrichtEvent.Operation.DUEL_NEW_QUESTION,
-                    gameCode,
-                    null
-                );
                 publisher.publishEvent(duelEvent);
             }
         }
 
-        // Eine Nachricht schicken, falls eine Barriere getroffen wurde, damit der Controller das automatische Öffnen des Maps triggern kann.
+        // Eine Nachricht schicken, falls eine Barriere getroffen wurde, damit der
+        // Controller das automatische Öffnen des Maps triggern kann.
         return barrierHit ? FigureMoveResult.ok("BARRIER_HIT") : FigureMoveResult.ok();
     }
+
+    public void resetPlayerEnergy(Game game, String playerId) {
+    Player player = game.getPlayerById(playerId);
+    
+    if (player != null) {
+        player.setEnergy(0);
+        
+        logger.info("Energie für Spieler {} wurde serverseitig auf 0 gesetzt.", playerId);
+    }
+}
+
 }

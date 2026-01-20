@@ -4,6 +4,7 @@ import java.time.Instant;
 
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
 import de.hsrm.mi.swtpr.milefiz.model.GameState;
+import de.hsrm.mi.swtpr.milefiz.model.Step;
 import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
 
 public class FrontendNachrichtEvent {
@@ -31,10 +32,14 @@ public class FrontendNachrichtEvent {
         // Ingame-Operationen
         GAME_OVER,
         MOVE,
+        STEP_UPDATE,
         ENERGY_UPDATED,
+        DUEL_PREPARE,
+        MINIGAME_SELECTED, // <--- NEU: Operation für ausgewähltes Minispiel
         DUEL,
         DUEL_RESULT,
-        DUEL_NEW_QUESTION
+        DUEL_NEW_QUESTION,
+        DUEL_MASH_UPDATE
     }
 
     private Nachrichtentyp typ;
@@ -52,6 +57,8 @@ public class FrontendNachrichtEvent {
     private String opponentId; // ID des zweiten spieler im duell
     private Bewegung bewegung;
     private int newEnergyValue;
+    private Step step;
+    private String minigameType; // für die Art des Minigames
 
     private QuizQuestion quizQuestion;
 
@@ -92,6 +99,19 @@ public class FrontendNachrichtEvent {
         this.figureId = fId;
         this.id = pId;
         this.bewegung = bew;
+    }
+
+    public FrontendNachrichtEvent(
+            Nachrichtentyp typ,
+            Operation operation,
+            String gameCode,
+            String playerId,
+            Step step) {
+        this.typ = typ;
+        this.operation = operation;
+        this.gameCode = gameCode;
+        this.id = playerId;
+        this.step = step;
     }
 
     public Nachrichtentyp getTyp() {
@@ -201,5 +221,13 @@ public class FrontendNachrichtEvent {
 
     public void setNewEnergyValue(int newEnergyValue) {
         this.newEnergyValue = newEnergyValue;
+    }
+
+    public String getMinigameType() {
+        return minigameType;
+    }
+
+    public void setMinigameType(String minigameType) {
+        this.minigameType = minigameType;
     }
 }
