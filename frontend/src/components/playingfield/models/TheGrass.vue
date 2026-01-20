@@ -31,7 +31,7 @@ watchEffect(() => {
   state.value.scene.traverse((child) => {
     // @ts-expect-error three.js Mesh hat isMesh und material zur Laufzeit
     if (child.isMesh) {
-      // Schatten empfangen aber NICHT werfen
+      // Schatten deaktivieren
       child.castShadow = false
       child.receiveShadow = false
     }

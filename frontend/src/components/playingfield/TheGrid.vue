@@ -17,6 +17,7 @@ import { useAnimationQueue } from '@/composable/useAnimationQueue'
 import { storeToRefs } from 'pinia'
 import { DirectionalLight, type PerspectiveCamera } from 'three'
 import TheSky from './TheSky.vue'
+import { useShadowLights } from '@/composable/useShadowLights'
 
 // Zellentypen
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER' | 'DUEL'
@@ -96,6 +97,11 @@ onMounted(async () => {
     // Websockets fuer Gameupdates und persoenliche Requests
     gameStore.startIngameLiveUpdate(gameCode, playerId)
     gameStore.startLobbyLiveUpdate(gameCode)
+  }
+  // Layers der Kamera setzen
+  if(camRef.value) {
+    camRef.value.layers.enable(0)
+    camRef.value.layers.enable(1)
   }
 })
 
@@ -569,10 +575,23 @@ defineExpose({
   figures
 })
 
-// Sachen fuer Schatten
-const dynamLightRef = shallowRef<DirectionalLight>()
-const staticLightRef = shallowRef<DirectionalLight>()
-const { scene } = useTres()
+// Schattensachen
+const { staticLightRef, dynamicLightRef } = useShadowLights()
+watchEffect(() => {
+  console.log("LICHT: Checke beide Lichter")
+  if(staticLightRef.value) {
+    console.log("LICHT: Setze statisches Licht auf Layer 0")
+    staticLightRef.value.layers.set(0)  // statisches licht auf layer 0 setze
+    staticLightRef.value.shadow.autoUpdate = false  // auto update ausschalten (fuer performance)
+  }
+  if(dynamicLightRef.value) {
+    dynamicLightRef.value.layers.set(1) // dynamisches licht auf layer 1
+  }
+})
+
+const lightPos = [0,2,2]
+const lightIntensity = 0.75
+const lightShadowParams = []
 
 </script>
 
@@ -582,20 +601,21 @@ const { scene } = useTres()
   <OrbitControls v-if="!egoPersp" />
 
   <TheSky />
-  <TresAmbientLight :intensity="0.5" />
+  <TresAmbientLight :intensity="0.50" />
   <TresDirectionalLight
-    :ref="staticLightRef"
-    :position="[5,2,5]" 
-    :intensity="0.75" 
+    ref="staticLightRef"
+    :position="lightPos" 
+    :intensity="lightIntensity" 
     cast-shadow
 
     :shadow-mapSize-width="1024"
     :shadow-mapSize-height="1024"
+    :shadow-auto-update="false"
   />
   <TresDirectionalLight
-    :ref="dynamLightRef"
-    :position="[5,2,5]" 
-    :intensity="0.75" 
+    ref="dynamicLightRef"
+    :position="lightPos" 
+    :intensity="lightIntensity" 
     cast-shadow
 
     :shadow-mapSize-width="512"
@@ -605,7 +625,7 @@ const { scene } = useTres()
   <template v-if="board">
     <TheTable :scale="(board.cols > board.rows) ? board.cols * CELL_SIZE * 0.17 : board.rows * CELL_SIZE * 0.17"/>
     <Align bottom>
-      <TresMesh :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]" receive-shadow>
+      <TresMesh receive-shadow :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]" :layers="[0,1]" >
         <TresBoxGeometry :args="[board.cols * CELL_SIZE * 1.3, board.rows * CELL_SIZE * 1.5, 0.1]" />
         <TresMeshStandardMaterial color="#b6e3a5" :roughness="0.13" :metalness="0.05" />
       </TresMesh>

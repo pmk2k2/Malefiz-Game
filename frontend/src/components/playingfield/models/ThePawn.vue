@@ -27,9 +27,12 @@ watchEffect(() => {
   state.value.scene.traverse((child) => {
     // @ts-expect-error three.js Mesh hat isMesh und material zur Laufzeit
     if (child.isMesh) {
+      child.layers.set(1) // auf Licht im layer1 reagieren
+
       // Schatten werfen und empfangen
       child.castShadow = true
       child.receiveShadow = true
+
       // Material setzen
       child.material = shinyMat
     }

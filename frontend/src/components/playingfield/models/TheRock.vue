@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useShadowLights } from '@/composable/useShadowLights';
 import { useGLTF } from '@tresjs/cientos';
 import { watchEffect } from 'vue';
 
@@ -15,6 +16,7 @@ const lift = -0.05
 const position: [number, number, number] = [randomX, randomY, lift]
 
 const { state } = useGLTF('/Rock Path Round Small.glb', { draco: true })
+const { calculateStaticShadows } = useShadowLights()
 
 watchEffect(() => {
   if (!state.value?.scene) return
@@ -23,10 +25,11 @@ watchEffect(() => {
     // @ts-expect-error three.js Mesh hat isMesh und material zur Laufzeit
     if (child.isMesh) {
       // Schatten empfangen aber NICHT werfen
-      child.castShadow = false
+      child.castShadow = true 
       child.receiveShadow = true
     }
   })
+  calculateStaticShadows()
 })
 
 </script>
