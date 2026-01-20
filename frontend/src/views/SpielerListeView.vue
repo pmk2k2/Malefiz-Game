@@ -24,14 +24,10 @@ watch(
     console.log('Updated host value:', newVal)
   },
 )
-const figures = computed(() => gameStore.figures)
 const spielerListe = computed(() => {
   return gameStore.gameData.players.map(player => {
-    // Finde eine Figur des Spielers
-    const fig = figures.value.find(f => f.playerId === player.id)
     return {
-      ...player,
-      color: fig?.color || '#cccccc' // fallback
+      ...player
     }
   })
 })

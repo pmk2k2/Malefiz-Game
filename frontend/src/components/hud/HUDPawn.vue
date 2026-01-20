@@ -7,13 +7,32 @@
   >
     <!-- Kopf -->
     <div
-      class="w-3 h-3 rounded-full"
+      class="w-4  h-4 rounded-full"
       :style="{ backgroundColor: color }"
     ></div>
 
+    <!-- Hals -->
+    <div
+      class="w-3 h-2 -mt-0.5 rounded-sm"
+      :style="{ backgroundColor: color }"
+    ></div>
+
+
     <!-- Körper -->
     <div
-      class="w-2.5 h-4 -mt-0.5 rounded-sm"
+      class="w-2.5 h-5 -mt-1.5 rounded-sm"
+      :style="{ backgroundColor: color }"
+    ></div>
+
+    <!-- Basis -->
+    <div
+      class="w-4  h-2 -mt-0.5 rounded-sm"
+      :style="{ backgroundColor: color }"
+    ></div>
+
+    <!-- Fuß -->
+     <div
+      class="w-5 h-2 -mt-0.5 rounded-sm"
       :style="{ backgroundColor: color }"
     ></div>
 

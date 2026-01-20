@@ -1,10 +1,12 @@
 <template>
   <div class="spieler-zeile"  @click="selectRow">
     <div class="spieler-info">
-     <span
-        class="spieler-farbe"
-        :style="{ backgroundColor: spieler.color}"
-      ></span>
+    <span >
+      <HudPawn
+        :color="spieler.color"
+        :active="spieler.isReady"
+      />
+    </span>
 
 
       <span class="spieler-name">
@@ -27,6 +29,7 @@
 <script setup lang="ts">
 import type { ISpielerDTD } from '@/stores/ISpielerDTD'
 import { useGameStore } from '@/stores/gamestore'
+import HudPawn from '@/components/hud/HUDPawn.vue'
 
 const gameStore = useGameStore()
 

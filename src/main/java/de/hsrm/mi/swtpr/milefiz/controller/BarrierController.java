@@ -23,12 +23,14 @@ public class BarrierController {
     @Autowired
     private GameService gameService;
 
-    //Trigger für das Platzieren der Barriere (Pickup and Place).
-    //Wird aufgerufen, wenn der Spieler eine Barriere platzieren will.
+    // Trigger für das Platzieren der Barriere (Pickup and Place).
+    // Wird aufgerufen, wenn der Spieler eine Barriere platzieren will.
     @PostMapping("/{gameCode}/barrier/place")
-    public FigureMoveResult placeBarrier(@PathVariable String gameCode, @RequestBody BarrierMoveRequest request) {
-        Game game =  gameService.getGame(gameCode);
-        if (game == null) return FigureMoveResult.fail("Spiel nicht gefunden.");
+    public FigureMoveResult placeBarrier(@PathVariable("gameCode") String gameCode,
+            @RequestBody BarrierMoveRequest request) {
+        Game game = gameService.getGame(gameCode);
+        if (game == null)
+            return FigureMoveResult.fail("Spiel nicht gefunden.");
 
         Field targetField = game.getBoard().get(request.toI, request.toJ);
         // Platzieren einer Barriere darf nur auf einer freien Zelle geschehen
@@ -44,6 +46,6 @@ public class BarrierController {
         }
 
         return FigureMoveResult.fail("Dieses Feld ist besetzt oder ungültig.");
-        
+
     }
 }

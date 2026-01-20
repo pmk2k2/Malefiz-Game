@@ -4,4 +4,5 @@ export interface IIngameRequestEvent {
   figureId: string // ID der Figur
   gameCode: string // Game-Code der Lobby
   forbiddenDir: string  // verbotene Richtung
+  result: number //dice result
 }

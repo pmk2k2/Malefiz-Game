@@ -1,8 +1,8 @@
 <template>
   <button
     class="roll-button"
-    :class="{ 'is-loading': isLoading }"
-    :disabled="isLoading"
+    :class="{ 'is-loading': isLoading || isJumping }"
+    :disabled="isLoading || isJumping"
     @click="handleClick"
   >
     <div class="button-content">
@@ -10,7 +10,7 @@
         Würfeln
       </span>
       <span v-else class="loader">
-        <span class="hourglass">⏳</span>
+        <span class="hourglass">{{ isJumping && !isLoading ? '🚀' : '⏳' }}</span>
       </span>
     </div>
   </button>
@@ -20,6 +20,7 @@
 
 const props = defineProps<{
   isLoading: boolean
+  isJumping: boolean
 }>()
 
 
@@ -27,7 +28,7 @@ const emit = defineEmits(['trigger'])
 
 function handleClick() {
   //Wenn props.isLoading true, dann läuft cooldwon und es darf nicht gewürfelt werden
-  if (!props.isLoading){
+  if (!props.isLoading && !props.isJumping){
     emit('trigger')
   }
 }

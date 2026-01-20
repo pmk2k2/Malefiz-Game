@@ -22,8 +22,8 @@ const props = withDefaults(defineProps<CensoredFiguresProps>(), {
   <TresMesh :position="props.position">
     <Align top>
       <TresMesh :position="[0, 0.2, 0]"> 
-        <TresCylinderGeometry :args="[0.4, 0.4, 0.8, 16]" />
-        <TresMeshStandardMaterial color="#A9A9A9"/>
+        <TresCylinderGeometry :args="[0.5, 0.5, 0.8, 16]" />
+        <TresMeshStandardMaterial color="#000000"/>
       </TresMesh>
     </Align>
   </TresMesh>
