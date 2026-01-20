@@ -17,6 +17,7 @@ import de.hsrm.mi.swtpr.milefiz.controller.dto.DuelAnswerRequest;
 import de.hsrm.mi.swtpr.milefiz.controller.dto.DuelArithmeticAnswerRequest;
 import de.hsrm.mi.swtpr.milefiz.controller.dto.DuelMashingRequest;
 import de.hsrm.mi.swtpr.milefiz.entities.game.Game;
+import de.hsrm.mi.swtpr.milefiz.entities.player.Player;
 import de.hsrm.mi.swtpr.milefiz.messaging.FrontendNachrichtEvent;
 import de.hsrm.mi.swtpr.milefiz.model.Bewegung;
 import de.hsrm.mi.swtpr.milefiz.model.Direction;
@@ -26,7 +27,12 @@ import de.hsrm.mi.swtpr.milefiz.model.duel.DuelAnswer;
 import de.hsrm.mi.swtpr.milefiz.model.duel.QuizQuestion;
 import de.hsrm.mi.swtpr.milefiz.service.GameService;
 import de.hsrm.mi.swtpr.milefiz.service.QuizService;
+import de.hsrm.mi.swtpr.milefiz.model.duel.Duel;
+import de.hsrm.mi.swtpr.milefiz.entities.board.Field;
+
+
 import de.hsrm.mi.swtpr.milefiz.service.ArithmetikService;
+
 
 @RestController
 @RequestMapping("/api/duel")
@@ -160,39 +166,53 @@ public class DuelController {
         publishDuelResult(gameCode, winner, loser);
     }
 
+
+
     private void resetLoserFigure(Game game, String loserId, String gameCode) {
-        game.getFigures().stream()
-                .filter(f -> f.getOwnerPlayerId().equals(loserId))
-                .forEach(f -> {
 
-                    int fromI = f.getGridI();
-                    int fromJ = f.getGridJ();
+    game.getFigures().stream()
+        .filter(f -> f.getOwnerPlayerId().equals(loserId))
+        .findFirst()
+        .ifPresent(f -> {
 
-                    int baseI = 0;
-                    int baseJ = 0;
+            int fromI = f.getGridI();
+            int fromJ = f.getGridJ();
 
-                    f.setGridI(baseI);
-                    f.setGridJ(baseJ);
+            // Startfeld holen
+            Player player = game.getPlayerById(f.getOwnerPlayerId());
+            int startIndex = game.getPlayerNumber().indexOf(player.getId());
+            Field startField = game.getBoard().getStartFieldByIndex(startIndex);
 
-                    Bewegung bew = new Bewegung(
-                            fromI,
-                            fromJ,
-                            baseI,
-                            baseJ,
-                            Direction.SOUTH,
-                            0);
+            // Board aktualisieren
+            game.getBoard().get(fromI, fromJ).removeFigure(f);
+            startField.addFigure(f);
 
-                    FrontendNachrichtEvent moveEvent = new FrontendNachrichtEvent(
-                            FrontendNachrichtEvent.Nachrichtentyp.INGAME,
-                            FrontendNachrichtEvent.Operation.MOVE,
-                            gameCode,
-                            f.getId(),
-                            loserId,
-                            bew);
+            // Figur auf Startposition setzen
+            f.setPosition(startField.getI(), startField.getJ());
 
-                    publisher.publishEvent(moveEvent);
-                });
-    }
+            // Figur ist jetzt auf dem Feld
+            f.setOnField(true);
+
+ 
+            Bewegung bew = new Bewegung(
+                fromI,
+                fromJ,
+                startField.getI(),
+                startField.getJ(),
+                Direction.SOUTH,
+                0
+            );
+
+            publisher.publishEvent(new FrontendNachrichtEvent(
+                FrontendNachrichtEvent.Nachrichtentyp.INGAME,
+                FrontendNachrichtEvent.Operation.MOVE,
+                gameCode,
+                f.getId(),
+                loserId,
+                bew
+            ));
+        });
+}
 
     private void publishDuelResult(String gameCode, String winner, String loser) {
         FrontendNachrichtEvent event = new FrontendNachrichtEvent(

@@ -61,11 +61,7 @@
       </div>
 
       <div class="button-group-lobby">
-        <button
-          class="btn ready-btn small-btn"
-          :class="{ 'is-ready': gameStore.gameData.isBereit }"
-          @click="isReady"
-        >
+        <button class="btn ready-btn small-btn" :class="{ 'is-ready': gameStore.gameData.isBereit }" @click="isReady">
           {{ gameStore.gameData.isBereit ? '✓ Bereit' : 'Bereit' }}
         </button>
 
@@ -81,11 +77,7 @@
     <div v-if="roll !== null" class="roll-result">Würfel: {{ roll }}</div>
 
     <!-- NEW: Board Editor -->
-    <BoardEditor
-      :isVisible="showBoardEditor"
-      @close="showBoardEditor = false"
-      @boardSaved="onBoardSaved"
-    />
+    <BoardEditor :isVisible="showBoardEditor" @close="handleEditorClose" @boardSaved="handleBoardSaved" />
   </div>
 </template>
 
@@ -116,6 +108,7 @@ const showCounter = computed(
 )
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
+
 
 // NEW: Board selection state
 const showBoardSelection = ref(false)
@@ -263,6 +256,19 @@ function onBoardSelected(boardName: string) {
 function onBoardSaved() {
   setzeInfo('Custom board saved successfully!', 'success')
 }
+
+function handleEditorClose() {
+  showBoardEditor.value = false
+  showBoardSelection.value = true
+}
+
+function handleBoardSaved() {
+  showBoardEditor.value = false
+  showBoardSelection.value = true
+
+  setzeInfo("Spielfeld erfolgreich gespeichert!", "success")
+}
+
 </script>
 
 <style scoped>
@@ -364,13 +370,11 @@ function onBoardSaved() {
   background-color: #3d2b1f;
   background-image:
     linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, transparent 100%),
-    repeating-linear-gradient(
-      90deg,
+    repeating-linear-gradient(90deg,
       transparent,
       transparent 38px,
       rgba(0, 0, 0, 0.15) 39px,
-      rgba(0, 0, 0, 0.15) 40px
-    );
+      rgba(0, 0, 0, 0.15) 40px);
 
   padding: 15px;
   border: 5px solid #2d1b0d;
@@ -516,13 +520,11 @@ function onBoardSaved() {
     linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, transparent 100%),
-    repeating-linear-gradient(
-      90deg,
+    repeating-linear-gradient(90deg,
       transparent,
       transparent 40px,
       rgba(0, 0, 0, 0.1) 41px,
-      rgba(0, 0, 0, 0.1) 42px
-    );
+      rgba(0, 0, 0, 0.1) 42px);
   background-size:
     100% 100%,
     100% 100%,
@@ -658,6 +660,100 @@ img {
   background: #2d4d19;
   border-color: #a7ff83;
 }
+.info-box.info {
+  background: #3d2b1f;
+  border-color: #ffc107;
+}
+
+.notifications-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.readonly-preview,
+.rules-display-readonly {
+  width: 400px;
+  height: 300px;
+  background-color: #3d2b1f;
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, transparent 100%),
+    repeating-linear-gradient(90deg,
+      transparent,
+      transparent 38px,
+      rgba(0, 0, 0, 0.15) 39px,
+      rgba(0, 0, 0, 0.15) 40px);
+  border: 5px solid #2d1b0d;
+  border-radius: 15px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: inset 0 0 20px rhba(0, 0, 0, 0.5);
+}
+
+.selection-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.host-info-text {
+  color: #ffc107;
+  font-size: 0.8rem;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.rule-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #f0e2d0;
+  margin: 15px 0;
+  padding: 0 20px;
+}
+
+.value-badge {
+  background: #f0e2d0;
+  color: #2d1b0d;
+  padding: 5px 15px;
+  border-radius: 8px;
+  font-weight: 900;
+  border: 2px solid #2d1b0d;
+}
+
+.section-subtitle {
+  color: #ffcc66;
+  text-transform: uppercase;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  text-shadow: 1px 1px 2px black;
+}
+
+img {
+  width: 220px;
+  height: 190px;
+  object-fit: cover;
+  border: 3px solid #2d1b0d;
+  border-radius: 8px;
+  background-color: #000;
+}
+
+.info-box.error {
+  background: #6d2d2d;
+  border-color: #f44336;
+}
+
+.info-box.success {
+  background: #2d4d19;
+  border-color: #a7ff83;
+}
+
 .info-box.info {
   background: #3d2b1f;
   border-color: #ffc107;

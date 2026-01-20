@@ -6,5 +6,5 @@ export interface ISpielerDTD {
   isReady: boolean
   spielfiguren: Array<IPlayerFigure>
   isHost: boolean
-  color?: string
+  color: string
 }

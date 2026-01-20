@@ -23,6 +23,9 @@ import java.util.List;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api")
@@ -141,6 +144,7 @@ public class BoardController {
         }
 
         // Save board to game
+        boardService.saveJSONFile(customBoard);
         boardService.addStartFieldsToBoard(customBoard);
         game.setBoard(customBoard);
         logger.info("Custom board saved for game {}: {}x{}", code, customBoard.getCols(), customBoard.getRows());
