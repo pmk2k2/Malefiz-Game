@@ -69,8 +69,8 @@ public class BoardValidationService {
             }
         }
 
-        if (startCount < 1) {
-            errors.add("Es muss mindestens ein Startfeld vorhanden sein.");
+        if (startCount != 4) {
+            errors.add("Es müssen 4 Startfelder vorhanden sein.");
         }
 
         if (endCount > 1) {
