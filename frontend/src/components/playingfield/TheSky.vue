@@ -11,8 +11,8 @@ const texturePaths = [
     '/skybox/attic/Attic2048-Cubemap/ny.png',
     '/skybox/attic/Attic2048-Cubemap/pz.png',
     '/skybox/attic/Attic2048-Cubemap/nz.png'
-]
-const { state: texture } = useLoader(CubeTextureLoader, texturePaths) // Textur fuer Env/Background
+] as string[]
+const { state: texture } = useLoader(CubeTextureLoader as any, texturePaths as string[]) // Textur fuer Env/Background
 // Texturen fuer den Cube
 const { state: cube_px }= useLoader(TextureLoader, texturePaths[0] as string)
 const { state: cube_nx }= useLoader(TextureLoader, texturePaths[1] as string)
