@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { useLoader, useTres } from '@tresjs/core';
-import { shallowRef, watch, watchEffect } from 'vue';
+import { shallowRef, watch } from 'vue';
 import { BackSide, CubeTextureLoader, LinearFilter, MeshBasicMaterial, TextureLoader } from 'three';
-import { materialSheen } from 'three/tsl';
 
 const { scene } = useTres()
 const texturePaths = [
@@ -13,26 +12,51 @@ const texturePaths = [
     '/skybox/attic/Attic2048-Cubemap/pz.png',
     '/skybox/attic/Attic2048-Cubemap/nz.png'
 ]
-const { state: texture } = useLoader(CubeTextureLoader, texturePaths)
+const { state: texture } = useLoader(CubeTextureLoader, texturePaths) // Textur fuer Env/Background
+// Texturen fuer den Cube
+const { state: cube_px }= useLoader(TextureLoader, texturePaths[0])
+const { state: cube_nx }= useLoader(TextureLoader, texturePaths[1])
+const { state: cube_py }= useLoader(TextureLoader, texturePaths[2])
+const { state: cube_ny }= useLoader(TextureLoader, texturePaths[3])
+const { state: cube_pz }= useLoader(TextureLoader, texturePaths[4])
+const { state: cube_nz }= useLoader(TextureLoader, texturePaths[5])
+
+const skyboxMats = shallowRef()
+watch([cube_px, cube_nx, cube_py, cube_ny, cube_pz, cube_nz], (textures) => {
+    if(textures.every(t => t)) {    // jede textur soll geladen sein
+        // Material-Array bauen mit den einzelnen Texturen je Material
+        const materials = textures.map(tex => {
+            return new MeshBasicMaterial({
+                color: '#AA9988',   // abdunkeln
+                map: tex,
+                side: BackSide,     // rendern im inneren des cubes
+                depthWrite: false   // ignoriert tiefe fuer hintergrund
+            })
+        })
+        skyboxMats.value = materials    // Update triggern
+    }
+})
 
 watch(texture, (map) => {
     if(map && scene.value) {
         map.magFilter = LinearFilter 
-        map.minFilter = LinearFilter
+        map.minFilter = LinearFilter    // ka ob das ueberhaupt was aendert
         scene.value.background = map
         scene.value.environment = map
-        scene.value.backgroundBlurriness = 0.03
+        scene.value.backgroundBlurriness = 0.01
     }
 })
-/*
-watchEffect(() => {
-    if(scene.value) {
-        scene.value.backgroundIntensity = 0.05
-        scene.value.backgroundBlurriness = 0.02
-    }
-})
-*/
 </script>
 
 <template>
+    <!-- Spiegelung an x-Achse, damit Textur mit Env-Map uebereinstimmt -->
+    <TresMesh :position="[0,0,0]"
+        v-if="skyboxMats"
+        :material="skyboxMats"
+        :scale="[-1,1,1]"
+    >
+        <TresBoxGeometry
+            :args="[350,350,350]"
+        />
+    </TresMesh>
 </template>
