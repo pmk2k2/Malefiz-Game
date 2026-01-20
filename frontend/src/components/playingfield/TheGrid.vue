@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { useLoop, useTres, type TresObject } from '@tresjs/core'
-import { Align, ContactShadows, OrbitControls } from '@tresjs/cientos'
+import { useLoop } from '@tresjs/core'
+import { Align, OrbitControls } from '@tresjs/cientos'
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import TheRock from './models/TheRock.vue'
 import TheTree from './models/TheTree.vue'
 import TheCrown from './models/TheCrown.vue'
 import TheGrass from './models/TheGrass.vue'
 import TheDuel from './models/TheDuel.vue'
-import Barrier from './models/Barrier.vue'
+import Barrier from './models/TheBarrier.vue'
 import TheTable from './models/TheTable.vue'
 import ThePlayerFigure from '@/components/playingfield/ThePlayerFigure.vue'
 import { useGameStore } from '@/stores/gamestore'
@@ -100,7 +100,7 @@ onMounted(async () => {
   }
   // Layers der Kamera setzen
   if(camRef.value) {
-    camRef.value.layers.enable(0)
+    //camRef.value.layers.disable(1)
     camRef.value.layers.enable(1)
   }
 })
@@ -297,7 +297,7 @@ function calculateHomeCenter(playerId: string) {
 // war: updateCam()
 // so ists besser, da nicht jedes mal updateCam() aufgerufen werden muss
 onBeforeRender(({ delta }) => {
-  const cam = camRef.value as any
+  const cam = camRef.value as PerspectiveCamera
   if (!cam) return
 
   if (egoPersp.value) {
@@ -589,9 +589,18 @@ watchEffect(() => {
   }
 })
 
-const lightPos = [0,2,2]
-const lightIntensity = 0.75
-const lightShadowParams = []
+const lightPos = [3.5,12,8]
+const lightLookAt = [0,1,-2]
+const lightIntensity = 1
+const lightDistance = 40
+const lightShadowParam = {
+  width: 50,
+  height: 50,
+  near: 0.5,
+  far: 40,
+  zoom: 0.2,
+  blurRadius: 2.5
+}
 
 </script>
 
@@ -601,26 +610,46 @@ const lightShadowParams = []
   <OrbitControls v-if="!egoPersp" />
 
   <TheSky />
-  <TresAmbientLight :intensity="0.50" />
+  <TresAmbientLight :intensity="0.45" />
+  <!-- ungenutzte Params
+   
+    :distance="lightDistance"
+    :shadow-camera-zoom="lightShadowParam.zoom"
+  -->
   <TresDirectionalLight
     ref="staticLightRef"
-    :position="lightPos" 
-    :intensity="lightIntensity" 
     cast-shadow
+    :layers="0"
+    :position="lightPos" 
+    :look-at="lightLookAt"
+    :intensity="lightIntensity" 
 
     :shadow-mapSize-width="1024"
     :shadow-mapSize-height="1024"
     :shadow-auto-update="false"
+
+    :shadow-camera-width="lightShadowParam.width"
+    :shadow-camera-height="lightShadowParam.height"
+    :shadow-camera-near="lightShadowParam.near"
+    :shadow-camera-far="lightShadowParam.far"
+    :shadow-camera-zoom="lightShadowParam.zoom"
   />
-  <TresDirectionalLight
+  <!-- TresDirectionalLight
     ref="dynamicLightRef"
-    :position="lightPos" 
-    :intensity="lightIntensity" 
     cast-shadow
+    :layers="1"
+    :position="lightPos" 
+    :look-at="lightLookAt"
+    :intensity="lightIntensity" 
 
     :shadow-mapSize-width="512"
     :shadow-mapSize-height="512"
-  />
+
+    :shadow-camera-width="lightShadowParam.width"
+    :shadow-camera-height="lightShadowParam.height"
+    :shadow-camera-near="lightShadowParam.near"
+    :shadow-camera-far="lightShadowParam.far"
+  / -->
 
   <template v-if="board">
     <TheTable :scale="(board.cols > board.rows) ? board.cols * CELL_SIZE * 0.17 : board.rows * CELL_SIZE * 0.17"/>

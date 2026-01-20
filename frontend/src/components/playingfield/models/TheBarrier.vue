@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { GLTFModel, useGLTF } from '@tresjs/cientos';
+import { useGLTF } from '@tresjs/cientos';
 import { watchEffect } from 'vue';
 
 // Skalierung und Position anpassen, damit die Barriere gut auf dem Feld steht
@@ -19,7 +19,7 @@ watchEffect(() => {
       child.layers.set(1) // auf Licht im layer1 reagieren
 
       // Schatten werfen und empfangen
-      child.castShadow = true
+      child.castShadow = false //true
       child.receiveShadow = true
     }
   })

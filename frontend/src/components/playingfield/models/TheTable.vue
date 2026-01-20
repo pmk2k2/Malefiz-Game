@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Align, GLTFModel, useGLTF } from '@tresjs/cientos';
-import { Color, Mesh, MeshStandardMaterial, Object3D } from 'three';
+import { Align, useGLTF } from '@tresjs/cientos';
+import { Color, MeshStandardMaterial } from 'three';
 import { watchEffect } from 'vue';
 
 // Table by jeremy [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/8RW134iS2gW)

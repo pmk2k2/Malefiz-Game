@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useGLTF } from '@tresjs/cientos';
 import { useLoop } from '@tresjs/core';
-import { shallowRef } from 'vue';
 
 const scale: [number, number, number] = [1.75, 1.75, 1.75]
 const rotation: [number, number, number] = [Math.PI / 2, 0, 0]

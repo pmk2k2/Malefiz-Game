@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useShadowLights } from '@/composable/useShadowLights';
-import { GLTFModel, useGLTF } from '@tresjs/cientos';
+import { useGLTF } from '@tresjs/cientos';
 import { watchEffect } from 'vue';
 
 // Etwas Variation in der Groesse, Skalierung und Platzierung der Baeume
@@ -42,6 +42,7 @@ watchEffect(() => {
         :object="state?.scene.clone()"
         :rotation="rotation"
         :position="position" 
+        :scale="scale"
     />
 </TresMesh>
 </template>

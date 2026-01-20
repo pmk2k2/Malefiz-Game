@@ -30,7 +30,7 @@ watchEffect(() => {
       child.layers.set(1) // auf Licht im layer1 reagieren
 
       // Schatten werfen und empfangen
-      child.castShadow = true
+      child.castShadow = false //true
       child.receiveShadow = true
 
       // Material setzen
