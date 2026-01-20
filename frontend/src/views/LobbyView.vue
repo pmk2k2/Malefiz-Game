@@ -39,6 +39,7 @@
           @click="isReady"
         > 
           {{ gameStore.gameData.isBereit ? "✓ Bereit" : "Bereit" }}
+          
         </button>
         
         <button v-if="isHost" class="btn create small-btn" @click="gameStartenByAdmin">Starten</button>
@@ -81,7 +82,7 @@ const showCounter = computed(
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
 
-
+ console.log(gameStore.gameData.isBereit)
 onMounted(() => {
   const code = gameStore.gameData.gameCode
   if (!code) {

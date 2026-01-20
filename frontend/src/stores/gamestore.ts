@@ -29,7 +29,7 @@ export const useGameStore = defineStore('gamestore', () => {
     playerName: string | null
     isHost: boolean | null
     counterWert: number | null
-    isBereit: boolean | null
+    isBereit: boolean 
     gameOver: boolean | null
     winnerId: string | null
     moveDone: boolean | null
