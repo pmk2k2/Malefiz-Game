@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Align, useGLTF } from '@tresjs/cientos';
-import { Color, MeshStandardMaterial } from 'three';
+import { Color, Mesh, MeshStandardMaterial } from 'three';
 import { watchEffect } from 'vue';
 
 // Table by jeremy [CC-BY] (https://creativecommons.org/licenses/by/3.0/) via Poly Pizza (https://poly.pizza/m/8RW134iS2gW)
@@ -19,8 +19,8 @@ watchEffect(() => {
   state.value.scene.traverse((child) => {
     // @ts-expect-error three.js Mesh hat isMesh und material zur Laufzeit
     if (child.isMesh) {
-        child.receiveShadow = true
-        child.material = shinyWoodMat
+        child.receiveShadow = true;
+        (child as Mesh).material = shinyWoodMat
     }
   })
 })

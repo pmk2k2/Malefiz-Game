@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useGLTF } from '@tresjs/cientos'
-import { Color, MeshStandardMaterial } from 'three'
+import { Color, Mesh, MeshStandardMaterial } from 'three'
 import { watchEffect } from 'vue'
 
 const props = defineProps({
@@ -31,10 +31,10 @@ watchEffect(() => {
 
       // Schatten werfen und empfangen
       child.castShadow = false //true
-      child.receiveShadow = true
+      child.receiveShadow = true;
 
       // Material setzen
-      child.material = shinyMat
+      (child as Mesh).material = shinyMat
     }
   })
 })

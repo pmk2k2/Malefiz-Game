@@ -568,7 +568,7 @@ watchEffect(() => {
   }
 })
 
-const lightPos = [3.5,12,8]
+const lightPos = [3.5,12,8] as [number, number, number]
 const lightLookAt = [0,1,-2]
 const lightIntensity = 1
 const lightDistance = 40
@@ -632,7 +632,7 @@ if (typeof window !== 'undefined') {
     ref="dynamicLightRef"
     cast-shadow
     :layers="1"
-    :position="lightPos" 
+    :position="[lightPos[0], lightPos[1], lightPos[2]]" 
     :look-at="lightLookAt"
     :intensity="lightIntensity" 
 
@@ -648,7 +648,7 @@ if (typeof window !== 'undefined') {
   <template v-if="board">
     <TheTable :scale="(board.cols > board.rows) ? board.cols * CELL_SIZE * 0.17 : board.rows * CELL_SIZE * 0.17"/>
     <Align bottom>
-      <TresMesh receive-shadow :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]" :layers="[0,1]" >
+      <TresMesh receive-shadow :rotation="[-Math.PI / 2, 0, 0]" :position="[0, 0, 0]" :layers="0" >
         <TresBoxGeometry :args="[board.cols * CELL_SIZE * 1.3, board.rows * CELL_SIZE * 1.5, 0.1]" />
         <TresMeshStandardMaterial color="#b6e3a5" :roughness="0.13" :metalness="0.05" />
       </TresMesh>

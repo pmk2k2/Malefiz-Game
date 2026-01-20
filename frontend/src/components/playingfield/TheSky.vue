@@ -14,12 +14,12 @@ const texturePaths = [
 ]
 const { state: texture } = useLoader(CubeTextureLoader, texturePaths) // Textur fuer Env/Background
 // Texturen fuer den Cube
-const { state: cube_px }= useLoader(TextureLoader, texturePaths[0])
-const { state: cube_nx }= useLoader(TextureLoader, texturePaths[1])
-const { state: cube_py }= useLoader(TextureLoader, texturePaths[2])
-const { state: cube_ny }= useLoader(TextureLoader, texturePaths[3])
-const { state: cube_pz }= useLoader(TextureLoader, texturePaths[4])
-const { state: cube_nz }= useLoader(TextureLoader, texturePaths[5])
+const { state: cube_px }= useLoader(TextureLoader, texturePaths[0] as string)
+const { state: cube_nx }= useLoader(TextureLoader, texturePaths[1] as string)
+const { state: cube_py }= useLoader(TextureLoader, texturePaths[2] as string)
+const { state: cube_ny }= useLoader(TextureLoader, texturePaths[3] as string)
+const { state: cube_pz }= useLoader(TextureLoader, texturePaths[4] as string)
+const { state: cube_nz }= useLoader(TextureLoader, texturePaths[5] as string)
 
 const skyboxMats = shallowRef()
 watch([cube_px, cube_nx, cube_py, cube_ny, cube_pz, cube_nz], (textures) => {
