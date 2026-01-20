@@ -31,7 +31,7 @@
     [
       { "i": 0, "j": 2, "type": "PATH" },
       { "i": 1, "j": 2, "type": "PATH" },
-      { "i": 2, "j": 2, "type": "DUEL" },
+      { "i": 2, "j": 2, "type": "PATH" },
       { "i": 3, "j": 2, "type": "PATH" },
       { "i": 4, "j": 2, "type": "PATH" },
       { "i": 5, "j": 2, "type": "PATH" },
