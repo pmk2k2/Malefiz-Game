@@ -47,9 +47,9 @@ export function useAnimationQueue() {
     // Falls Figur ausserhalb des Spielfelds startet
     if(figures.value[index].position[0] == undefined || figures.value[index].position[1] == undefined || figures.value[index].position[2] == undefined) return
     if(bewegung.startX === null || bewegung.startZ === null) {
-      startPos = [figures.value[index].position[0],figures.value[index].position[1],figures.value[index].position[2]]
+      startPos = [figures.value[index].position[0], 0.2,figures.value[index].position[2]]
     } else {
-      startPos = [bewegung.startX, figures.value[index].position[1], bewegung.startZ]
+      startPos = [bewegung.startX, 0.2, bewegung.startZ]
     }
 
     // Wenn keine "Schritte" gelaufen werden

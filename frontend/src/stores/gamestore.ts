@@ -475,6 +475,10 @@ export const useGameStore = defineStore('gamestore', () => {
       stompClient.deactivate()
       stompClient = null
     }
+    if(persStompClient) {
+      persStompClient.deactivate()
+      persStompClient = null
+    }
     stopCountdown()
   }
 
@@ -491,10 +495,15 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.stepsTaken = 0
     gameData.remainingSteps = 0
     gameData.totalSteps = 0
+    gameData.moveChoiceAllowed = false
+    gameData.requireInput = false
+    gameData.movingFigure = null
+    gameData.forbiddenDir = null
     gameData.duelActive = false
     gameData.duelP1Id = null
     gameData.duelP2Id = null
     gameData.currentMinigame = null
+    gameData.energy = 0
     stopCountdown()
 
     localStorage.removeItem('gameData')
@@ -509,6 +518,15 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.stepsTaken = 0
     gameData.remainingSteps = 0
     gameData.totalSteps = 0
+
+    gameData.moveChoiceAllowed = false
+    gameData.requireInput = false
+    gameData.movingFigure = null
+    gameData.forbiddenDir = null
+    gameData.duelActive = false
+    gameData.energy = 0
+
+    disconnect()
 
     stopCountdown()
     console.log(JSON.stringify(gameData))
