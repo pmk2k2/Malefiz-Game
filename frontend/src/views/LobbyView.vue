@@ -82,7 +82,6 @@ const showCounter = computed(
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
 
- console.log(gameStore.gameData.isBereit)
 onMounted(() => {
   const code = gameStore.gameData.gameCode
   if (!code) {
