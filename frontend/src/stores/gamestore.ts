@@ -442,6 +442,10 @@ export const useGameStore = defineStore('gamestore', () => {
       if (gameData.playerId) {
         const me = (gameData.players as any[]).find((p) => p.id === gameData.playerId)
         gameData.isHost = !!(me && me.isHost)
+        // Sync isBereit with server state
+        if (me) {
+          gameData.isBereit = me.isReady
+        }
       }
 
       console.log('[updatePlayerList] Daten aktualisiert:', jsonData)
