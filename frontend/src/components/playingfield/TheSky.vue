@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useLoader, useTres } from '@tresjs/core';
 import { shallowRef, watch } from 'vue';
-import { BackSide, CubeTextureLoader, LinearFilter, MeshBasicMaterial, TextureLoader } from 'three';
+import { BackSide, CubeTexture, CubeTextureLoader, LinearFilter, MeshBasicMaterial, TextureLoader } from 'three';
 
 const { scene } = useTres()
 const texturePaths = [
@@ -12,7 +12,7 @@ const texturePaths = [
     '/skybox/attic/Attic2048-Cubemap/pz.png',
     '/skybox/attic/Attic2048-Cubemap/nz.png'
 ] as string[]
-const { state: texture } = useLoader(CubeTextureLoader as any, texturePaths as string[]) // Textur fuer Env/Background
+const { state: texture } = useLoader(CubeTextureLoader as any, texturePaths as any) // Textur fuer Env/Background
 // Texturen fuer den Cube
 const { state: cube_px }= useLoader(TextureLoader, texturePaths[0] as string)
 const { state: cube_nx }= useLoader(TextureLoader, texturePaths[1] as string)
@@ -39,10 +39,10 @@ watch([cube_px, cube_nx, cube_py, cube_ny, cube_pz, cube_nz], (textures) => {
 
 watch(texture, (map) => {
     if(map && scene.value) {
-        map.magFilter = LinearFilter 
-        map.minFilter = LinearFilter    // ka ob das ueberhaupt was aendert
-        scene.value.background = map
-        scene.value.environment = map
+        (map as CubeTexture).magFilter = LinearFilter;
+        (map as CubeTexture).minFilter = LinearFilter    // ka ob das ueberhaupt was aendert
+        scene.value.background = (map as CubeTexture)
+        scene.value.environment = (map as CubeTexture)
         scene.value.backgroundBlurriness = 0.01
     }
 })
