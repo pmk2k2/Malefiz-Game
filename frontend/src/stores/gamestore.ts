@@ -504,6 +504,7 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.duelP2Id = null
     gameData.currentMinigame = null
     gameData.energy = 0
+    figures.value = []
     stopCountdown()
 
     localStorage.removeItem('gameData')
@@ -525,6 +526,7 @@ export const useGameStore = defineStore('gamestore', () => {
     gameData.forbiddenDir = null
     gameData.duelActive = false
     gameData.energy = 0
+    figures.value = []
 
     disconnect()
 
