@@ -52,25 +52,40 @@ public class BoardValidationService {
             errors.add("Das Spielfeld ist zu klein (Minimum 5x5).");
         }
 
-        // 2. Start- und Zielfelder zählen
+        // 2. Start- und Zielfelder zählen & Position prüfen
         int startCount = 0;
         int endCount = 0;
+        int barrierCount = 0;
+        boolean startNotAtBottom = false;
 
         for (int y = 0; y < board.getRows(); y++) {
             for (int x = 0; x < board.getCols(); x++) {
                 Field f = board.get(x, y);
                 // Achtung: Prüfen ob Field null ist, falls Arrays lückenhaft gefüllt sind
-                if (f != null && f.getType() == CellType.START) {
-                    startCount++;
-                }
-                if (f != null && f.getType() == CellType.GOAL) {
-                    endCount++;
+                if (f != null) {
+                    if (f.getType() == CellType.START) {
+                        startCount++;
+                        // NEU: Prüfen ob das Startfeld in der untersten Reihe ist
+                        if (y != 0) {
+                            startNotAtBottom = true;
+                        }
+                    }
+                    if (f.getType() == CellType.GOAL) {
+                        endCount++;
+                    }
+                    if (f.getType() == CellType.BARRIER) {
+                        barrierCount++;
+                    }
                 }
             }
         }
 
+        if (startNotAtBottom) {
+            errors.add("Startfelder dürfen nur am unteren Rand (letzte Reihe) platziert werden.");
+        }
+
         if (startCount != 4) {
-            errors.add("Es müssen 4 Startfelder vorhanden sein.");
+            errors.add("Es müssen genau 4 Startfelder vorhanden sein.");
         }
 
         if (endCount > 1) {
@@ -78,6 +93,9 @@ public class BoardValidationService {
         }
         if (endCount < 1) {
             errors.add("Es muss ein Zielfeld vorhanden sein.");
+        }
+        if (barrierCount < 1) {
+            errors.add("Es muss mindestens eine Barriere vorhanden sein.");
         }
 
         // 3. Pfad-Prüfung

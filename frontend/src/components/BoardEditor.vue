@@ -68,6 +68,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useGameStore } from '@/stores/gamestore'
+import { useInfo } from '@/composable/useInfo'
 
 type CellType = 'START' | 'PATH' | 'BLOCKED' | 'GOAL' | 'BARRIER'
 
@@ -93,6 +94,7 @@ const props = defineProps<{
 }>()
 
 const gameStore = useGameStore()
+const { setzeInfo } = useInfo()
 const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || '/api'
 
 const cellTypes: CellType[] = ['PATH', 'START', 'GOAL', 'BLOCKED', 'BARRIER']
@@ -225,7 +227,7 @@ async function confirmBoard() {
     const playerId = gameStore.gameData.playerId
 
     if (!gameCode || !playerId) {
-        alert('Missing game code or player ID')
+        setzeInfo('Fehler: Fehlender Game Code oder Player ID') // Statt alert
         return
     }
 
@@ -261,18 +263,22 @@ async function confirmBoard() {
         )
 
         if (res.ok) {
-            // Download the board after successful save
-            downloadBoard(boardData)
-
             emit('boardSaved')
             emit('close')
+            setzeInfo("Das Board wurde erfolgreich gespeichert!")
         } else {
             const err = await res.json()
-            alert(err.error || 'Failed to save board')
+            
+            if (err.validationErrors && Array.isArray(err.validationErrors) && err.validationErrors.length > 0) {
+                const msg = "Das Board ist ungültig:\n- " + err.validationErrors.join('\n- ')
+                setzeInfo(msg)
+            } else {
+                setzeInfo(err.error || 'Fehler beim Speichern des Boards')
+            }
         }
     } catch (err) {
         console.error('Failed to save board:', err)
-        alert('Failed to save board')
+        setzeInfo('Netzwerkfehler: Konnte Board nicht speichern.')
     }
 }
 
