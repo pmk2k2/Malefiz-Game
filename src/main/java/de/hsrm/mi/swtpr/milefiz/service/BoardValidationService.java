@@ -1,7 +1,11 @@
 package de.hsrm.mi.swtpr.milefiz.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -50,7 +54,7 @@ public class BoardValidationService {
 
         // 2. Start- und Zielfelder zählen
         int startCount = 0;
-        int endCount = 0; // Falls ihr Zielfelder habt
+        int endCount = 0;
 
         for (int y = 0; y < board.getRows(); y++) {
             for (int x = 0; x < board.getCols(); x++) {
@@ -65,8 +69,8 @@ public class BoardValidationService {
             }
         }
 
-        if (startCount < 1) {
-            errors.add("Es muss mindestens ein Startfeld vorhanden sein.");
+        if (startCount != 4) {
+            errors.add("Es müssen 4 Startfelder vorhanden sein.");
         }
 
         if (endCount > 1) {
@@ -76,20 +80,89 @@ public class BoardValidationService {
             errors.add("Es muss ein Zielfeld vorhanden sein.");
         }
 
-        // 3. Pfad-Prüfung (hier können später Algorithmen wie BFS/DFS rein)
+        // 3. Pfad-Prüfung
         if (!isBoardConnected(board)) {
-            errors.add("Das Spielfeld hat unerreichbare Inseln oder Sackgassen (Beispiel).");
+            errors.add("Das Spielfeld hat ein unerreichbares Zielfeld");
         }
 
         return errors;
     }
 
     //
-    // PFADFINDUNG
+    // PFADFINDUNG funktion
     //
     //
     private boolean isBoardConnected(Board board) {
 
-        return true;
+        // 1. Finde alle Startfelder
+
+        List<Field> startFields = new ArrayList<>();
+
+        for (int y = 0; y < board.getRows(); y++) {
+            for (int x = 0; x < board.getCols(); x++) {
+                Field f = board.get(x, y);
+                if (f != null && f.getType() == CellType.START) {
+                    startFields.add(f);
+                }
+            }
+        }
+
+        if (startFields.isEmpty()) {
+            return false; // Kein Start -> kein Weg
+        }
+
+        // 2. BFS Initialisierung
+
+        Queue<Field> queue = new LinkedList<>();
+        Set<String> visited = new HashSet<>();
+
+        // Alle Startfelder zur Queue hinzufügen
+
+        for (Field start : startFields) {
+            queue.add(start);
+            visited.add(start.getI() + "," + start.getJ());
+        }
+
+        boolean goalReached = false;
+
+        // 3. Die Suche (Loop)
+
+        while (!queue.isEmpty()) {
+            Field current = queue.poll();
+
+            // Haben wir das Ziel gefunden?
+            if (current.getType() == CellType.GOAL) {
+                goalReached = true;
+                break; // Erfolgreich!
+            }
+
+            int cx = current.getI();
+            int cy = current.getJ();
+
+            // Mögliche Richtungen als Offsets: (dx, dy)
+            int[][] directions = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
+
+            for (int[] dir : directions) {
+                int nx = cx + dir[0];
+                int ny = cy + dir[1];
+
+                // Ist Nachbar innerhalb des Grids?
+                if (nx >= 0 && nx < board.getCols() && ny >= 0 && ny < board.getRows()) {
+                    Field neighbor = board.get(nx, ny);
+
+                    // Ist Nachbar existierend und begehbar (Nicht BLOCKED)?
+                    if (neighbor != null && neighbor.getType() != CellType.BLOCKED) {
+
+                        String key = nx + "," + ny;
+                        if (!visited.contains(key)) {
+                            visited.add(key);
+                            queue.add(neighbor);
+                        }
+                    }
+                }
+            }
+        }
+
+        return goalReached;
     }
 }
